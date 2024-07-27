@@ -78,7 +78,7 @@ fn find_keybinds_parallel(
     min_confidence: Option<f32>,
     tolerance: Option<u8>,
 ) -> Option<KeybindTypes> {
-    images
+    let maybe_max = images
         .into_par_iter() // Convert to a parallel iterator
         .filter_map(|(img, keybind)| {
             match locate_image(&**img, region, min_confidence, tolerance) {
@@ -86,8 +86,18 @@ fn find_keybinds_parallel(
                 None => None,
             }
         })
-        .max_by(|(_, confidence1), (_, confidence2)| confidence1.partial_cmp(confidence2).unwrap())
-        .map(|(keybind, _)| keybind)
+        .max_by(|(_, confidence1), (_, confidence2)| confidence1.partial_cmp(confidence2).unwrap());
+
+    if let Some((keybind, confidence)) = &maybe_max {
+        println!(
+            "Max confidence found: {}, for keybind: {:?}",
+            confidence, keybind
+        );
+    } else {
+        println!("No valid keybinding found.")
+    }
+
+    maybe_max.map(|(keybind, _)| keybind)
 }
 
 pub(crate) fn get_next_keybind_from_screen() -> Option<KeybindTypes> {

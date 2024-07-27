@@ -15,18 +15,6 @@ log = "0.4"
 tracing = "0.1"
 tracing-subscriber = "0.3"
 
-
-
-
-
-
-
-
-
-
-
-
-
 #spectrust = { path = "../crates/spectrust" }
 
 [profile.release]
