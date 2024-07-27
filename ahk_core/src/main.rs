@@ -10,11 +10,12 @@ use inputbot::{
     KeybdKey::{self, *},
     MouseButton::*,
 };
+use rayon::prelude::*;
 use spectrust::*;
-use std::sync::Mutex;
+use std::sync::{Mutex, MutexGuard, Arc};
 use std::{thread::sleep, time::Duration};
 
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 pub enum KeybindTypes {
     KeyQ,
     KeyE,
@@ -72,7 +73,7 @@ macro_rules! create_image_refs {
     ( $( $name:ident => $file_stem:expr ),+ ) => {
         lazy_static! {
             $(
-                static ref $name: Mutex<DynamicImage> = Mutex::new(
+                static ref $name: Arc<DynamicImage> = Arc::new(
                     image::open(format!("images/{}.png", $file_stem))
                         .expect("Unable to locate file.")
                 );
@@ -258,295 +259,71 @@ fn main() {
     inputbot::handle_input_events(false);
 }
 
-pub(crate) fn get_next_keybind_from_screen() -> Option<KeybindTypes> {
-    let img_Q = IMG_Q.lock().unwrap();
-    let img_E = IMG_E.lock().unwrap();
-    let img_R = IMG_R.lock().unwrap();
-    let img_F = IMG_F.lock().unwrap();
-    let img_Z = IMG_Z.lock().unwrap();
-    let img_X = IMG_X.lock().unwrap();
-    let img_C = IMG_C.lock().unwrap();
-    let img_V = IMG_V.lock().unwrap();
-    
-    let img_1 = IMG_1.lock().unwrap();
-    let img_2 = IMG_2.lock().unwrap();
-    let img_3 = IMG_3.lock().unwrap();
-    let img_4 = IMG_4.lock().unwrap();
-    let img_5 = IMG_5.lock().unwrap();
-    let img_6 = IMG_6.lock().unwrap();
-    let img_7 = IMG_7.lock().unwrap();
-    let img_8 = IMG_8.lock().unwrap();
-    let img_9 = IMG_9.lock().unwrap();
-    let img_0 = IMG_0.lock().unwrap();
-    let img_dash = IMG_DASH.lock().unwrap();
-    let img_equals = IMG_EQUALS.lock().unwrap();
+fn find_keybinds_parallel(
+    images: Vec<(&Arc<DynamicImage>, KeybindTypes)>,
+    region: Option<(u16, u16, u16, u16)>,
+    min_confidence: Option<f32>,
+    tolerance: Option<u8>,
+) -> Option<KeybindTypes> {
+    images
+        .into_par_iter() // Convert to a parallel iterator
+        .filter_map(|(img, keybind)| {
+            match locate_image(&**img, region, min_confidence, tolerance) {
+                Some((_x, _y, _img_width, _img_height, confidence)) => Some((keybind, confidence)),
+                None => None,
+            }
+        })
+        .max_by(|(_, confidence1), (_, confidence2)| confidence1.partial_cmp(confidence2).unwrap())
+        .map(|(keybind, _)| keybind)
+}
 
-    let img_S1 = IMG_S1.lock().unwrap();
-    let img_S2 = IMG_S2.lock().unwrap();
-    let img_S3 = IMG_S3.lock().unwrap();
-    let img_S4 = IMG_S4.lock().unwrap();
-    let img_S5 = IMG_S5.lock().unwrap();
-    let img_S6 = IMG_S6.lock().unwrap();
-    let img_S7 = IMG_S7.lock().unwrap();
-    let img_S8 = IMG_S8.lock().unwrap();
-    let img_S9 = IMG_S9.lock().unwrap();
-    let img_S0 = IMG_S0.lock().unwrap();
-    let img_Sdash = IMG_SDASH.lock().unwrap();
-    let img_Sequals = IMG_SEQUALS.lock().unwrap();
+pub(crate) fn get_next_keybind_from_screen() -> Option<KeybindTypes> {
+    let images_with_keybinds: Vec<(&Arc<DynamicImage>, KeybindTypes)> = vec![
+        (&IMG_Q, KeybindTypes::KeyQ),
+        (&IMG_E, KeybindTypes::KeyE),
+        (&IMG_R, KeybindTypes::KeyR),
+        (&IMG_F, KeybindTypes::KeyF),
+        (&IMG_Z, KeybindTypes::KeyZ),
+        (&IMG_X, KeybindTypes::KeyX),
+        (&IMG_C, KeybindTypes::KeyC),
+        (&IMG_V, KeybindTypes::KeyV),
+        (&IMG_1, KeybindTypes::Key1),
+        (&IMG_2, KeybindTypes::Key2),
+        (&IMG_3, KeybindTypes::Key3),
+        (&IMG_4, KeybindTypes::Key4),
+        (&IMG_5, KeybindTypes::Key5),
+        (&IMG_6, KeybindTypes::Key6),
+        (&IMG_7, KeybindTypes::Key7),
+        (&IMG_8, KeybindTypes::Key8),
+        (&IMG_9, KeybindTypes::Key9),
+        (&IMG_0, KeybindTypes::Key0),
+        (&IMG_DASH, KeybindTypes::KeyDash),
+        (&IMG_EQUALS, KeybindTypes::KeyEquals),
+        (&IMG_S1, KeybindTypes::KeyS1),
+        (&IMG_S2, KeybindTypes::KeyS2),
+        (&IMG_S3, KeybindTypes::KeyS3),
+        (&IMG_S4, KeybindTypes::KeyS4),
+        (&IMG_S5, KeybindTypes::KeyS5),
+        (&IMG_S6, KeybindTypes::KeyS6),
+        (&IMG_S7, KeybindTypes::KeyS7),
+        (&IMG_S8, KeybindTypes::KeyS8),
+        (&IMG_S9, KeybindTypes::KeyS9),
+        (&IMG_S0, KeybindTypes::KeyS0),
+        (&IMG_SDASH, KeybindTypes::KeySDash),
+        (&IMG_SEQUALS, KeybindTypes::KeySEquals),
+    ];
 
     let x_pos = 800;
     let y_pos = 1300;
     let width = 150;
     let height = 140;
     let region = Some((x_pos, y_pos, width, height));
-    //let region = None;
     let min_confidence = Some(0.9999);
     let tolerance = Some(0);
 
-    let mut found_keybind = None;
-    let mut highest_confidence = 0.0;
-    let find_image = |img: &DynamicImage, _keyname: &str| match locate_image(
-        img,
-        region,
-        min_confidence,
-        tolerance,
-    ) {
-        Some((_x, _y, _img_width, _img_height, confidence)) => {
-            //println!(
-            //    "{}: x: {}, y: {}, width: {}, height: {}, confidence: {}",
-            //    keyname, x, y, img_width, img_height, confidence
-            //);
-            return Some(confidence);
-        }
-        None => None,
-    };
+    let found_keybind =
+        find_keybinds_parallel(images_with_keybinds, region, min_confidence, tolerance);
 
-    if let Some(confidence) = find_image(&img_Q, "Q") {
-        if confidence > highest_confidence {
-            highest_confidence = confidence;
-            found_keybind = Some(KeybindTypes::KeyQ);
-        }
-    }
-
-    if let Some(confidence) = find_image(&img_E, "E") {
-        if confidence > highest_confidence {
-            highest_confidence = confidence;
-            found_keybind = Some(KeybindTypes::KeyE);
-        }
-    }
-
-    if let Some(confidence) = find_image(&img_R, "R") {
-        if confidence > highest_confidence {
-            highest_confidence = confidence;
-            found_keybind = Some(KeybindTypes::KeyR);
-        }
-    }
-
-    if let Some(confidence) = find_image(&img_F, "F") {
-        if confidence > highest_confidence {
-            highest_confidence = confidence;
-            found_keybind = Some(KeybindTypes::KeyF);
-        }
-    }
-
-    if let Some(confidence) = find_image(&img_Z, "Z") {
-        if confidence > highest_confidence {
-            highest_confidence = confidence;
-            found_keybind = Some(KeybindTypes::KeyZ);
-        }
-    }
-
-    if let Some(confidence) = find_image(&img_X, "X") {
-        if confidence > highest_confidence {
-            highest_confidence = confidence;
-            found_keybind = Some(KeybindTypes::KeyX);
-        }
-    }
-
-    if let Some(confidence) = find_image(&img_C, "C") {
-        if confidence > highest_confidence {
-            highest_confidence = confidence;
-            found_keybind = Some(KeybindTypes::KeyC);
-        }
-    }
-
-    if let Some(confidence) = find_image(&img_V, "V") {
-        if confidence > highest_confidence {
-            highest_confidence = confidence;
-            found_keybind = Some(KeybindTypes::KeyV);
-        }
-    }
-
-    if let Some(confidence) = find_image(&img_1, "1") {
-        if confidence > highest_confidence {
-            highest_confidence = confidence;
-            found_keybind = Some(KeybindTypes::Key1);
-        }
-    }
-
-    if let Some(confidence) = find_image(&img_2, "2") {
-        if confidence > highest_confidence {
-            highest_confidence = confidence;
-            found_keybind = Some(KeybindTypes::Key2);
-        }
-    }
-
-    if let Some(confidence) = find_image(&img_3, "3") {
-        if confidence > highest_confidence {
-            highest_confidence = confidence;
-            found_keybind = Some(KeybindTypes::Key3);
-        }
-    }
-
-    if let Some(confidence) = find_image(&img_4, "4") {
-        if confidence > highest_confidence {
-            highest_confidence = confidence;
-            found_keybind = Some(KeybindTypes::Key4);
-        }
-    }
-
-    if let Some(confidence) = find_image(&img_5, "5") {
-        if confidence > highest_confidence {
-            highest_confidence = confidence;
-            found_keybind = Some(KeybindTypes::Key5);
-        }
-    }
-
-    if let Some(confidence) = find_image(&img_6, "6") {
-        if confidence > highest_confidence {
-            highest_confidence = confidence;
-            found_keybind = Some(KeybindTypes::Key6);
-        }
-    }
-
-    if let Some(confidence) = find_image(&img_7, "7") {
-        if confidence > highest_confidence {
-            highest_confidence = confidence;
-            found_keybind = Some(KeybindTypes::Key7);
-        }
-    }
-
-    if let Some(confidence) = find_image(&img_8, "8") {
-        if confidence > highest_confidence {
-            highest_confidence = confidence;
-            found_keybind = Some(KeybindTypes::Key8);
-        }
-    }
-
-    if let Some(confidence) = find_image(&img_9, "9") {
-        if confidence > highest_confidence {
-            highest_confidence = confidence;
-            found_keybind = Some(KeybindTypes::Key9);
-        }
-    }
-
-    if let Some(confidence) = find_image(&img_0, "0") {
-        if confidence > highest_confidence {
-            highest_confidence = confidence;
-            found_keybind = Some(KeybindTypes::Key0);
-        }
-    }
-
-    if let Some(confidence) = find_image(&img_dash, "-") {
-        if confidence > highest_confidence {
-            highest_confidence = confidence;
-            found_keybind = Some(KeybindTypes::KeyDash);
-        }
-    }
-
-    if let Some(confidence) = find_image(&img_equals, "=") {
-        if confidence > highest_confidence {
-            //highest_confidence = confidence;
-            found_keybind = Some(KeybindTypes::KeyEquals);
-        }
-    }
-    
-    // Shift Keybinds
-    if let Some(confidence) = find_image(&img_S1, "S1") {
-        if confidence > highest_confidence {
-            highest_confidence = confidence;
-            found_keybind = Some(KeybindTypes::KeyS1);
-        }
-    }
-
-    if let Some(confidence) = find_image(&img_S2, "S2") {
-        if confidence > highest_confidence {
-            highest_confidence = confidence;
-            found_keybind = Some(KeybindTypes::KeyS2);
-        }
-    }
-
-    if let Some(confidence) = find_image(&img_S3, "S3") {
-        if confidence > highest_confidence {
-            highest_confidence = confidence;
-            found_keybind = Some(KeybindTypes::KeyS3);
-        }
-    }
-
-    if let Some(confidence) = find_image(&img_S4, "S4") {
-        if confidence > highest_confidence {
-            highest_confidence = confidence;
-            found_keybind = Some(KeybindTypes::KeyS4);
-        }
-    }
-
-    if let Some(confidence) = find_image(&img_S5, "S5") {
-        if confidence > highest_confidence {
-            highest_confidence = confidence;
-            found_keybind = Some(KeybindTypes::KeyS5);
-        }
-    }
-
-    if let Some(confidence) = find_image(&img_S6, "S6") {
-        if confidence > highest_confidence {
-            highest_confidence = confidence;
-            found_keybind = Some(KeybindTypes::KeyS6);
-        }
-    }
-
-    if let Some(confidence) = find_image(&img_S7, "S7") {
-        if confidence > highest_confidence {
-            highest_confidence = confidence;
-            found_keybind = Some(KeybindTypes::KeyS7);
-        }
-    }
-
-    if let Some(confidence) = find_image(&img_S8, "S8") {
-        if confidence > highest_confidence {
-            highest_confidence = confidence;
-            found_keybind = Some(KeybindTypes::KeyS8);
-        }
-    }
-
-    if let Some(confidence) = find_image(&img_S9, "S9") {
-        if confidence > highest_confidence {
-            highest_confidence = confidence;
-            found_keybind = Some(KeybindTypes::KeyS9);
-        }
-    }
-
-    if let Some(confidence) = find_image(&img_S0, "S0") {
-        if confidence > highest_confidence {
-            highest_confidence = confidence;
-            found_keybind = Some(KeybindTypes::KeyS0);
-        }
-    }
-
-    if let Some(confidence) = find_image(&img_Sdash, "S-") {
-        if confidence > highest_confidence {
-            highest_confidence = confidence;
-            found_keybind = Some(KeybindTypes::KeySDash);
-        }
-    }
-
-    if let Some(confidence) = find_image(&img_Sequals, "S=") {
-        if confidence > highest_confidence {
-            //highest_confidence = confidence;
-            found_keybind = Some(KeybindTypes::KeySEquals);
-        }
-    }
-    
-    
     println!("Selected Key: {:?}", found_keybind);
-    return found_keybind;
+    found_keybind
 }

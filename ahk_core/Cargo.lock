@@ -9,6 +9,7 @@ dependencies = [
  "image",
  "inputbot",
  "lazy_static",
+ "rayon",
  "spectrust",
 ]
 
@@ -679,9 +680,7 @@ checksum = "3c5e1a9a646d36c3599cd173a41282daf47c44583ad367b8e6837255952e5c67"
 
 [[package]]
 name = "spectrust"
-version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2af949747045279acd811897e5221cc8f5755448ab3d5c14cf8d45d85402e1ab"
+version = "0.1.0"
 dependencies = [
  "image",
  "screenshots",
