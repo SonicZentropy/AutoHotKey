@@ -4,8 +4,8 @@
 #[macro_use]
 extern crate lazy_static;
 
+mod image_processing;
 mod utils;
-
 use utils::*;
 
 use image::DynamicImage;
@@ -15,134 +15,20 @@ use inputbot::{
     MouseButton::*,
 };
 use rayon::prelude::*;
-use spectrust::*;
-use std::sync::{Mutex, MutexGuard, Arc};
+
+use std::sync::{Arc, Mutex, MutexGuard};
 use std::{thread::sleep, time::Duration};
 
+use image_processing::*;
 
-
+const X_POS: u16 = 800;
+const Y_POS: u16 = 1300;
 
 fn main() {
-    //let img_Q = image::open("images/Q.png").expect("Unable to locate file.");
-    //let img_1 = image::open("images/1.png").expect("Unable to locate file.");
-    // Bind the number 1 key your keyboard to a function that types
-    // "Hello, world!" when pressed.
-    Numpad0Key.bind(|| {
-        println!("In bind");
-        let pre = std::time::Instant::now();
-
-        let thingmod = 5.0;
-        let thing = if thingmod % 2.0 > 0.5 { QKey } else { RKey };
-        thing.press();
-
-        match get_next_keybind_from_screen() {
-            Some(KeybindTypes::KeyQ) => {
-                press_key(QKey);
-            }
-            Some(KeybindTypes::KeyE) => {
-                press_key(EKey);
-            }
-            Some(KeybindTypes::KeyR) => {
-                press_key(QKey);
-            }
-            Some(KeybindTypes::KeyF) => {
-                press_key(EKey);
-            }
-            Some(KeybindTypes::KeyZ) => {
-                press_key(QKey);
-            }
-            Some(KeybindTypes::KeyX) => {
-                press_key(EKey);
-            }
-            Some(KeybindTypes::KeyC) => {
-                press_key(QKey);
-            }
-            Some(KeybindTypes::KeyV) => {
-                press_key(EKey);
-            }
-            Some(KeybindTypes::Key1) => {
-                press_key(Numrow1Key);
-            }
-            Some(KeybindTypes::Key2) => {
-                press_key(Numrow2Key);
-            }
-            Some(KeybindTypes::Key3) => {
-                press_key(Numrow3Key);
-            }
-            Some(KeybindTypes::Key4) => {
-                press_key(Numrow4Key);
-            }
-            Some(KeybindTypes::Key5) => {
-                press_key(Numrow5Key);
-            }
-            Some(KeybindTypes::Key6) => {
-                press_key(Numrow6Key);
-            }
-            Some(KeybindTypes::Key7) => {
-                press_key(Numrow7Key);
-            }
-            Some(KeybindTypes::Key8) => {
-                press_key(Numrow8Key);
-            }
-            Some(KeybindTypes::Key9) => {
-                press_key(Numrow9Key);
-            }
-            Some(KeybindTypes::Key0) => {
-                press_key(Numrow0Key);
-            }
-            Some(KeybindTypes::KeyDash) => {
-                press_key(MinusKey);
-            }
-            Some(KeybindTypes::KeyEquals) => {
-                press_key(EqualKey);
-            }
-
-            Some(KeybindTypes::KeyS1) => {
-                press_shift_key_sequence(Numrow1Key);
-            }
-            Some(KeybindTypes::KeyS2) => {
-                press_shift_key_sequence(Numrow2Key);
-            }
-            Some(KeybindTypes::KeyS3) => {
-                press_shift_key_sequence(Numrow3Key);
-            }
-            Some(KeybindTypes::KeyS4) => {
-                press_shift_key_sequence(Numrow4Key);
-            }
-            Some(KeybindTypes::KeyS5) => {
-                press_shift_key_sequence(Numrow5Key);
-            }
-            Some(KeybindTypes::KeyS6) => {
-                press_shift_key_sequence(Numrow6Key);
-            }
-            Some(KeybindTypes::KeyS7) => {
-                press_shift_key_sequence(Numrow7Key);
-            }
-            Some(KeybindTypes::KeyS8) => {
-                press_shift_key_sequence(Numrow8Key);
-            }
-            Some(KeybindTypes::KeyS9) => {
-                press_shift_key_sequence(Numrow9Key);
-            }
-            Some(KeybindTypes::KeyS0) => {
-                press_shift_key_sequence(Numrow0Key);
-            }
-            Some(KeybindTypes::KeySDash) => {
-                press_shift_key_sequence(MinusKey);
-            }
-            Some(KeybindTypes::KeySEquals) => {
-                press_shift_key_sequence(EqualKey);
-            }
-
-            None => {}
-        }
-
-        let post = std::time::Instant::now();
-        let dur = post - pre;
-        println!("Time taken: {:?}ms", dur.as_millis());
+    Numpad0Key.bind(|| {        
+        profile!("Full Search Process", execute_search_process());
     });
 
-    // Call this to start listening for bound inputs.
     inputbot::handle_input_events(false);
 }
 
@@ -200,11 +86,9 @@ pub(crate) fn get_next_keybind_from_screen() -> Option<KeybindTypes> {
         (&IMG_SEQUALS, KeybindTypes::KeySEquals),
     ];
 
-    let x_pos = 800;
-    let y_pos = 1300;
     let width = 150;
     let height = 140;
-    let region = Some((x_pos, y_pos, width, height));
+    let region = Some((X_POS, Y_POS, width, height));
     let min_confidence = Some(0.9999);
     let tolerance = Some(0);
 
@@ -213,4 +97,43 @@ pub(crate) fn get_next_keybind_from_screen() -> Option<KeybindTypes> {
 
     println!("Selected Key: {:?}", found_keybind);
     found_keybind
+}
+
+fn execute_search_process() {
+    if let Some(keybind) = get_next_keybind_from_screen() {
+        match keybind {
+            KeybindTypes::KeyQ => press_key(QKey),
+            KeybindTypes::KeyE => press_key(EKey),
+            KeybindTypes::KeyR => press_key(RKey),
+            KeybindTypes::KeyF => press_key(FKey),
+            KeybindTypes::KeyZ => press_key(ZKey),
+            KeybindTypes::KeyX => press_key(XKey),
+            KeybindTypes::KeyC => press_key(CKey),
+            KeybindTypes::KeyV => press_key(VKey),
+            KeybindTypes::Key1 => press_key(Numrow1Key),
+            KeybindTypes::Key2 => press_key(Numrow2Key),
+            KeybindTypes::Key3 => press_key(Numrow3Key),
+            KeybindTypes::Key4 => press_key(Numrow4Key),
+            KeybindTypes::Key5 => press_key(Numrow5Key),
+            KeybindTypes::Key6 => press_key(Numrow6Key),
+            KeybindTypes::Key7 => press_key(Numrow7Key),
+            KeybindTypes::Key8 => press_key(Numrow8Key),
+            KeybindTypes::Key9 => press_key(Numrow9Key),
+            KeybindTypes::Key0 => press_key(Numrow0Key),
+            KeybindTypes::KeyDash => press_key(MinusKey),
+            KeybindTypes::KeyEquals => press_key(EqualKey),
+            KeybindTypes::KeyS1 => press_shift_key_sequence(Numrow1Key),
+            KeybindTypes::KeyS2 => press_shift_key_sequence(Numrow2Key),
+            KeybindTypes::KeyS3 => press_shift_key_sequence(Numrow3Key),
+            KeybindTypes::KeyS4 => press_shift_key_sequence(Numrow4Key),
+            KeybindTypes::KeyS5 => press_shift_key_sequence(Numrow5Key),
+            KeybindTypes::KeyS6 => press_shift_key_sequence(Numrow6Key),
+            KeybindTypes::KeyS7 => press_shift_key_sequence(Numrow7Key),
+            KeybindTypes::KeyS8 => press_shift_key_sequence(Numrow8Key),
+            KeybindTypes::KeyS9 => press_shift_key_sequence(Numrow9Key),
+            KeybindTypes::KeyS0 => press_shift_key_sequence(Numrow0Key),
+            KeybindTypes::KeySDash => press_shift_key_sequence(MinusKey),
+            KeybindTypes::KeySEquals => press_shift_key_sequence(EqualKey),
+        }
+    }
 }

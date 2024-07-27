@@ -5,44 +5,19 @@ use inputbot::{
     MouseButton::*,
 };
 use rayon::prelude::*;
-use spectrust::*;
+use crate::image_processing::*;
 use std::sync::{Arc, Mutex, MutexGuard};
 use std::{thread::sleep, time::Duration};
 
-#[derive(Debug, Copy, Clone)]
-pub enum KeybindTypes {
-    KeyQ,
-    KeyE,
-    KeyR,
-    KeyF,
-    KeyZ,
-    KeyX,
-    KeyC,
-    KeyV,
-    Key1,
-    Key2,
-    Key3,
-    Key4,
-    Key5,
-    Key6,
-    Key7,
-    Key8,
-    Key9,
-    Key0,
-    KeyDash,
-    KeyEquals,
-    KeyS1,
-    KeyS2,
-    KeyS3,
-    KeyS4,
-    KeyS5,
-    KeyS6,
-    KeyS7,
-    KeyS8,
-    KeyS9,
-    KeyS0,
-    KeySDash,
-    KeySEquals,
+
+#[macro_export]
+macro_rules! profile {
+    ($label:expr, $blockfn:expr) => {{
+            let start = std::time::Instant::now();
+            $blockfn;
+            let duration = start.elapsed();
+            println!("{}: {:?}ms", $label, duration.as_millis());            
+        }};
 }
 
 macro_rules! create_image_refs {
@@ -109,4 +84,40 @@ pub(crate) fn press_shift_key_sequence(key: KeybdKey) {
     LShiftKey.release();
     sleep(Duration::from_millis(20));
     key.release();
+}
+
+#[derive(Debug, Copy, Clone)]
+pub enum KeybindTypes {
+    KeyQ,
+    KeyE,
+    KeyR,
+    KeyF,
+    KeyZ,
+    KeyX,
+    KeyC,
+    KeyV,
+    Key1,
+    Key2,
+    Key3,
+    Key4,
+    Key5,
+    Key6,
+    Key7,
+    Key8,
+    Key9,
+    Key0,
+    KeyDash,
+    KeyEquals,
+    KeyS1,
+    KeyS2,
+    KeyS3,
+    KeyS4,
+    KeyS5,
+    KeyS6,
+    KeyS7,
+    KeyS8,
+    KeyS9,
+    KeyS0,
+    KeySDash,
+    KeySEquals,
 }
