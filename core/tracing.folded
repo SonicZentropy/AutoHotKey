@@ -1,0 +1,1274 @@
+ThreadId(2) 699308000
+ThreadId(2); AutoHotKey::execute_search_process:src/main.rs:181 127800
+ThreadId(2); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::image_processing::update_screenshot:src\image_processing.rs:291 550300
+ThreadId(2); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::image_processing::update_screenshot:src\image_processing.rs:291; AutoHotKey::image_processing::size:src\image_processing.rs:50 300500
+ThreadId(2); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::image_processing::update_screenshot:src\image_processing.rs:291 4100
+ThreadId(2); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::image_processing::update_screenshot:src\image_processing.rs:291; AutoHotKey::image_processing::size:src\image_processing.rs:50 88000
+ThreadId(2); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::image_processing::update_screenshot:src\image_processing.rs:291 5500
+ThreadId(2); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::image_processing::update_screenshot:src\image_processing.rs:291; AutoHotKey::image_processing::screenshot:src\image_processing.rs:16 8300
+ThreadId(2); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::image_processing::update_screenshot:src\image_processing.rs:291; AutoHotKey::image_processing::screenshot:src\image_processing.rs:16; AutoHotKey::image_processing::size:src\image_processing.rs:50 88800
+ThreadId(2); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::image_processing::update_screenshot:src\image_processing.rs:291; AutoHotKey::image_processing::screenshot:src\image_processing.rs:16 2936400
+ThreadId(2); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::image_processing::update_screenshot:src\image_processing.rs:291 14400
+ThreadId(2); AutoHotKey::execute_search_process:src/main.rs:181 3200
+ThreadId(2); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::get_next_keybind_from_screen:src/main.rs:128 10892100
+ThreadId(7) 721049200
+ThreadId(4) 721675500
+ThreadId(3) 722407600
+ThreadId(12) 722478400
+ThreadId(7); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1464200
+ThreadId(13) 722741200
+ThreadId(14) 722748900
+ThreadId(8) 722861400
+ThreadId(10) 722881800
+ThreadId(4); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1593100
+ThreadId(3); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1175400
+ThreadId(9) 723631000
+ThreadId(8); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 938000
+ThreadId(13); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1216100
+ThreadId(14); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1318900
+ThreadId(11) 724158100
+ThreadId(10); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1367000
+ThreadId(12); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1847600
+ThreadId(9); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1614600
+ThreadId(5) 725301500
+ThreadId(11); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1970100
+ThreadId(5); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1083700
+ThreadId(6) 728519300
+ThreadId(7) 7088200
+ThreadId(6); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1289800
+ThreadId(13) 6196700
+ThreadId(10) 6819900
+ThreadId(3) 7655600
+ThreadId(13); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1338500
+ThreadId(4) 8258900
+ThreadId(7); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 2144400
+ThreadId(12) 7571600
+ThreadId(3); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1395500
+ThreadId(10); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1600300
+ThreadId(12); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1139300
+ThreadId(4); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1630800
+ThreadId(8) 9406800
+ThreadId(14) 9492500
+ThreadId(9) 8607600
+ThreadId(5) 7921700
+ThreadId(8); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1278500
+ThreadId(9); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1147400
+ThreadId(14); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1447900
+ThreadId(11) 9032500
+ThreadId(5); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1327400
+ThreadId(6) 5860700
+ThreadId(11); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1514200
+ThreadId(6); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1230200
+ThreadId(3) 6575300
+ThreadId(7) 7628500
+ThreadId(4) 6243200
+ThreadId(3); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 234600
+ThreadId(4); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1130200
+ThreadId(12) 7584000
+ThreadId(7); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1360400
+ThreadId(10) 8455600
+ThreadId(9) 6476400
+ThreadId(12); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1714100
+ThreadId(9); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 866700
+ThreadId(13) 11099300
+ThreadId(8) 8287900
+ThreadId(13); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 622300
+ThreadId(8); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 960700
+ThreadId(10); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 2724500
+ThreadId(2); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::get_next_keybind_from_screen:src/main.rs:128; AutoHotKey::find_keybinds_parallel:src/main.rs:106 29713200
+ThreadId(2); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::get_next_keybind_from_screen:src/main.rs:128 390400
+ThreadId(2); AutoHotKey::execute_search_process:src/main.rs:181 26700
+ThreadId(15) 951204100
+ThreadId(15); AutoHotKey::execute_search_process:src/main.rs:181 37500
+ThreadId(15); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::image_processing::update_screenshot:src\image_processing.rs:291 519700
+ThreadId(15); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::image_processing::update_screenshot:src\image_processing.rs:291; AutoHotKey::image_processing::size:src\image_processing.rs:50 345400
+ThreadId(15); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::image_processing::update_screenshot:src\image_processing.rs:291 7200
+ThreadId(15); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::image_processing::update_screenshot:src\image_processing.rs:291; AutoHotKey::image_processing::size:src\image_processing.rs:50 146400
+ThreadId(15); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::image_processing::update_screenshot:src\image_processing.rs:291 6400
+ThreadId(15); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::image_processing::update_screenshot:src\image_processing.rs:291; AutoHotKey::image_processing::screenshot:src\image_processing.rs:16 2400
+ThreadId(15); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::image_processing::update_screenshot:src\image_processing.rs:291; AutoHotKey::image_processing::screenshot:src\image_processing.rs:16; AutoHotKey::image_processing::size:src\image_processing.rs:50 87500
+ThreadId(15); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::image_processing::update_screenshot:src\image_processing.rs:291; AutoHotKey::image_processing::screenshot:src\image_processing.rs:16 10223700
+ThreadId(15); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::image_processing::update_screenshot:src\image_processing.rs:291 26100
+ThreadId(15); AutoHotKey::execute_search_process:src/main.rs:181 4200
+ThreadId(15); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::get_next_keybind_from_screen:src/main.rs:128 1226700
+ThreadId(10) 226065900
+ThreadId(13) 226989000
+ThreadId(9) 228008300
+ThreadId(12) 228204000
+ThreadId(8) 226895100
+ThreadId(6) 234192400
+ThreadId(10); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1198200
+ThreadId(13); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1444800
+ThreadId(7) 230930900
+ThreadId(12); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1604500
+ThreadId(11) 235661000
+ThreadId(9); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 2122400
+ThreadId(8); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1888800
+ThreadId(5) 236983300
+ThreadId(6); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1569000
+ThreadId(7); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1217500
+ThreadId(3) 233873400
+ThreadId(11); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1982900
+ThreadId(4) 234373200
+ThreadId(3); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1749300
+ThreadId(14) 240294600
+ThreadId(5); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 2761900
+ThreadId(4); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1188400
+ThreadId(14); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1660700
+ThreadId(10) 6370800
+ThreadId(10); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1216500
+ThreadId(7) 6039700
+ThreadId(9) 7088800
+ThreadId(7); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1283400
+ThreadId(8) 8312100
+ThreadId(9); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1368500
+ThreadId(13) 9649000
+ThreadId(3) 6387400
+ThreadId(5) 6107900
+ThreadId(4) 5662000
+ThreadId(13); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1092700
+ThreadId(3); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1185400
+ThreadId(8); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1890400
+ThreadId(5); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1287800
+ThreadId(6) 10140100
+ThreadId(12) 10890400
+ThreadId(4); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1524400
+ThreadId(14) 6592800
+ThreadId(11) 9650100
+ThreadId(12); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1313500
+ThreadId(6); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1590400
+ThreadId(14); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1619700
+ThreadId(11); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1493400
+ThreadId(9) 6649300
+ThreadId(9); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 226100
+ThreadId(3) 5743100
+ThreadId(10) 9854300
+ThreadId(7) 8558400
+ThreadId(8) 6227800
+ThreadId(13) 6954000
+ThreadId(4) 6091500
+ThreadId(3); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1397700
+ThreadId(10); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1437900
+ThreadId(7); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1470000
+ThreadId(8); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1418300
+ThreadId(13); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1272600
+ThreadId(12) 6311800
+ThreadId(12); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 829100
+ThreadId(4); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 3793900
+ThreadId(15); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::get_next_keybind_from_screen:src/main.rs:128; AutoHotKey::find_keybinds_parallel:src/main.rs:106 29483200
+ThreadId(15); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::get_next_keybind_from_screen:src/main.rs:128 443000
+ThreadId(15); AutoHotKey::execute_search_process:src/main.rs:181 8200
+ThreadId(16) 1152418700
+ThreadId(16); AutoHotKey::execute_search_process:src/main.rs:181 26900
+ThreadId(16); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::image_processing::update_screenshot:src\image_processing.rs:291 557400
+ThreadId(16); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::image_processing::update_screenshot:src\image_processing.rs:291; AutoHotKey::image_processing::size:src\image_processing.rs:50 285900
+ThreadId(16); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::image_processing::update_screenshot:src\image_processing.rs:291 4800
+ThreadId(16); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::image_processing::update_screenshot:src\image_processing.rs:291; AutoHotKey::image_processing::size:src\image_processing.rs:50 125200
+ThreadId(16); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::image_processing::update_screenshot:src\image_processing.rs:291 5600
+ThreadId(16); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::image_processing::update_screenshot:src\image_processing.rs:291; AutoHotKey::image_processing::screenshot:src\image_processing.rs:16 2400
+ThreadId(16); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::image_processing::update_screenshot:src\image_processing.rs:291; AutoHotKey::image_processing::screenshot:src\image_processing.rs:16; AutoHotKey::image_processing::size:src\image_processing.rs:50 100500
+ThreadId(16); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::image_processing::update_screenshot:src\image_processing.rs:291; AutoHotKey::image_processing::screenshot:src\image_processing.rs:16 9408900
+ThreadId(16); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::image_processing::update_screenshot:src\image_processing.rs:291 8000
+ThreadId(16); AutoHotKey::execute_search_process:src/main.rs:181 3200
+ThreadId(16); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::get_next_keybind_from_screen:src/main.rs:128 1264400
+ThreadId(5) 187318200
+ThreadId(9) 182343500
+ThreadId(6) 186096400
+ThreadId(14) 185428900
+ThreadId(13) 180195500
+ThreadId(11) 185395500
+ThreadId(9); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1010700
+ThreadId(5); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1256300
+ThreadId(4) 178338400
+ThreadId(3) 181921200
+ThreadId(6); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1399100
+ThreadId(14); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1430400
+ThreadId(11); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1636100
+ThreadId(13); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1689100
+ThreadId(4); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1379700
+ThreadId(10) 183001100
+ThreadId(3); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1593400
+ThreadId(12) 182157600
+ThreadId(12); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 260700
+ThreadId(10); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1451700
+ThreadId(8) 186580000
+ThreadId(7) 187031300
+ThreadId(7); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1804000
+ThreadId(3) 5825800
+ThreadId(8); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 2681600
+ThreadId(11) 7200000
+ThreadId(12) 6129200
+ThreadId(3); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1421400
+ThreadId(12); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1067900
+ThreadId(10) 6965300
+ThreadId(11); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 2057100
+ThreadId(5) 10608800
+ThreadId(14) 10908500
+ThreadId(5); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1033100
+ThreadId(10); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1644300
+ThreadId(9) 12474800
+ThreadId(13) 11269100
+ThreadId(9); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1209300
+ThreadId(13); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1534800
+ThreadId(4) 13122800
+ThreadId(3) 5800400
+ThreadId(7) 7354200
+ThreadId(4); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1168500
+ThreadId(7); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1137000
+ThreadId(3); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1654600
+ThreadId(14); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 5612600
+ThreadId(6) 16837600
+ThreadId(8) 10695500
+ThreadId(6); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1875700
+ThreadId(8); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1405900
+ThreadId(10) 10165200
+ThreadId(5) 11126700
+ThreadId(12) 13552200
+ThreadId(10); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1486200
+ThreadId(11) 13607900
+ThreadId(5); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1689500
+ThreadId(12); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1456600
+ThreadId(9) 11911600
+ThreadId(11); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1586200
+ThreadId(9); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1517000
+ThreadId(13) 13782000
+ThreadId(13); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1266700
+ThreadId(4) 14190300
+ThreadId(4); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1088400
+ThreadId(16); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::get_next_keybind_from_screen:src/main.rs:128; AutoHotKey::find_keybinds_parallel:src/main.rs:106 38378000
+ThreadId(16); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::get_next_keybind_from_screen:src/main.rs:128 616100
+ThreadId(16); AutoHotKey::execute_search_process:src/main.rs:181 20200
+ThreadId(17) 1348278200
+ThreadId(17); AutoHotKey::execute_search_process:src/main.rs:181 31600
+ThreadId(17); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::image_processing::update_screenshot:src\image_processing.rs:291 329400
+ThreadId(17); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::image_processing::update_screenshot:src\image_processing.rs:291; AutoHotKey::image_processing::size:src\image_processing.rs:50 245000
+ThreadId(17); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::image_processing::update_screenshot:src\image_processing.rs:291 5200
+ThreadId(17); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::image_processing::update_screenshot:src\image_processing.rs:291; AutoHotKey::image_processing::size:src\image_processing.rs:50 90300
+ThreadId(17); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::image_processing::update_screenshot:src\image_processing.rs:291 5700
+ThreadId(17); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::image_processing::update_screenshot:src\image_processing.rs:291; AutoHotKey::image_processing::screenshot:src\image_processing.rs:16 2300
+ThreadId(17); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::image_processing::update_screenshot:src\image_processing.rs:291; AutoHotKey::image_processing::screenshot:src\image_processing.rs:16; AutoHotKey::image_processing::size:src\image_processing.rs:50 87100
+ThreadId(17); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::image_processing::update_screenshot:src\image_processing.rs:291; AutoHotKey::image_processing::screenshot:src\image_processing.rs:16 4061600
+ThreadId(17); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::image_processing::update_screenshot:src\image_processing.rs:291 8700
+ThreadId(17); AutoHotKey::execute_search_process:src/main.rs:181 16800
+ThreadId(17); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::get_next_keybind_from_screen:src/main.rs:128 1840400
+ThreadId(4) 158121200
+ThreadId(13) 160536800
+ThreadId(4); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1021900
+ThreadId(6) 171073000
+ThreadId(7) 174433400
+ThreadId(13); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1393700
+ThreadId(6); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 948200
+ThreadId(14) 174125400
+ThreadId(14); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 208800
+ThreadId(10) 168262500
+ThreadId(5) 167217400
+ThreadId(7); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1449000
+ThreadId(3) 176152500
+ThreadId(10); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1196600
+ThreadId(5); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1194800
+ThreadId(8) 173328100
+ThreadId(11) 168707300
+ThreadId(3); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1648500
+ThreadId(12) 170053400
+ThreadId(8); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1270600
+ThreadId(11); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1681700
+ThreadId(12); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1657800
+ThreadId(13) 6514700
+ThreadId(14) 6235400
+ThreadId(13); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1428400
+ThreadId(9) 172331000
+ThreadId(14); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1549400
+ThreadId(6) 8383900
+ThreadId(9); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1337200
+ThreadId(4) 10487700
+ThreadId(3) 6591900
+ThreadId(7) 9135800
+ThreadId(5) 8390000
+ThreadId(6); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1617500
+ThreadId(12) 6109800
+ThreadId(7); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1629300
+ThreadId(3); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1981300
+ThreadId(5); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 2054600
+ThreadId(12); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1650200
+ThreadId(10) 11613700
+ThreadId(4); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 4939700
+ThreadId(10); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1418400
+ThreadId(11) 11788200
+ThreadId(14) 8791100
+ThreadId(13) 9768800
+ThreadId(11); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1704400
+ThreadId(14); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1527200
+ThreadId(12) 6033400
+ThreadId(13); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1779100
+ThreadId(9) 10741000
+ThreadId(12); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1600800
+ThreadId(7) 9340800
+ThreadId(9); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1574400
+ThreadId(6) 12319100
+ThreadId(3) 10660000
+ThreadId(4) 8247200
+ThreadId(7); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1844800
+ThreadId(6); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1267800
+ThreadId(5) 11749200
+ThreadId(3); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1499300
+ThreadId(4); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1641400
+ThreadId(5); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1020500
+ThreadId(8) 21130600
+ThreadId(8); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 984200
+ThreadId(17); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::get_next_keybind_from_screen:src/main.rs:128; AutoHotKey::find_keybinds_parallel:src/main.rs:106 33651300
+ThreadId(17); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::get_next_keybind_from_screen:src/main.rs:128 365700
+ThreadId(17); AutoHotKey::execute_search_process:src/main.rs:181 5100
+ThreadId(18) 1539144700
+ThreadId(18); AutoHotKey::execute_search_process:src/main.rs:181 23400
+ThreadId(18); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::image_processing::update_screenshot:src\image_processing.rs:291 293400
+ThreadId(18); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::image_processing::update_screenshot:src\image_processing.rs:291; AutoHotKey::image_processing::size:src\image_processing.rs:50 248800
+ThreadId(18); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::image_processing::update_screenshot:src\image_processing.rs:291 10700
+ThreadId(18); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::image_processing::update_screenshot:src\image_processing.rs:291; AutoHotKey::image_processing::size:src\image_processing.rs:50 127300
+ThreadId(18); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::image_processing::update_screenshot:src\image_processing.rs:291 12000
+ThreadId(18); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::image_processing::update_screenshot:src\image_processing.rs:291; AutoHotKey::image_processing::screenshot:src\image_processing.rs:16 4900
+ThreadId(18); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::image_processing::update_screenshot:src\image_processing.rs:291; AutoHotKey::image_processing::screenshot:src\image_processing.rs:16; AutoHotKey::image_processing::size:src\image_processing.rs:50 158100
+ThreadId(18); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::image_processing::update_screenshot:src\image_processing.rs:291; AutoHotKey::image_processing::screenshot:src\image_processing.rs:16 13469500
+ThreadId(18); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::image_processing::update_screenshot:src\image_processing.rs:291 10900
+ThreadId(18); AutoHotKey::execute_search_process:src/main.rs:181 4500
+ThreadId(18); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::get_next_keybind_from_screen:src/main.rs:128 1724000
+ThreadId(6) 173885900
+ThreadId(4) 173762000
+ThreadId(9) 176633700
+ThreadId(6); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 880600
+ThreadId(5) 173848800
+ThreadId(4); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1224000
+ThreadId(9); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1084700
+ThreadId(3) 175573500
+ThreadId(5); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1091500
+ThreadId(7) 177117400
+ThreadId(8) 174627300
+ThreadId(3); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1500700
+ThreadId(11) 182860000
+ThreadId(11); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 219400
+ThreadId(8); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1698100
+ThreadId(7); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 2595200
+ThreadId(14) 185641300
+ThreadId(12) 184150200
+ThreadId(14); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1457600
+ThreadId(12); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1336700
+ThreadId(9) 6865400
+ThreadId(13) 187302400
+ThreadId(11) 5306100
+ThreadId(9); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1218700
+ThreadId(3) 6738100
+ThreadId(11); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1163100
+ThreadId(7) 6087500
+ThreadId(3); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1250000
+ThreadId(8) 7159200
+ThreadId(7); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1689400
+ThreadId(8); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1703100
+ThreadId(10) 196680100
+ThreadId(14) 5969600
+ThreadId(13); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 5285600
+ThreadId(10); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1176800
+ThreadId(6) 14086600
+ThreadId(14); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1424500
+ThreadId(11) 5378200
+ThreadId(4) 14227700
+ThreadId(6); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1357000
+ThreadId(11); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1419300
+ThreadId(4); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1292400
+ThreadId(7) 5609900
+ThreadId(8) 5722600
+ThreadId(5) 17289400
+ThreadId(9) 9862000
+ThreadId(13) 5774500
+ThreadId(8); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1527400
+ThreadId(7); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 2741000
+ThreadId(5); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 2032600
+ThreadId(13); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1646500
+ThreadId(9); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 2492700
+ThreadId(10) 7954000
+ThreadId(11) 6220000
+ThreadId(3) 12058100
+ThreadId(12) 15240200
+ThreadId(10); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1636600
+ThreadId(3); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 996300
+ThreadId(11); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1631600
+ThreadId(12); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1638400
+ThreadId(6) 9593500
+ThreadId(14) 11145300
+ThreadId(14); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 958300
+ThreadId(6); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1617200
+ThreadId(18); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::get_next_keybind_from_screen:src/main.rs:128; AutoHotKey::find_keybinds_parallel:src/main.rs:106 32640300
+ThreadId(18); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::get_next_keybind_from_screen:src/main.rs:128 226700
+ThreadId(18); AutoHotKey::execute_search_process:src/main.rs:181 5400
+ThreadId(19) 1721521500
+ThreadId(19); AutoHotKey::execute_search_process:src/main.rs:181 37600
+ThreadId(19); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::image_processing::update_screenshot:src\image_processing.rs:291 536800
+ThreadId(19); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::image_processing::update_screenshot:src\image_processing.rs:291; AutoHotKey::image_processing::size:src\image_processing.rs:50 313000
+ThreadId(19); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::image_processing::update_screenshot:src\image_processing.rs:291 8200
+ThreadId(19); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::image_processing::update_screenshot:src\image_processing.rs:291; AutoHotKey::image_processing::size:src\image_processing.rs:50 134900
+ThreadId(19); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::image_processing::update_screenshot:src\image_processing.rs:291 6500
+ThreadId(19); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::image_processing::update_screenshot:src\image_processing.rs:291; AutoHotKey::image_processing::screenshot:src\image_processing.rs:16 15900
+ThreadId(19); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::image_processing::update_screenshot:src\image_processing.rs:291; AutoHotKey::image_processing::screenshot:src\image_processing.rs:16; AutoHotKey::image_processing::size:src\image_processing.rs:50 110600
+ThreadId(19); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::image_processing::update_screenshot:src\image_processing.rs:291; AutoHotKey::image_processing::screenshot:src\image_processing.rs:16 10341500
+ThreadId(19); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::image_processing::update_screenshot:src\image_processing.rs:291 8200
+ThreadId(19); AutoHotKey::execute_search_process:src/main.rs:181 3800
+ThreadId(19); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::get_next_keybind_from_screen:src/main.rs:128 1209200
+ThreadId(10) 154992200
+ThreadId(11) 154711400
+ThreadId(3) 155364200
+ThreadId(5) 158402700
+ThreadId(13) 158481700
+ThreadId(14) 152909600
+ThreadId(6) 153210100
+ThreadId(10); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1227000
+ThreadId(11); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1230800
+ThreadId(8) 160136000
+ThreadId(7) 159866400
+ThreadId(5); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1099200
+ThreadId(9) 158862000
+ThreadId(7); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 197900
+ThreadId(13); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1051500
+ThreadId(4) 164209500
+ThreadId(3); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1757300
+ThreadId(14); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1410600
+ThreadId(12) 156590700
+ThreadId(8); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1207300
+ThreadId(6); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1439100
+ThreadId(9); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1113300
+ThreadId(4); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1571700
+ThreadId(12); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1645700
+ThreadId(5) 5912100
+ThreadId(10) 6309100
+ThreadId(13) 6031200
+ThreadId(3) 5676000
+ThreadId(6) 5529100
+ThreadId(7) 6604700
+ThreadId(5); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1373800
+ThreadId(10); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1376400
+ThreadId(3); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1276100
+ThreadId(8) 6710800
+ThreadId(9) 6594000
+ThreadId(13); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1700900
+ThreadId(6); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1582000
+ThreadId(12) 5873700
+ThreadId(14) 8089200
+ThreadId(11) 9477600
+ThreadId(8); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1572200
+ThreadId(12); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1140000
+ThreadId(9); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 2030900
+ThreadId(14); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1601400
+ThreadId(11); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1267100
+ThreadId(7); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 4991700
+ThreadId(4) 10035700
+ThreadId(4); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1612600
+ThreadId(13) 6135800
+ThreadId(5) 6733400
+ThreadId(6) 5861100
+ThreadId(8) 5567900
+ThreadId(5); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1212000
+ThreadId(6); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1373600
+ThreadId(13); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1730000
+ThreadId(12) 6604200
+ThreadId(8); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1636200
+ThreadId(12); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 921100
+ThreadId(9) 7933300
+ThreadId(10) 10875300
+ThreadId(3) 10925900
+ThreadId(9); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1343800
+ThreadId(10); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1112200
+ThreadId(3); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1732600
+ThreadId(19); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::get_next_keybind_from_screen:src/main.rs:128; AutoHotKey::find_keybinds_parallel:src/main.rs:106 27370200
+ThreadId(19); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::get_next_keybind_from_screen:src/main.rs:128 429000
+ThreadId(19); AutoHotKey::execute_search_process:src/main.rs:181 27900
+ThreadId(20) 1916337500
+ThreadId(20); AutoHotKey::execute_search_process:src/main.rs:181 52000
+ThreadId(20); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::image_processing::update_screenshot:src\image_processing.rs:291 512700
+ThreadId(20); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::image_processing::update_screenshot:src\image_processing.rs:291; AutoHotKey::image_processing::size:src\image_processing.rs:50 299100
+ThreadId(20); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::image_processing::update_screenshot:src\image_processing.rs:291 4500
+ThreadId(20); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::image_processing::update_screenshot:src\image_processing.rs:291; AutoHotKey::image_processing::size:src\image_processing.rs:50 85900
+ThreadId(20); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::image_processing::update_screenshot:src\image_processing.rs:291 5700
+ThreadId(20); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::image_processing::update_screenshot:src\image_processing.rs:291; AutoHotKey::image_processing::screenshot:src\image_processing.rs:16 2100
+ThreadId(20); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::image_processing::update_screenshot:src\image_processing.rs:291; AutoHotKey::image_processing::screenshot:src\image_processing.rs:16; AutoHotKey::image_processing::size:src\image_processing.rs:50 85100
+ThreadId(20); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::image_processing::update_screenshot:src\image_processing.rs:291; AutoHotKey::image_processing::screenshot:src\image_processing.rs:16 5163200
+ThreadId(20); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::image_processing::update_screenshot:src\image_processing.rs:291 9100
+ThreadId(20); AutoHotKey::execute_search_process:src/main.rs:181 3400
+ThreadId(20); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::get_next_keybind_from_screen:src/main.rs:128 1389500
+ThreadId(8) 171416200
+ThreadId(7) 176648800
+ThreadId(4) 174778300
+ThreadId(10) 169225200
+ThreadId(6) 173154400
+ThreadId(14) 178243800
+ThreadId(12) 171768500
+ThreadId(8); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1276600
+ThreadId(5) 174091300
+ThreadId(11) 178914100
+ThreadId(3) 169273900
+ThreadId(5); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 222500
+ThreadId(7); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1267300
+ThreadId(4); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1202600
+ThreadId(10); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1117300
+ThreadId(14); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1378800
+ThreadId(9) 170979500
+ThreadId(12); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1343800
+ThreadId(6); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1759900
+ThreadId(11); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1493600
+ThreadId(3); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1836500
+ThreadId(13) 175596300
+ThreadId(9); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1391700
+ThreadId(13); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1633000
+ThreadId(8) 5880700
+ThreadId(10) 6156100
+ThreadId(6) 5553100
+ThreadId(7) 6479700
+ThreadId(14) 6403100
+ThreadId(8); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1357600
+ThreadId(5) 7255400
+ThreadId(12) 6589500
+ThreadId(11) 6154200
+ThreadId(10); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1304200
+ThreadId(6); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1309400
+ThreadId(4) 7740800
+ThreadId(7); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1623300
+ThreadId(9) 6291300
+ThreadId(14); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1588400
+ThreadId(3) 7024300
+ThreadId(12); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1968800
+ThreadId(11); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1886000
+ThreadId(4); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1676400
+ThreadId(9); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1352600
+ThreadId(13) 6329100
+ThreadId(3); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1818900
+ThreadId(13); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1330800
+ThreadId(5); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 5362600
+ThreadId(8) 6230000
+ThreadId(11) 3744000
+ThreadId(14) 5652900
+ThreadId(6) 6541100
+ThreadId(8); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1307400
+ThreadId(12) 5211100
+ThreadId(11); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1536600
+ThreadId(6); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 944500
+ThreadId(12); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 678200
+ThreadId(7) 7207700
+ThreadId(10) 7785300
+ThreadId(14); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1482300
+ThreadId(10); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 724300
+ThreadId(7); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 826800
+ThreadId(4) 8039800
+ThreadId(4); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1438800
+ThreadId(20); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::get_next_keybind_from_screen:src/main.rs:128; AutoHotKey::find_keybinds_parallel:src/main.rs:106 25948300
+ThreadId(20); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::get_next_keybind_from_screen:src/main.rs:128 450100
+ThreadId(20); AutoHotKey::execute_search_process:src/main.rs:181 4200
+ThreadId(21) 2114253700
+ThreadId(21); AutoHotKey::execute_search_process:src/main.rs:181 25000
+ThreadId(21); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::image_processing::update_screenshot:src\image_processing.rs:291 485900
+ThreadId(21); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::image_processing::update_screenshot:src\image_processing.rs:291; AutoHotKey::image_processing::size:src\image_processing.rs:50 176400
+ThreadId(21); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::image_processing::update_screenshot:src\image_processing.rs:291 4800
+ThreadId(21); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::image_processing::update_screenshot:src\image_processing.rs:291; AutoHotKey::image_processing::size:src\image_processing.rs:50 89100
+ThreadId(21); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::image_processing::update_screenshot:src\image_processing.rs:291 5600
+ThreadId(21); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::image_processing::update_screenshot:src\image_processing.rs:291; AutoHotKey::image_processing::screenshot:src\image_processing.rs:16 2000
+ThreadId(21); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::image_processing::update_screenshot:src\image_processing.rs:291; AutoHotKey::image_processing::screenshot:src\image_processing.rs:16; AutoHotKey::image_processing::size:src\image_processing.rs:50 88100
+ThreadId(21); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::image_processing::update_screenshot:src\image_processing.rs:291; AutoHotKey::image_processing::screenshot:src\image_processing.rs:16 2301300
+ThreadId(21); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::image_processing::update_screenshot:src\image_processing.rs:291 48000
+ThreadId(21); AutoHotKey::execute_search_process:src/main.rs:181 3300
+ThreadId(21); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::get_next_keybind_from_screen:src/main.rs:128 1548800
+ThreadId(12) 178090700
+ThreadId(9) 183870500
+ThreadId(4) 174557900
+ThreadId(6) 178804500
+ThreadId(3) 183622000
+ThreadId(10) 178521200
+ThreadId(11) 179937500
+ThreadId(9); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1308100
+ThreadId(12); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1660300
+ThreadId(5) 182310600
+ThreadId(4); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1573600
+ThreadId(6); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1302900
+ThreadId(13) 184433600
+ThreadId(11); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1131800
+ThreadId(7) 179708300
+ThreadId(3); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1723500
+ThreadId(5); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1177900
+ThreadId(10); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1622400
+ThreadId(8) 182397600
+ThreadId(7); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 968300
+ThreadId(13); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1498400
+ThreadId(8); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 170200
+ThreadId(12) 7247800
+ThreadId(7) 5309600
+ThreadId(4) 7140000
+ThreadId(14) 186662200
+ThreadId(10) 6026900
+ThreadId(9) 7606700
+ThreadId(11) 6942800
+ThreadId(5) 6946100
+ThreadId(7); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1097400
+ThreadId(13) 6355200
+ThreadId(14); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1203300
+ThreadId(4); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1333400
+ThreadId(12); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1662800
+ThreadId(10); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1572700
+ThreadId(6) 8703800
+ThreadId(11); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1307400
+ThreadId(9); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1672700
+ThreadId(8) 7229400
+ThreadId(13); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1512300
+ThreadId(6); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1310300
+ThreadId(5); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 5089600
+ThreadId(3) 13688700
+ThreadId(9) 5901900
+ThreadId(10) 6105300
+ThreadId(4) 6793800
+ThreadId(12) 6547200
+ThreadId(11) 6475700
+ThreadId(6) 5354700
+ThreadId(9); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1233000
+ThreadId(7) 7915800
+ThreadId(3); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1586200
+ThreadId(13) 6441600
+ThreadId(4); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1124400
+ThreadId(14) 8095300
+ThreadId(10); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1613100
+ThreadId(8); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 7498100
+ThreadId(12); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1380600
+ThreadId(11); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1573800
+ThreadId(6); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1489500
+ThreadId(7); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1435800
+ThreadId(13); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1460200
+ThreadId(14); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1761800
+ThreadId(21); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::get_next_keybind_from_screen:src/main.rs:128; AutoHotKey::find_keybinds_parallel:src/main.rs:106 25254700
+ThreadId(21); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::get_next_keybind_from_screen:src/main.rs:128 468100
+ThreadId(21); AutoHotKey::execute_search_process:src/main.rs:181 37100
+ThreadId(22) 2306269400
+ThreadId(22); AutoHotKey::execute_search_process:src/main.rs:181 20800
+ThreadId(22); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::image_processing::update_screenshot:src\image_processing.rs:291 487000
+ThreadId(22); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::image_processing::update_screenshot:src\image_processing.rs:291; AutoHotKey::image_processing::size:src\image_processing.rs:50 175800
+ThreadId(22); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::image_processing::update_screenshot:src\image_processing.rs:291 3900
+ThreadId(22); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::image_processing::update_screenshot:src\image_processing.rs:291; AutoHotKey::image_processing::size:src\image_processing.rs:50 93300
+ThreadId(22); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::image_processing::update_screenshot:src\image_processing.rs:291 5200
+ThreadId(22); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::image_processing::update_screenshot:src\image_processing.rs:291; AutoHotKey::image_processing::screenshot:src\image_processing.rs:16 2300
+ThreadId(22); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::image_processing::update_screenshot:src\image_processing.rs:291; AutoHotKey::image_processing::screenshot:src\image_processing.rs:16; AutoHotKey::image_processing::size:src\image_processing.rs:50 90700
+ThreadId(22); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::image_processing::update_screenshot:src\image_processing.rs:291; AutoHotKey::image_processing::screenshot:src\image_processing.rs:16 4704500
+ThreadId(22); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::image_processing::update_screenshot:src\image_processing.rs:291 51700
+ThreadId(22); AutoHotKey::execute_search_process:src/main.rs:181 3200
+ThreadId(22); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::get_next_keybind_from_screen:src/main.rs:128 1289100
+ThreadId(11) 174931100
+ThreadId(13) 175442100
+ThreadId(8) 176475700
+ThreadId(11); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1228000
+ThreadId(6) 176168500
+ThreadId(7) 175853200
+ThreadId(14) 175276200
+ThreadId(5) 180723000
+ThreadId(6); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1121400
+ThreadId(8); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1275100
+ThreadId(12) 177732900
+ThreadId(9) 178424300
+ThreadId(12); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 236000
+ThreadId(14); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1160900
+ThreadId(13); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1602900
+ThreadId(10) 178283800
+ThreadId(7); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1365300
+ThreadId(5); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1734200
+ThreadId(9); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1269600
+ThreadId(10); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1504900
+ThreadId(3) 182201500
+ThreadId(4) 183465700
+ThreadId(7) 5825100
+ThreadId(8) 6391100
+ThreadId(4); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1308400
+ThreadId(3); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 2869000
+ThreadId(7); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1366900
+ThreadId(8); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1905500
+ThreadId(9) 7309000
+ThreadId(14) 9667400
+ThreadId(5) 9632200
+ThreadId(9); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 2977200
+ThreadId(14); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 2042300
+ThreadId(5); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1625100
+ThreadId(6) 12548000
+ThreadId(6); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1316900
+ThreadId(7) 6399200
+ThreadId(11) 16091800
+ThreadId(10) 13017700
+ThreadId(7); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1431400
+ThreadId(11); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1412700
+ThreadId(10); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 2302000
+ThreadId(5) 5210000
+ThreadId(13) 17844500
+ThreadId(5); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1385200
+ThreadId(12) 19151600
+ThreadId(6) 5635500
+ThreadId(4) 12670800
+ThreadId(8) 11454400
+ThreadId(13); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1976800
+ThreadId(4); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1199300
+ThreadId(6); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1510100
+ThreadId(8); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1614900
+ThreadId(9) 10014200
+ThreadId(7) 6535800
+ThreadId(14) 10351300
+ThreadId(7); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 967100
+ThreadId(11) 6738200
+ThreadId(3) 16340700
+ThreadId(9); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1576500
+ThreadId(14); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1892100
+ThreadId(12); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 4927500
+ThreadId(11); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1818000
+ThreadId(3); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1762100
+ThreadId(22); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::get_next_keybind_from_screen:src/main.rs:128; AutoHotKey::find_keybinds_parallel:src/main.rs:106 32186300
+ThreadId(22); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::get_next_keybind_from_screen:src/main.rs:128 457300
+ThreadId(22); AutoHotKey::execute_search_process:src/main.rs:181 4500
+ThreadId(23) 2501375600
+ThreadId(23); AutoHotKey::execute_search_process:src/main.rs:181 16400
+ThreadId(23); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::image_processing::update_screenshot:src\image_processing.rs:291 575500
+ThreadId(23); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::image_processing::update_screenshot:src\image_processing.rs:291; AutoHotKey::image_processing::size:src\image_processing.rs:50 791200
+ThreadId(23); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::image_processing::update_screenshot:src\image_processing.rs:291 5100
+ThreadId(23); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::image_processing::update_screenshot:src\image_processing.rs:291; AutoHotKey::image_processing::size:src\image_processing.rs:50 379600
+ThreadId(23); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::image_processing::update_screenshot:src\image_processing.rs:291 20900
+ThreadId(23); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::image_processing::update_screenshot:src\image_processing.rs:291; AutoHotKey::image_processing::screenshot:src\image_processing.rs:16 2200
+ThreadId(23); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::image_processing::update_screenshot:src\image_processing.rs:291; AutoHotKey::image_processing::screenshot:src\image_processing.rs:16; AutoHotKey::image_processing::size:src\image_processing.rs:50 317100
+ThreadId(23); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::image_processing::update_screenshot:src\image_processing.rs:291; AutoHotKey::image_processing::screenshot:src\image_processing.rs:16 8189200
+ThreadId(23); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::image_processing::update_screenshot:src\image_processing.rs:291 43600
+ThreadId(23); AutoHotKey::execute_search_process:src/main.rs:181 3800
+ThreadId(23); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::get_next_keybind_from_screen:src/main.rs:128 1611000
+ThreadId(8) 177475300
+ThreadId(4) 178327000
+ThreadId(3) 174252700
+ThreadId(7) 176273000
+ThreadId(8); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1144600
+ThreadId(4); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1209400
+ThreadId(7); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1284900
+ThreadId(3); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1695000
+ThreadId(13) 180881000
+ThreadId(9) 177891000
+ThreadId(12) 176829700
+ThreadId(5) 182656000
+ThreadId(9); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1273900
+ThreadId(10) 185249100
+ThreadId(12); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1351400
+ThreadId(13); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1592100
+ThreadId(11) 178253200
+ThreadId(5); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1591300
+ThreadId(10); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1632900
+ThreadId(11); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1327600
+ThreadId(6) 183920700
+ThreadId(6); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1268900
+ThreadId(14) 182923800
+ThreadId(14); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1650700
+ThreadId(13) 7706700
+ThreadId(4) 10488700
+ThreadId(10) 6793100
+ThreadId(4); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1288200
+ThreadId(13); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1835700
+ThreadId(10); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1637900
+ThreadId(11) 8249500
+ThreadId(11); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1602900
+ThreadId(9) 11926800
+ThreadId(8) 14353800
+ThreadId(8); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 233500
+ThreadId(3) 13952400
+ThreadId(6) 9546300
+ThreadId(9); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 2039100
+ThreadId(3); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1722400
+ThreadId(6); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1378700
+ThreadId(12) 14605000
+ThreadId(4) 6077800
+ThreadId(5) 15258200
+ThreadId(10) 6095500
+ThreadId(12); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1955800
+ThreadId(4); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1600500
+ThreadId(10); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1336300
+ThreadId(5); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1522600
+ThreadId(7) 21101700
+ThreadId(13) 9911100
+ThreadId(11) 7941900
+ThreadId(7); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1244000
+ThreadId(11); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1746500
+ThreadId(13); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 2291200
+ThreadId(6) 7410700
+ThreadId(8) 10040100
+ThreadId(9) 8780600
+ThreadId(14) 16793800
+ThreadId(6); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1494200
+ThreadId(3) 9590000
+ThreadId(9); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1352200
+ThreadId(3); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 650900
+ThreadId(14); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1768500
+ThreadId(8); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 4016200
+ThreadId(23); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::get_next_keybind_from_screen:src/main.rs:128; AutoHotKey::find_keybinds_parallel:src/main.rs:106 35664900
+ThreadId(23); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::get_next_keybind_from_screen:src/main.rs:128 309200
+ThreadId(23); AutoHotKey::execute_search_process:src/main.rs:181 5400
+ThreadId(24) 2684241700
+ThreadId(24); AutoHotKey::execute_search_process:src/main.rs:181 19300
+ThreadId(24); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::image_processing::update_screenshot:src\image_processing.rs:291 614400
+ThreadId(24); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::image_processing::update_screenshot:src\image_processing.rs:291; AutoHotKey::image_processing::size:src\image_processing.rs:50 315000
+ThreadId(24); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::image_processing::update_screenshot:src\image_processing.rs:291 10400
+ThreadId(24); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::image_processing::update_screenshot:src\image_processing.rs:291; AutoHotKey::image_processing::size:src\image_processing.rs:50 112700
+ThreadId(24); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::image_processing::update_screenshot:src\image_processing.rs:291 8000
+ThreadId(24); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::image_processing::update_screenshot:src\image_processing.rs:291; AutoHotKey::image_processing::screenshot:src\image_processing.rs:16 3000
+ThreadId(24); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::image_processing::update_screenshot:src\image_processing.rs:291; AutoHotKey::image_processing::screenshot:src\image_processing.rs:16; AutoHotKey::image_processing::size:src\image_processing.rs:50 109000
+ThreadId(24); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::image_processing::update_screenshot:src\image_processing.rs:291; AutoHotKey::image_processing::screenshot:src\image_processing.rs:16 3758900
+ThreadId(24); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::image_processing::update_screenshot:src\image_processing.rs:291 8000
+ThreadId(24); AutoHotKey::execute_search_process:src/main.rs:181 3700
+ThreadId(24); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::get_next_keybind_from_screen:src/main.rs:128 2066100
+ThreadId(8) 148076200
+ThreadId(4) 157235800
+ThreadId(10) 157234400
+ThreadId(3) 150714600
+ThreadId(6) 151786800
+ThreadId(8); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1146600
+ThreadId(7) 155216200
+ThreadId(11) 154379000
+ThreadId(4); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1655600
+ThreadId(14) 151287000
+ThreadId(5) 158811900
+ThreadId(10); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1669300
+ThreadId(6); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1218900
+ThreadId(9) 152700500
+ThreadId(3); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1735500
+ThreadId(7); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1623000
+ThreadId(14); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1358200
+ThreadId(11); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 2506400
+ThreadId(9); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1672600
+ThreadId(5); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 2669100
+ThreadId(13) 160133600
+ThreadId(4) 6027100
+ThreadId(13); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 198900
+ThreadId(12) 166250200
+ThreadId(8) 7632800
+ThreadId(4); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1295500
+ThreadId(7) 6587900
+ThreadId(3) 7483200
+ThreadId(8); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1276700
+ThreadId(12); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1520700
+ThreadId(14) 6899600
+ThreadId(6) 8491800
+ThreadId(7); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1590800
+ThreadId(3); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1613900
+ThreadId(14); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1420100
+ThreadId(6); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1280100
+ThreadId(11) 9503700
+ThreadId(5) 8950900
+ThreadId(11); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1063900
+ThreadId(5); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1236500
+ThreadId(9) 11724100
+ThreadId(10) 14159900
+ThreadId(7) 6044800
+ThreadId(9); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1378700
+ThreadId(10); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1769900
+ThreadId(4) 9290000
+ThreadId(14) 6920300
+ThreadId(7); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1768800
+ThreadId(12) 8853800
+ThreadId(8) 9372400
+ThreadId(13) 11967500
+ThreadId(14); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1708100
+ThreadId(4); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1808900
+ThreadId(12); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1478900
+ThreadId(8); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1548300
+ThreadId(3) 10268700
+ThreadId(11) 8160300
+ThreadId(3); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1323400
+ThreadId(5) 8242300
+ThreadId(11); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1039000
+ThreadId(6) 12086300
+ThreadId(13); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 4802100
+ThreadId(5); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1874700
+ThreadId(6); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1043200
+ThreadId(24); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::get_next_keybind_from_screen:src/main.rs:128; AutoHotKey::find_keybinds_parallel:src/main.rs:106 31000900
+ThreadId(24); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::get_next_keybind_from_screen:src/main.rs:128 416200
+ThreadId(24); AutoHotKey::execute_search_process:src/main.rs:181 7400
+ThreadId(25) 2869070000
+ThreadId(25); AutoHotKey::execute_search_process:src/main.rs:181 24600
+ThreadId(25); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::image_processing::update_screenshot:src\image_processing.rs:291 383300
+ThreadId(25); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::image_processing::update_screenshot:src\image_processing.rs:291; AutoHotKey::image_processing::size:src\image_processing.rs:50 265900
+ThreadId(25); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::image_processing::update_screenshot:src\image_processing.rs:291 4700
+ThreadId(25); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::image_processing::update_screenshot:src\image_processing.rs:291; AutoHotKey::image_processing::size:src\image_processing.rs:50 104100
+ThreadId(25); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::image_processing::update_screenshot:src\image_processing.rs:291 6400
+ThreadId(25); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::image_processing::update_screenshot:src\image_processing.rs:291; AutoHotKey::image_processing::screenshot:src\image_processing.rs:16 2300
+ThreadId(25); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::image_processing::update_screenshot:src\image_processing.rs:291; AutoHotKey::image_processing::screenshot:src\image_processing.rs:16; AutoHotKey::image_processing::size:src\image_processing.rs:50 117400
+ThreadId(25); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::image_processing::update_screenshot:src\image_processing.rs:291; AutoHotKey::image_processing::screenshot:src\image_processing.rs:16 2278300
+ThreadId(25); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::image_processing::update_screenshot:src\image_processing.rs:291 10400
+ThreadId(25); AutoHotKey::execute_search_process:src/main.rs:181 5400
+ThreadId(25); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::get_next_keybind_from_screen:src/main.rs:128 4065000
+ThreadId(12) 163999600
+ThreadId(10) 166641700
+ThreadId(11) 160851400
+ThreadId(6) 159766700
+ThreadId(9) 167977300
+ThreadId(7) 166523600
+ThreadId(12); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1008300
+ThreadId(10); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1154500
+ThreadId(3) 162691100
+ThreadId(11); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1315900
+ThreadId(6); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1320300
+ThreadId(7); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1157600
+ThreadId(9); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1669100
+ThreadId(14) 167092900
+ThreadId(13) 162841500
+ThreadId(3); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1761300
+ThreadId(13); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 246700
+ThreadId(8) 167408000
+ThreadId(14); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1400500
+ThreadId(5) 164130100
+ThreadId(8); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1659600
+ThreadId(5); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1259200
+ThreadId(4) 170219500
+ThreadId(12) 5072800
+ThreadId(11) 5713900
+ThreadId(4); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1439700
+ThreadId(12); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1472400
+ThreadId(7) 6069800
+ThreadId(10) 6849900
+ThreadId(11); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1196900
+ThreadId(7); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1194000
+ThreadId(14) 5606400
+ThreadId(10); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1669800
+ThreadId(14); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1200200
+ThreadId(6) 9849800
+ThreadId(5) 6064000
+ThreadId(8) 6655700
+ThreadId(6); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1414300
+ThreadId(3) 9941300
+ThreadId(4) 5750800
+ThreadId(5); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1391000
+ThreadId(8); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1657500
+ThreadId(11) 5739900
+ThreadId(3); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1130000
+ThreadId(4); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1077900
+ThreadId(12) 7032800
+ThreadId(13) 11453200
+ThreadId(7) 5670800
+ThreadId(9) 12810600
+ThreadId(11); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1601400
+ThreadId(12); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1590400
+ThreadId(7); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1565100
+ThreadId(14) 5685600
+ThreadId(9); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1607700
+ThreadId(14); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1304600
+ThreadId(10) 9211000
+ThreadId(13); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 4312300
+ThreadId(5) 5699000
+ThreadId(6) 6572600
+ThreadId(8) 5900700
+ThreadId(6); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 772300
+ThreadId(8); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 980500
+ThreadId(10); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1652000
+ThreadId(5); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1652100
+ThreadId(25); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::get_next_keybind_from_screen:src/main.rs:128; AutoHotKey::find_keybinds_parallel:src/main.rs:106 26183900
+ThreadId(25); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::get_next_keybind_from_screen:src/main.rs:128 260500
+ThreadId(25); AutoHotKey::execute_search_process:src/main.rs:181 4200
+ThreadId(26) 3057255400
+ThreadId(26); AutoHotKey::execute_search_process:src/main.rs:181 21600
+ThreadId(26); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::image_processing::update_screenshot:src\image_processing.rs:291 465300
+ThreadId(26); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::image_processing::update_screenshot:src\image_processing.rs:291; AutoHotKey::image_processing::size:src\image_processing.rs:50 259900
+ThreadId(26); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::image_processing::update_screenshot:src\image_processing.rs:291 5900
+ThreadId(26); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::image_processing::update_screenshot:src\image_processing.rs:291; AutoHotKey::image_processing::size:src\image_processing.rs:50 86700
+ThreadId(26); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::image_processing::update_screenshot:src\image_processing.rs:291 8300
+ThreadId(26); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::image_processing::update_screenshot:src\image_processing.rs:291; AutoHotKey::image_processing::screenshot:src\image_processing.rs:16 2100
+ThreadId(26); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::image_processing::update_screenshot:src\image_processing.rs:291; AutoHotKey::image_processing::screenshot:src\image_processing.rs:16; AutoHotKey::image_processing::size:src\image_processing.rs:50 85300
+ThreadId(26); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::image_processing::update_screenshot:src\image_processing.rs:291; AutoHotKey::image_processing::screenshot:src\image_processing.rs:16 2389000
+ThreadId(26); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::image_processing::update_screenshot:src\image_processing.rs:291 39500
+ThreadId(26); AutoHotKey::execute_search_process:src/main.rs:181 3200
+ThreadId(26); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::get_next_keybind_from_screen:src/main.rs:128 1202400
+ThreadId(11) 169678800
+ThreadId(4) 171586300
+ThreadId(14) 167936400
+ThreadId(7) 169565000
+ThreadId(3) 171990700
+ThreadId(10) 165476400
+ThreadId(12) 170282600
+ThreadId(5) 165708300
+ThreadId(9) 169746700
+ThreadId(6) 166295300
+ThreadId(11); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1295900
+ThreadId(8) 166045000
+ThreadId(13) 167987700
+ThreadId(4); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1427000
+ThreadId(14); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1285100
+ThreadId(13); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 217200
+ThreadId(7); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1482700
+ThreadId(12); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1269500
+ThreadId(10); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1618100
+ThreadId(9); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1320100
+ThreadId(3); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1783000
+ThreadId(5); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1514700
+ThreadId(6); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1635700
+ThreadId(8); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1714600
+ThreadId(11) 5851500
+ThreadId(13) 5777100
+ThreadId(14) 5894100
+ThreadId(12) 5670100
+ThreadId(4) 6355400
+ThreadId(9) 6131000
+ThreadId(7) 6558300
+ThreadId(11); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1777200
+ThreadId(10) 6604600
+ThreadId(8) 6093200
+ThreadId(14); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1453900
+ThreadId(3) 6686500
+ThreadId(12); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1424000
+ThreadId(6) 6719100
+ThreadId(5) 7376200
+ThreadId(4); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1973200
+ThreadId(9); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1779100
+ThreadId(3); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1178800
+ThreadId(8); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1288500
+ThreadId(10); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1481400
+ThreadId(7); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1707400
+ThreadId(6); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1444400
+ThreadId(5); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1519700
+ThreadId(13); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 4567700
+ThreadId(11) 4865000
+ThreadId(11); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1306900
+ThreadId(12) 5906400
+ThreadId(8) 5271800
+ThreadId(14) 6559300
+ThreadId(12); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1036400
+ThreadId(14); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 615900
+ThreadId(3) 5994600
+ThreadId(9) 6158800
+ThreadId(10) 6201000
+ThreadId(4) 6582400
+ThreadId(8); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1189100
+ThreadId(9); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 906700
+ThreadId(10); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 814600
+ThreadId(4); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 836600
+ThreadId(3); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1271200
+ThreadId(26); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::get_next_keybind_from_screen:src/main.rs:128; AutoHotKey::find_keybinds_parallel:src/main.rs:106 22912000
+ThreadId(26); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::get_next_keybind_from_screen:src/main.rs:128 484400
+ThreadId(26); AutoHotKey::execute_search_process:src/main.rs:181 9200
+ThreadId(27) 3238171000
+ThreadId(27); AutoHotKey::execute_search_process:src/main.rs:181 21000
+ThreadId(27); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::image_processing::update_screenshot:src\image_processing.rs:291 449700
+ThreadId(27); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::image_processing::update_screenshot:src\image_processing.rs:291; AutoHotKey::image_processing::size:src\image_processing.rs:50 173500
+ThreadId(27); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::image_processing::update_screenshot:src\image_processing.rs:291 3800
+ThreadId(27); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::image_processing::update_screenshot:src\image_processing.rs:291; AutoHotKey::image_processing::size:src\image_processing.rs:50 88500
+ThreadId(27); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::image_processing::update_screenshot:src\image_processing.rs:291 5300
+ThreadId(27); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::image_processing::update_screenshot:src\image_processing.rs:291; AutoHotKey::image_processing::screenshot:src\image_processing.rs:16 2400
+ThreadId(27); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::image_processing::update_screenshot:src\image_processing.rs:291; AutoHotKey::image_processing::screenshot:src\image_processing.rs:16; AutoHotKey::image_processing::size:src\image_processing.rs:50 92300
+ThreadId(27); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::image_processing::update_screenshot:src\image_processing.rs:291; AutoHotKey::image_processing::screenshot:src\image_processing.rs:16 2020200
+ThreadId(27); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::image_processing::update_screenshot:src\image_processing.rs:291 62300
+ThreadId(27); AutoHotKey::execute_search_process:src/main.rs:181 3200
+ThreadId(27); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::get_next_keybind_from_screen:src/main.rs:128 1214800
+ThreadId(14) 164353500
+ThreadId(3) 163228600
+ThreadId(10) 163430000
+ThreadId(5) 170076100
+ThreadId(12) 165406000
+ThreadId(11) 166595900
+ThreadId(9) 164390700
+ThreadId(14); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1210200
+ThreadId(10); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1328400
+ThreadId(8) 165777200
+ThreadId(3); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1789800
+ThreadId(11); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1122800
+ThreadId(7) 172369400
+ThreadId(5); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1334200
+ThreadId(12); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1383900
+ThreadId(9); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1553800
+ThreadId(8); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1312000
+ThreadId(7); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1565400
+ThreadId(6) 174165300
+ThreadId(13) 173173300
+ThreadId(4) 168461000
+ThreadId(13); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1339500
+ThreadId(6); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1612300
+ThreadId(4); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1222400
+ThreadId(11) 5928700
+ThreadId(14) 7151600
+ThreadId(12) 6132100
+ThreadId(8) 5441900
+ThreadId(11); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1177300
+ThreadId(7) 5543900
+ThreadId(12); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1185000
+ThreadId(14); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1372200
+ThreadId(8); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1497000
+ThreadId(10) 9165700
+ThreadId(7); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1606100
+ThreadId(9) 8388800
+ThreadId(9); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 213800
+ThreadId(5) 9361800
+ThreadId(10); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1375900
+ThreadId(3) 10118300
+ThreadId(4) 5776200
+ThreadId(5); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1291200
+ThreadId(13) 6900400
+ThreadId(3); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1466900
+ThreadId(4); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1261000
+ThreadId(13); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1584500
+ThreadId(12) 5410500
+ThreadId(11) 5896600
+ThreadId(12); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1401400
+ThreadId(11); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1607000
+ThreadId(9) 6422600
+ThreadId(7) 7245100
+ThreadId(8) 8454700
+ThreadId(7); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1696500
+ThreadId(8); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1971200
+ThreadId(5) 8115200
+ThreadId(10) 9225800
+ThreadId(3) 7781100
+ThreadId(9); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 4123600
+ThreadId(6) 16287100
+ThreadId(5); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1519700
+ThreadId(3); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1301300
+ThreadId(10); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1589000
+ThreadId(6); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1094900
+ThreadId(27); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::get_next_keybind_from_screen:src/main.rs:128; AutoHotKey::find_keybinds_parallel:src/main.rs:106 28991600
+ThreadId(27); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::get_next_keybind_from_screen:src/main.rs:128 272700
+ThreadId(27); AutoHotKey::execute_search_process:src/main.rs:181 5900
+ThreadId(28) 3448425400
+ThreadId(28); AutoHotKey::execute_search_process:src/main.rs:181 24400
+ThreadId(28); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::image_processing::update_screenshot:src\image_processing.rs:291 563100
+ThreadId(28); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::image_processing::update_screenshot:src\image_processing.rs:291; AutoHotKey::image_processing::size:src\image_processing.rs:50 345300
+ThreadId(28); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::image_processing::update_screenshot:src\image_processing.rs:291 11500
+ThreadId(28); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::image_processing::update_screenshot:src\image_processing.rs:291; AutoHotKey::image_processing::size:src\image_processing.rs:50 118300
+ThreadId(28); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::image_processing::update_screenshot:src\image_processing.rs:291 15100
+ThreadId(28); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::image_processing::update_screenshot:src\image_processing.rs:291; AutoHotKey::image_processing::screenshot:src\image_processing.rs:16 3800
+ThreadId(28); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::image_processing::update_screenshot:src\image_processing.rs:291; AutoHotKey::image_processing::screenshot:src\image_processing.rs:16; AutoHotKey::image_processing::size:src\image_processing.rs:50 196500
+ThreadId(28); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::image_processing::update_screenshot:src\image_processing.rs:291; AutoHotKey::image_processing::screenshot:src\image_processing.rs:16 3099900
+ThreadId(28); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::image_processing::update_screenshot:src\image_processing.rs:291 11200
+ThreadId(28); AutoHotKey::execute_search_process:src/main.rs:181 4800
+ThreadId(28); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::get_next_keybind_from_screen:src/main.rs:128 1433200
+ThreadId(7) 192219400
+ThreadId(6) 188697500
+ThreadId(8) 191753300
+ThreadId(5) 190028600
+ThreadId(3) 189899100
+ThreadId(13) 198298700
+ThreadId(11) 196433200
+ThreadId(9) 191356500
+ThreadId(4) 199707900
+ThreadId(7); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1273600
+ThreadId(6); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1368300
+ThreadId(8); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1166500
+ThreadId(5); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1279500
+ThreadId(3); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1621200
+ThreadId(13); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1647700
+ThreadId(4); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1192300
+ThreadId(14) 204785300
+ThreadId(9); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1365000
+ThreadId(11); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1610600
+ThreadId(14); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1226800
+ThreadId(10) 193168100
+ThreadId(10); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1574600
+ThreadId(6) 6292500
+ThreadId(8) 6978900
+ThreadId(7) 7344400
+ThreadId(6); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1361000
+ThreadId(12) 204931000
+ThreadId(13) 7066500
+ThreadId(11) 7161100
+ThreadId(8); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1434300
+ThreadId(7); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1340100
+ThreadId(3) 8444100
+ThreadId(5) 8908100
+ThreadId(12); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1305400
+ThreadId(5); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 220700
+ThreadId(4) 8598800
+ThreadId(13); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1611500
+ThreadId(11); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1572000
+ThreadId(10) 6509700
+ThreadId(4); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1161700
+ThreadId(10); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1618500
+ThreadId(3); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 4472200
+ThreadId(6) 6333900
+ThreadId(7) 6361500
+ThreadId(9) 14092700
+ThreadId(5) 5997100
+ThreadId(11) 5477700
+ThreadId(14) 13375900
+ThreadId(6); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1642400
+ThreadId(13) 6031900
+ThreadId(7); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1371600
+ThreadId(8) 7827900
+ThreadId(9); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1249100
+ThreadId(11); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1387700
+ThreadId(4) 6258300
+ThreadId(14); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1476300
+ThreadId(5); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1949500
+ThreadId(13); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1707800
+ThreadId(8); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1504400
+ThreadId(10) 5624500
+ThreadId(4); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1621600
+ThreadId(10); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 930000
+ThreadId(12) 11178900
+ThreadId(12); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 921300
+ThreadId(28); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::get_next_keybind_from_screen:src/main.rs:128; AutoHotKey::find_keybinds_parallel:src/main.rs:106 28445600
+ThreadId(28); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::get_next_keybind_from_screen:src/main.rs:128 432100
+ThreadId(28); AutoHotKey::execute_search_process:src/main.rs:181 11900
+ThreadId(29) 3650306400
+ThreadId(29); AutoHotKey::execute_search_process:src/main.rs:181 16100
+ThreadId(29); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::image_processing::update_screenshot:src\image_processing.rs:291 490900
+ThreadId(29); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::image_processing::update_screenshot:src\image_processing.rs:291; AutoHotKey::image_processing::size:src\image_processing.rs:50 229900
+ThreadId(29); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::image_processing::update_screenshot:src\image_processing.rs:291 4000
+ThreadId(29); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::image_processing::update_screenshot:src\image_processing.rs:291; AutoHotKey::image_processing::size:src\image_processing.rs:50 84900
+ThreadId(29); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::image_processing::update_screenshot:src\image_processing.rs:291 5400
+ThreadId(29); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::image_processing::update_screenshot:src\image_processing.rs:291; AutoHotKey::image_processing::screenshot:src\image_processing.rs:16 2200
+ThreadId(29); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::image_processing::update_screenshot:src\image_processing.rs:291; AutoHotKey::image_processing::screenshot:src\image_processing.rs:16; AutoHotKey::image_processing::size:src\image_processing.rs:50 83300
+ThreadId(29); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::image_processing::update_screenshot:src\image_processing.rs:291; AutoHotKey::image_processing::screenshot:src\image_processing.rs:16 2413500
+ThreadId(29); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::image_processing::update_screenshot:src\image_processing.rs:291 73500
+ThreadId(29); AutoHotKey::execute_search_process:src/main.rs:181 6300
+ThreadId(29); AutoHotKey::execute_search_process:src/main.rs:181; AutoHotKey::get_next_keybind_from_screen:src/main.rs:128 1840100
+ThreadId(3) 186039000
+ThreadId(4) 181308200
+ThreadId(5) 182777300
+ThreadId(11) 183323500
+ThreadId(12) 179189900
+ThreadId(9) 184284700
+ThreadId(10) 181868100
+ThreadId(13) 183333900
+ThreadId(4); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1048700
+ThreadId(3); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1351800
+ThreadId(6) 185425200
+ThreadId(14) 184045500
+ThreadId(5); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1133600
+ThreadId(11); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1298000
+ThreadId(12); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1255200
+ThreadId(9); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1202300
+ThreadId(13); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1360300
+ThreadId(10); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1603700
+ThreadId(6); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1483200
+ThreadId(14); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1708900
+ThreadId(8) 187115100
+ThreadId(7) 189938900
+ThreadId(8); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1283800
+ThreadId(3) 6388500
+ThreadId(7); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1236900
+ThreadId(12) 5844400
+ThreadId(9) 6138100
+ThreadId(5) 6851800
+ThreadId(10) 5852900
+ThreadId(5); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 210400
+ThreadId(6) 5767000
+ThreadId(4) 7621700
+ThreadId(12); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1442700
+ThreadId(14) 6301400
+ThreadId(3); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1804400
+ThreadId(11) 7686900
+ThreadId(9); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1361400
+ThreadId(10); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1629600
+ThreadId(6); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1680100
+ThreadId(4); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1909500
+ThreadId(11); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1330800
+ThreadId(14); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1856000
+ThreadId(13) 11660700
+ThreadId(5) 6030900
+ThreadId(7) 7083900
+ThreadId(8) 8429000
+ThreadId(13); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1419800
+ThreadId(12) 6133400
+ThreadId(3) 6278300
+ThreadId(10) 5831800
+ThreadId(6) 5882100
+ThreadId(7); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1414000
+ThreadId(8); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1383600
+ThreadId(9) 7174400
+ThreadId(12); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1527700
+ThreadId(10); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1316200
+ThreadId(4) 6427600
+ThreadId(3); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1750500
+ThreadId(11) 6855000
+ThreadId(6); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1692800
+ThreadId(9); AutoHotKey::image_processing::locate_on_screen:src\image_processing.rs:67 1071200

@@ -17,19 +17,59 @@ use inputbot::{
 use rayon::prelude::*;
 
 use std::sync::{Arc, Mutex, MutexGuard};
+use std::{fs::File, io::BufWriter};
 use std::{thread::sleep, time::Duration};
+use tracing_subscriber::{fmt, prelude::*, registry::Registry};
 
-use image_processing::*;
+use crate::image_processing::*;
 
 const X_POS: u16 = 800;
 const Y_POS: u16 = 1300;
 
+
+
 fn main() {
-    Numpad0Key.bind(|| {        
+    //fastrace::set_reporter(ConsoleTimeReporter, Config::default());
+    //optick::start_capture();
+    // construct a subscriber that prints formatted traces to stdout
+    tracing_subscriber::fmt()
+        // enable everything
+        .with_max_level(tracing::Level::TRACE)
+        .compact()
+        // Display source code file paths
+        .with_file(true)
+        // Display source code line numbers
+        .with_line_number(true)
+        // Display the thread ID an event was recorded on
+        .with_thread_ids(false)
+        // Don't display the event's target (module path)
+        .with_target(false)
+        // sets this to be the default, global collector for this application.
+        .init();
+ 
+
+    Numpad0Key.bind(|| {
         profile!("Full Search Process", execute_search_process());
+        //fastrace::flush();
     });
 
+    // Exit program
+    Numpad1Key.bind(|| {
+        //Numpad0Key.unbind();
+        //Numpad1Key.unbind();
+        inputbot::stop_handling_input_events();
+        //optick::stop_capture("zen_base_capture");
+        //fastrace::flush();
+    });
+
+    //let root = Span::root("root", SpanContext::random());
+    //let _g = root.set_local_parent();
+    //let _g = LocalSpan::enter_with_local_parent("child");
     inputbot::handle_input_events(false);
+
+    //fastrace::flush();
+    //optick::stop_capture("zen_base_capture.opt");
+    println!("Exiting safely!")
 }
 
 fn find_keybinds_parallel(
@@ -95,11 +135,17 @@ pub(crate) fn get_next_keybind_from_screen() -> Option<KeybindTypes> {
     let found_keybind =
         find_keybinds_parallel(images_with_keybinds, region, min_confidence, tolerance);
 
-    println!("Selected Key: {:?}", found_keybind);
+    //tracing::info!("Selected Key: {:?}", found_keybind);
     found_keybind
 }
 
 fn execute_search_process() {
+
+    let width = 150;
+    let height = 140;
+    let region = Some((X_POS, Y_POS, width, height));
+    update_screenshot(region);
+
     if let Some(keybind) = get_next_keybind_from_screen() {
         match keybind {
             KeybindTypes::KeyQ => press_key(QKey),
