@@ -4,6 +4,10 @@
 #[macro_use]
 extern crate lazy_static;
 
+mod utils;
+
+use utils::*;
+
 use image::DynamicImage;
 use inputbot::{
     KeySequence,
@@ -15,59 +19,9 @@ use spectrust::*;
 use std::sync::{Mutex, MutexGuard, Arc};
 use std::{thread::sleep, time::Duration};
 
-#[derive(Debug, Copy, Clone)]
-pub enum KeybindTypes {
-    KeyQ,
-    KeyE,
-    KeyR,
-    KeyF,
-    KeyZ,
-    KeyX,
-    KeyC,
-    KeyV,
-    Key1,
-    Key2,
-    Key3,
-    Key4,
-    Key5,
-    Key6,
-    Key7,
-    Key8,
-    Key9,
-    Key0,
-    KeyDash,
-    KeyEquals,
-    KeyS1,
-    KeyS2,
-    KeyS3,
-    KeyS4,
-    KeyS5,
-    KeyS6,
-    KeyS7,
-    KeyS8,
-    KeyS9,
-    KeyS0,
-    KeySDash,
-    KeySEquals,
-}
 
-//lazy_static! {
-//    static ref IMG_Q: Mutex<DynamicImage> = Mutex::new(image::open("images/Q.png").expect("Unable to locate file."));
-//    static ref IMG_E: Mutex<DynamicImage> = Mutex::new(image::open("images/E.png").expect("Unable to locate file."));
 
-//    static ref IMG_1: Mutex<DynamicImage> = Mutex::new(image::open("images/1.png").expect("Unable to locate file."));
-//    static ref IMG_2: Mutex<DynamicImage> = Mutex::new(image::open("images/2.png").expect("Unable to locate file."));
-//    static ref IMG_3: Mutex<DynamicImage> = Mutex::new(image::open("images/3.png").expect("Unable to locate file."));
-//    static ref IMG_4: Mutex<DynamicImage> = Mutex::new(image::open("images/4.png").expect("Unable to locate file."));
-//    static ref IMG_5: Mutex<DynamicImage> = Mutex::new(image::open("images/5.png").expect("Unable to locate file."));
-//    static ref IMG_6: Mutex<DynamicImage> = Mutex::new(image::open("images/6.png").expect("Unable to locate file."));
-//    static ref IMG_7: Mutex<DynamicImage> = Mutex::new(image::open("images/7.png").expect("Unable to locate file."));
-//    static ref IMG_8: Mutex<DynamicImage> = Mutex::new(image::open("images/8.png").expect("Unable to locate file."));
-//    static ref IMG_9: Mutex<DynamicImage> = Mutex::new(image::open("images/9.png").expect("Unable to locate file."));
-//    static ref IMG_0: Mutex<DynamicImage> = Mutex::new(image::open("images/0.png").expect("Unable to locate file."));
-//    static ref IMG_DASH: Mutex<DynamicImage> = Mutex::new(image::open("images/dash.png").expect("Unable to locate file."));
-//    static ref IMG_EQUALS: Mutex<DynamicImage> = Mutex::new(image::open("images/equals.png").expect("Unable to locate file."));
-//}
+
 
 macro_rules! create_image_refs {
     ( $( $name:ident => $file_stem:expr ),+ ) => {
