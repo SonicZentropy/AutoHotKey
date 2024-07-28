@@ -122,10 +122,10 @@ fn locate_on_screen(
 }
 
 // Helper function to check if a color value is within a tolerance range
+#[inline]
 fn within_tolerance(value1: u8, value2: u8, tolerance: u8) -> bool {
     let min_value = value2.saturating_sub(tolerance);
     let max_value = value2.saturating_add(tolerance);
-    // Check if the color value is within tolerance range
     value1 >= min_value && value1 <= max_value
 }
 

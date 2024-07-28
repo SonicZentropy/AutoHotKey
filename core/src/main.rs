@@ -6,7 +6,7 @@ extern crate lazy_static;
 
 mod image_processing;
 mod utils;
-use tracing::warn;
+use tracing::{info, trace, warn};
 use utils::*;
 
 use eframe::{
@@ -43,7 +43,7 @@ fn main() -> eframe::Result {
    
     tracing_subscriber::fmt()
         // enable everything
-        .with_max_level(tracing::Level::WARN)
+        .with_max_level(tracing::Level::INFO)
         .compact()
         // Display source code file paths
         .with_file(true)
@@ -72,32 +72,8 @@ fn main() -> eframe::Result {
 
     // Exit program
     Numpad1Key.bind(|| {
-        //Numpad0Key.unbind();
-        //Numpad1Key.unbind();
         inputbot::stop_handling_input_events();
-        //optick::stop_capture("zen_base_capture");
-        //fastrace::flush();
     });
-
-    //std::thread::spawn(move || {
-    //    let options = eframe::NativeOptions {
-    //        viewport: egui::ViewportBuilder::default().with_inner_size([400.0, 800.0]),
-    //        ..Default::default()
-    //    };
-    //     use winit::platform::windows::EventLoopBuilderExtWindows;
-    //    EventLoopBuilder::new().with_any_thread(true).build();
-
-    //    let _ = eframe::run_native(
-    //        "Image Viewer",
-    //        options,
-    //        Box::new(|cc| {
-    //            // This gives us image support:
-    //            egui_extras::install_image_loaders(&cc.egui_ctx);
-    //            Ok(Box::<MyApp>::default())
-    //        }),
-    //    ) ;
-
-    //});
 
     let _handle = std::thread::spawn(|| {
         inputbot::handle_input_events(false);
@@ -112,18 +88,15 @@ fn main() -> eframe::Result {
         ..Default::default()
     };
     eframe::run_native(
-        "Image Viewer",
+        "Dev Tools",
         options,
         Box::new(|_cc| {
-            // This gives us image support:
-            //egui_extras::install_image_loaders(&cc.egui_ctx);
             Ok(Box::<MyApp>::default())
         }),
     )
     .unwrap();
-    //fastrace::flush();
-    //optick::stop_capture("zen_base_capture.opt");
-    println!("Exiting safely!");
+    
+    info!("Exiting safely!");
     Ok(())
 }
 
@@ -203,10 +176,6 @@ impl eframe::App for MyApp {
                 
                  ui.image(&texture);
                 
-                
-                //let screen_pixels: Vec<_> = screenshot.pixels().map(|p| p.2.to_rgba()).collect();
-                //let screen_width = screenshot.width();
-                //let screen_height = screenshot.height();
             });
         });
     }
@@ -240,30 +209,19 @@ fn find_keybinds_parallel(
     images
         .into_par_iter()
         .filter_map(|(img, keybind)| {
-            warn!("Testing keybind: {:?}", keybind);
+            trace!("Testing keybind: {:?}", keybind);
             match locate_image(&**img, region, min_confidence, tolerance) {
                 Some((_x, _y, _img_width, _img_height, confidence)) => {
-                    warn!("Found match for keybind: {:?} with confidence: {:?}", keybind, confidence);
+                    trace!("Found match for keybind: {:?} with confidence: {:?}", keybind, confidence);
                     Some((keybind, confidence))},
                 None => {
-                    warn!("No match found for keybind: {:?}", keybind);
+                    trace!("No match found for keybind: {:?}", keybind);
                     None},
             }
         })
         .max_by(|(_, confidence1), (_, confidence2)| confidence1.partial_cmp(confidence2).unwrap())
         .tap(|conf| tracing::warn!("Max found confidence: {:?}", conf))
         .map(|(keybind, _)| keybind)
-
-    //if let Some((keybind, confidence)) = &maybe_max {
-    //    println!(
-    //        "Max confidence found: {}, for keybind: {:?}",
-    //        confidence, keybind
-    //    );
-    //} else {
-    //    println!("No valid keybinding found.")
-    //}
-
-    //maybe_max.map(|(keybind, _)| keybind)
 }
 
 pub(crate) fn get_next_keybind_from_screen() -> Option<KeybindTypes> {
@@ -309,7 +267,6 @@ pub(crate) fn get_next_keybind_from_screen() -> Option<KeybindTypes> {
     let found_keybind =
         find_keybinds_parallel(images_with_keybinds, region, min_confidence, tolerance);
 
-    //tracing::info!("Selected Key: {:?}", found_keybind);
     found_keybind
 }
 
