@@ -8,33 +8,36 @@ mod image_processing;
 mod utils;
 use utils::*;
 
-use image::DynamicImage;
+use eframe::{
+    egui::{self, ColorImage},
+    EventLoopBuilderHook,
+};
+use image::{DynamicImage, GenericImageView, Pixel, Rgba};
 use inputbot::{
     KeySequence,
     KeybdKey::{self, *},
     MouseButton::*,
 };
 use rayon::prelude::*;
-
-use std::sync::{Arc, Mutex, MutexGuard};
+use std::sync::{Arc, Mutex, MutexGuard, Once};
 use std::{fs::File, io::BufWriter};
 use std::{thread::sleep, time::Duration};
+use tap::prelude::*;
 use tracing_subscriber::{fmt, prelude::*, registry::Registry};
+use winit::platform::windows::EventLoopBuilderExtWindows;
 
 use crate::image_processing::*;
 
-const X_POS: u16 = 800;
-const Y_POS: u16 = 1300;
+static mut X_POS: u16 = 850;
+static mut Y_POS: u16 = 1390;
+static mut WIDTH: u16 = 91;
+static mut HEIGHT: u16 = 50;
 
-
-
-fn main() {
-    //fastrace::set_reporter(ConsoleTimeReporter, Config::default());
-    //optick::start_capture();
-    // construct a subscriber that prints formatted traces to stdout
+fn main() -> eframe::Result {
+   
     tracing_subscriber::fmt()
         // enable everything
-        .with_max_level(tracing::Level::TRACE)
+        .with_max_level(tracing::Level::WARN)
         .compact()
         // Display source code file paths
         .with_file(true)
@@ -46,7 +49,8 @@ fn main() {
         .with_target(false)
         // sets this to be the default, global collector for this application.
         .init();
- 
+    
+    unsafe {update_screenshot(Some((X_POS, Y_POS, WIDTH, HEIGHT)))};
 
     Numpad0Key.bind(|| {
         profile!("Full Search Process", execute_search_process());
@@ -62,14 +66,156 @@ fn main() {
         //fastrace::flush();
     });
 
-    //let root = Span::root("root", SpanContext::random());
-    //let _g = root.set_local_parent();
-    //let _g = LocalSpan::enter_with_local_parent("child");
-    inputbot::handle_input_events(false);
+    //std::thread::spawn(move || {
+    //    let options = eframe::NativeOptions {
+    //        viewport: egui::ViewportBuilder::default().with_inner_size([400.0, 800.0]),
+    //        ..Default::default()
+    //    };
+    //     use winit::platform::windows::EventLoopBuilderExtWindows;
+    //    EventLoopBuilder::new().with_any_thread(true).build();
 
+    //    let _ = eframe::run_native(
+    //        "Image Viewer",
+    //        options,
+    //        Box::new(|cc| {
+    //            // This gives us image support:
+    //            egui_extras::install_image_loaders(&cc.egui_ctx);
+    //            Ok(Box::<MyApp>::default())
+    //        }),
+    //    ) ;
+
+    //});
+
+    let _handle = std::thread::spawn(|| {
+        inputbot::handle_input_events(false);
+    });
+
+    let options = eframe::NativeOptions {
+        viewport: egui::ViewportBuilder::default()
+            .with_inner_size([400.0, 800.0])
+            //.with_mouse_passthrough(true)
+            .with_transparent(true)
+            .with_decorations(true),
+        ..Default::default()
+    };
+    eframe::run_native(
+        "Image Viewer",
+        options,
+        Box::new(|_cc| {
+            // This gives us image support:
+            //egui_extras::install_image_loaders(&cc.egui_ctx);
+            Ok(Box::<MyApp>::default())
+        }),
+    )
+    .unwrap();
     //fastrace::flush();
     //optick::stop_capture("zen_base_capture.opt");
-    println!("Exiting safely!")
+    println!("Exiting safely!");
+    Ok(())
+}
+
+
+#[derive(Default)]
+struct MyApp {}
+
+impl eframe::App for MyApp {
+    fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+        ctx.set_visuals(egui::Visuals {
+            //window_fill: egui::Color32::TRANSPARENT,
+            panel_fill: egui::Color32::TRANSPARENT,
+            ..Default::default()
+        });
+
+        egui::CentralPanel::default().show(ctx, |ui| {
+            egui::ScrollArea::both().show(ui, |ui| {
+                unsafe {
+                    let mut x_pos = X_POS as f64;
+                    let mut y_pos = Y_POS as f64;
+                    let mut width = WIDTH as f64;
+                    let mut height = HEIGHT as f64;
+
+                    ui.label("X Position");
+                    if ui.add(egui::Slider::new(&mut x_pos, 0.0..=3440.0)).changed() {
+                        X_POS = x_pos as u16;
+                    }
+
+                    ui.label("Y Position");
+                    if ui.add(egui::Slider::new(&mut y_pos, 0.0..=1440.0)).changed() {
+                        Y_POS = y_pos as u16;
+                    }
+
+                    ui.label("Width");
+                    if ui.add(egui::Slider::new(&mut width, 0.0..=200.0)).changed() {
+                        WIDTH = width as u16;
+                    }
+
+                    ui.label("Height");
+                    if ui.add(egui::Slider::new(&mut height, 0.0..=200.0)).changed() {
+                        HEIGHT = height as u16;
+                    }
+                }
+                               
+                let screenshot = SCREEN.lock().unwrap().as_ref().unwrap().clone();
+                let color_image = dynamic_image_to_color_image(screenshot);
+                
+                let texture = ui.ctx().load_texture(
+                    "logo",
+                    egui::ImageData::Color(Arc::new(color_image)),
+                    Default::default(),
+                );
+                
+                 ui.image(&texture);
+                 
+                 let img_clone = IMG_0.clone();
+                 let inner_image = &*img_clone; // Dereference the Arc to get &DynamicImage
+                 let comparison_img = dynamic_image_to_color_image(inner_image.clone());
+                
+                let texture = ui.ctx().load_texture(
+                    "comparison",
+                    egui::ImageData::Color(Arc::new(comparison_img)),
+                    Default::default(),
+                );
+                
+                 ui.image(&texture);
+                 
+                 let img_clone = IMG_7.clone();
+                 let inner_image = &*img_clone; // Dereference the Arc to get &DynamicImage
+                 let comparison_img = dynamic_image_to_color_image(inner_image.clone());
+                
+                let texture = ui.ctx().load_texture(
+                    "comparison",
+                    egui::ImageData::Color(Arc::new(comparison_img)),
+                    Default::default(),
+                );
+                
+                 ui.image(&texture);
+                
+                
+                //let screen_pixels: Vec<_> = screenshot.pixels().map(|p| p.2.to_rgba()).collect();
+                //let screen_width = screenshot.width();
+                //let screen_height = screenshot.height();
+            });
+        });
+    }
+
+    fn clear_color(&self, visuals: &egui::Visuals) -> [f32; 4] {
+        let u8_array = visuals.panel_fill.to_array();
+        // Convert each u8 value to f32
+        let f32_array: [f32; 4] = [
+            u8_array[0] as f32,
+            u8_array[1] as f32,
+            u8_array[2] as f32,
+            u8_array[3] as f32,
+        ];
+        f32_array
+    }
+}
+
+fn dynamic_image_to_color_image(dynamic_image: DynamicImage) -> ColorImage {
+    let image_buffer = dynamic_image.to_rgba8();
+    let (width, height) = image_buffer.dimensions();
+    let pixels = image_buffer.into_raw();
+    ColorImage::from_rgba_unmultiplied([width as usize, height as usize], &pixels)
 }
 
 fn find_keybinds_parallel(
@@ -78,69 +224,69 @@ fn find_keybinds_parallel(
     min_confidence: Option<f32>,
     tolerance: Option<u8>,
 ) -> Option<KeybindTypes> {
-    let maybe_max = images
-        .into_par_iter() // Convert to a parallel iterator
+    images
+        .into_par_iter()
         .filter_map(|(img, keybind)| {
             match locate_image(&**img, region, min_confidence, tolerance) {
                 Some((_x, _y, _img_width, _img_height, confidence)) => Some((keybind, confidence)),
                 None => None,
             }
         })
-        .max_by(|(_, confidence1), (_, confidence2)| confidence1.partial_cmp(confidence2).unwrap());
+        .max_by(|(_, confidence1), (_, confidence2)| confidence1.partial_cmp(confidence2).unwrap())
+        .tap(|conf| tracing::warn!("Max found confidence: {:?}", conf))
+        .map(|(keybind, _)| keybind)
 
-    if let Some((keybind, confidence)) = &maybe_max {
-        println!(
-            "Max confidence found: {}, for keybind: {:?}",
-            confidence, keybind
-        );
-    } else {
-        println!("No valid keybinding found.")
-    }
+    //if let Some((keybind, confidence)) = &maybe_max {
+    //    println!(
+    //        "Max confidence found: {}, for keybind: {:?}",
+    //        confidence, keybind
+    //    );
+    //} else {
+    //    println!("No valid keybinding found.")
+    //}
 
-    maybe_max.map(|(keybind, _)| keybind)
+    //maybe_max.map(|(keybind, _)| keybind)
 }
 
 pub(crate) fn get_next_keybind_from_screen() -> Option<KeybindTypes> {
     let images_with_keybinds: Vec<(&Arc<DynamicImage>, KeybindTypes)> = vec![
-        (&IMG_Q, KeybindTypes::KeyQ),
-        (&IMG_E, KeybindTypes::KeyE),
-        (&IMG_R, KeybindTypes::KeyR),
-        (&IMG_F, KeybindTypes::KeyF),
-        (&IMG_Z, KeybindTypes::KeyZ),
-        (&IMG_X, KeybindTypes::KeyX),
-        (&IMG_C, KeybindTypes::KeyC),
-        (&IMG_V, KeybindTypes::KeyV),
-        (&IMG_1, KeybindTypes::Key1),
-        (&IMG_2, KeybindTypes::Key2),
-        (&IMG_3, KeybindTypes::Key3),
-        (&IMG_4, KeybindTypes::Key4),
-        (&IMG_5, KeybindTypes::Key5),
-        (&IMG_6, KeybindTypes::Key6),
+        //(&IMG_Q, KeybindTypes::KeyQ),
+        //(&IMG_E, KeybindTypes::KeyE),
+        //(&IMG_R, KeybindTypes::KeyR),
+        //(&IMG_F, KeybindTypes::KeyF),
+        //(&IMG_Z, KeybindTypes::KeyZ),
+        //(&IMG_X, KeybindTypes::KeyX),
+        //(&IMG_C, KeybindTypes::KeyC),
+        //(&IMG_V, KeybindTypes::KeyV),
+        //(&IMG_1, KeybindTypes::Key1),
+        //(&IMG_2, KeybindTypes::Key2),
+        //(&IMG_3, KeybindTypes::Key3),
+        //(&IMG_4, KeybindTypes::Key4),
+        //(&IMG_5, KeybindTypes::Key5),
+        //(&IMG_6, KeybindTypes::Key6),
         (&IMG_7, KeybindTypes::Key7),
-        (&IMG_8, KeybindTypes::Key8),
-        (&IMG_9, KeybindTypes::Key9),
+        //(&IMG_8, KeybindTypes::Key8),
+        //(&IMG_9, KeybindTypes::Key9),
         (&IMG_0, KeybindTypes::Key0),
-        (&IMG_DASH, KeybindTypes::KeyDash),
-        (&IMG_EQUALS, KeybindTypes::KeyEquals),
-        (&IMG_S1, KeybindTypes::KeyS1),
-        (&IMG_S2, KeybindTypes::KeyS2),
-        (&IMG_S3, KeybindTypes::KeyS3),
-        (&IMG_S4, KeybindTypes::KeyS4),
-        (&IMG_S5, KeybindTypes::KeyS5),
-        (&IMG_S6, KeybindTypes::KeyS6),
-        (&IMG_S7, KeybindTypes::KeyS7),
-        (&IMG_S8, KeybindTypes::KeyS8),
-        (&IMG_S9, KeybindTypes::KeyS9),
-        (&IMG_S0, KeybindTypes::KeyS0),
-        (&IMG_SDASH, KeybindTypes::KeySDash),
-        (&IMG_SEQUALS, KeybindTypes::KeySEquals),
+        //(&IMG_DASH, KeybindTypes::KeyDash),
+        //(&IMG_EQUALS, KeybindTypes::KeyEquals),
+        //(&IMG_S1, KeybindTypes::KeyS1),
+        //(&IMG_S2, KeybindTypes::KeyS2),
+        //(&IMG_S3, KeybindTypes::KeyS3),
+        //(&IMG_S4, KeybindTypes::KeyS4),
+        //(&IMG_S5, KeybindTypes::KeyS5),
+        //(&IMG_S6, KeybindTypes::KeyS6),
+        //(&IMG_S7, KeybindTypes::KeyS7),
+        //(&IMG_S8, KeybindTypes::KeyS8),
+        //(&IMG_S9, KeybindTypes::KeyS9),
+        //(&IMG_S0, KeybindTypes::KeyS0),
+        //(&IMG_SDASH, KeybindTypes::KeySDash),
+        //(&IMG_SEQUALS, KeybindTypes::KeySEquals),
     ];
 
-    let width = 150;
-    let height = 140;
-    let region = Some((X_POS, Y_POS, width, height));
-    let min_confidence = Some(0.9999);
-    let tolerance = Some(0);
+    let region = unsafe {Some((X_POS, Y_POS, WIDTH, HEIGHT))};
+    let min_confidence = Some(0.95);
+    let tolerance = Some(10);
 
     let found_keybind =
         find_keybinds_parallel(images_with_keybinds, region, min_confidence, tolerance);
@@ -151,9 +297,7 @@ pub(crate) fn get_next_keybind_from_screen() -> Option<KeybindTypes> {
 
 fn execute_search_process() {
 
-    let width = 150;
-    let height = 140;
-    let region = Some((X_POS, Y_POS, width, height));
+    let region = unsafe { Some((X_POS, Y_POS, WIDTH, HEIGHT)) };
     update_screenshot(region);
 
     if let Some(keybind) = get_next_keybind_from_screen() {

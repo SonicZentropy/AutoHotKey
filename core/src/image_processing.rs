@@ -5,8 +5,10 @@ use image::{DynamicImage, GenericImageView, Pixel, Rgba};
 use screenshots::{DisplayInfo, Screen};
 use tracing::warn;
 
+use crate::{HEIGHT, WIDTH, X_POS, Y_POS};
+
 lazy_static! {
-    static ref SCREEN: Mutex<Option<DynamicImage>> = Mutex::new(None);
+    pub static ref SCREEN: Mutex<Option<DynamicImage>> = Mutex::new(None);
 }
 
 // Function that takes a screenshot of a specified area.
@@ -27,7 +29,7 @@ fn screenshot(x: u16, y: u16, width: u16, height: u16) -> DynamicImage {
     let capture = screen
         .capture_area(x.into(), y.into(), width.into(), height.into())
         .expect("Unable to screen capture.");
-
+    
     // Convert capture to image buffer
     let buffer = capture.buffer();
 
@@ -136,6 +138,7 @@ pub fn locate_image(
     let img_height = img.height();
 
     //let screenshot = screenshot(x, y, width, height);
+    unsafe {update_screenshot(Some((X_POS, Y_POS, WIDTH, HEIGHT)))}; 
     let screenshot = SCREEN.lock().unwrap().as_ref().unwrap().clone();
     let screen_pixels: Vec<_> = screenshot.pixels().map(|p| p.2.to_rgba()).collect();
     let screen_width = screenshot.width();
@@ -159,37 +162,3 @@ pub fn update_screenshot(region: Option<(u16, u16, u16, u16)>) {
     let mut screen = SCREEN.lock().unwrap();
     *screen = Some(screenshot);
 }
-
-// Function to locate an image on the screen with optional region, minimum confidence, and tolerance.
-// Returns coordinates, width, height and confidence if image is found, otherwise None.
-//pub fn locate_image_from_array(
-//    img: Vec<&DynamicImage>,
-//    region: Option<(u16, u16, u16, u16)>,
-//    min_confidence: Option<f32>,
-//    tolerance: Option<u8>,
-//) -> Option<(u32, u32, u32, u32, f32)> {
-//    // Default values
-//    let (x, y, width, height) = region.unwrap_or((0, 0, size().0, size().1));
-//    let min_confidence = min_confidence.unwrap_or(0.75);
-//    let tolerance = tolerance.unwrap_or(25);
-
-//    let img_pixels: Vec<_> = img.pixels().map(|p| p.2.to_rgba()).collect();
-//    let img_width = img.width();
-//    let img_height = img.height();
-
-//    let screenshot = screenshot(x, y, width, height);
-//    let screen_pixels: Vec<_> = screenshot.pixels().map(|p| p.2.to_rgba()).collect();
-//    let screen_width = screenshot.width();
-//    let screen_height = screenshot.height();
-
-//    locate_on_screen(
-//        &screen_pixels,
-//        &img_pixels,
-//        screen_width,
-//        screen_height,
-//        img_width,
-//        img_height,
-//        min_confidence,
-//        tolerance,
-//    )
-//}
