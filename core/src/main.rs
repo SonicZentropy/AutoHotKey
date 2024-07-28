@@ -290,7 +290,7 @@ pub(crate) fn get_next_keybind_from_screen() -> Option<KeybindTypes> {
         (&IMG_SEQUALS, KeybindTypes::KeySEquals),
     ];
 
-    let region = unsafe {Some((X_POS, Y_POS, WIDTH, HEIGHT))};
+    let region = Some((X_POS, Y_POS, WIDTH, HEIGHT));
     let min_confidence = Some(0.95);
     let tolerance = Some(0);
 
@@ -303,7 +303,7 @@ pub(crate) fn get_next_keybind_from_screen() -> Option<KeybindTypes> {
 
 fn execute_search_process() {
 
-    let region = unsafe { Some((X_POS, Y_POS, WIDTH, HEIGHT)) };
+    let region = Some((X_POS, Y_POS, WIDTH, HEIGHT)) ;
     update_screenshot(region);
 
     if let Some(keybind) = get_next_keybind_from_screen() {
