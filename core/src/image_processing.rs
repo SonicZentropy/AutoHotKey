@@ -29,7 +29,7 @@ fn screenshot(x: u16, y: u16, width: u16, height: u16) -> DynamicImage {
     let capture = screen
         .capture_area(x.into(), y.into(), width.into(), height.into())
         .expect("Unable to screen capture.");
-    
+
     // Convert capture to image buffer
     let buffer = capture.buffer();
 
@@ -72,12 +72,19 @@ fn locate_on_screen(
             let mut total_pixels = 0;
 
             'outer: for dy in 0..img_height {
-                for dx in 0..img_width {
-                    let screen_idx: usize = ((y + dy) * screen_width + (x + dx)) as usize;
-                    let img_idx: usize = (dy * img_width + dx) as usize;
+                let base_screen_idx = (y + dy) * screen_width + x;
+                let base_img_idx = dy * img_width;
 
-                    let screen_pixel = screen[screen_idx];
-                    let img_pixel = img[img_idx];
+                for dx in 0..img_width {
+                    //let screen_idx: usize = ((y + dy) * screen_width + (x + dx)) as usize;
+                    //let img_idx: usize = (dy * img_width + dx) as usize;
+
+                    let screen_idx =
+                        unsafe { screen.get_unchecked((base_screen_idx + dx) as usize) };
+                    let img_idx = unsafe { img.get_unchecked((base_img_idx + dx) as usize) };
+                    
+                    let screen_pixel = *screen_idx;
+                    let img_pixel = *img_idx;
 
                     // Skip transparent pixels
                     if img_pixel[3] < 128 {
@@ -102,11 +109,10 @@ fn locate_on_screen(
             } else {
                 matching_pixels as f32 / total_pixels as f32
             };
-           
-           //warn!("Confidence: {:?}", confidence);
-           
+
+            //warn!("Confidence: {:?}", confidence);
+
             if confidence >= min_confidence {
-                
                 return Some((x, y, img_width, img_height, confidence));
             }
         }
@@ -141,7 +147,7 @@ pub fn locate_image(
     let img_height = img.height();
 
     //let screenshot = screenshot(x, y, width, height);
-    //unsafe {update_screenshot(Some((X_POS, Y_POS, WIDTH, HEIGHT)))}; 
+    //unsafe {update_screenshot(Some((X_POS, Y_POS, WIDTH, HEIGHT)))};
     let screenshot = SCREEN.lock().unwrap().as_ref().unwrap().clone();
     let screen_pixels: Vec<_> = screenshot.pixels().map(|p| p.2.to_rgba()).collect();
     let screen_width = screenshot.width();
