@@ -22,10 +22,13 @@ egui-winit = "0.28.1"
 egui_glow = "0.28.1"
 glutin = "0.32.0"
 glutin-winit = "0.5.0"
-windows = "0.58.0"
+windows = {version = "0.58.0", features = ["Win32", "Win32_UI", "Win32_UI_WindowsAndMessaging"]}
+anyhow = "1.0.86"
+
+
 
 #spectrust = { path = "../crates/spectrust" }
 
 [profile.release]
 debug = true
-lto = true
+lto = false

@@ -85,7 +85,7 @@ fn locate_on_screen(
                     
                     let screen_pixel = *screen_idx;
                     let img_pixel = *img_idx;
-
+                    
                     // Skip transparent pixels
                     if img_pixel[3] < 128 {
                         continue;

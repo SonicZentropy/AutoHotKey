@@ -20,19 +20,24 @@ use inputbot::{
     MouseButton::*,
 };
 use rayon::prelude::*;
+use std::ffi::OsString;
+use std::os::windows::ffi::OsStrExt;
+use std::os::windows::ffi::OsStringExt;
 use std::sync::{Arc, Mutex, MutexGuard, Once};
 use std::{fs::File, io::BufWriter};
 use std::{thread::sleep, time::Duration};
 use tap::prelude::*;
 use tracing_subscriber::{fmt, prelude::*, registry::Registry};
+use windows::{core::HSTRING, Win32::Foundation::{BOOL, HWND, LPARAM, RECT}};
+use windows::Win32::UI::WindowsAndMessaging::{FindWindowW, GetWindowRect};
 use winit::platform::windows::EventLoopBuilderExtWindows;
 
 use crate::image_processing::*;
 
-const X_POS: u16 = 25;
-const Y_POS: u16 = 1390;
-const WIDTH: u16 = 91;
-const HEIGHT: u16 = 50;
+static mut X_POS: u16 = 25;
+static mut Y_POS: u16 = 1390;
+static mut WIDTH: u16 = 91;
+static mut HEIGHT: u16 = 50;
 
 fn main() -> eframe::Result {
    
@@ -51,7 +56,14 @@ fn main() -> eframe::Result {
         // sets this to be the default, global collector for this application.
         .init();
     
-    update_screenshot(Some((X_POS, Y_POS, WIDTH, HEIGHT)));
+    let win = find_window_by_title("World of Warcraft").unwrap();
+    let rect = get_window_rect(win).unwrap();
+    let width = rect.right - rect.left;
+    let height = rect.bottom - rect.top;
+    warn!("Window Size: {:?}", (width, height));
+    unsafe {X_POS = rect.left as u16; Y_POS = (rect.bottom as u16 - HEIGHT) as u16; }
+    
+    unsafe {update_screenshot(Some((X_POS, Y_POS, WIDTH, HEIGHT)))};
 
     Numpad0Key.bind(|| {
         profile!("Full Search Process", execute_search_process());
@@ -290,10 +302,10 @@ pub(crate) fn get_next_keybind_from_screen() -> Option<KeybindTypes> {
         (&IMG_SEQUALS, KeybindTypes::KeySEquals),
     ];
 
-    let region = Some((X_POS, Y_POS, WIDTH, HEIGHT));
+    let region = unsafe {Some((X_POS, Y_POS, WIDTH, HEIGHT))};
     let min_confidence = Some(0.95);
     let tolerance = Some(0);
-
+    
     let found_keybind =
         find_keybinds_parallel(images_with_keybinds, region, min_confidence, tolerance);
 
@@ -303,7 +315,7 @@ pub(crate) fn get_next_keybind_from_screen() -> Option<KeybindTypes> {
 
 fn execute_search_process() {
 
-    let region = Some((X_POS, Y_POS, WIDTH, HEIGHT)) ;
+    let region = unsafe {Some((X_POS, Y_POS, WIDTH, HEIGHT))} ;
     update_screenshot(region);
 
     if let Some(keybind) = get_next_keybind_from_screen() {
@@ -341,5 +353,34 @@ fn execute_search_process() {
             KeybindTypes::KeySDash => press_shift_key_sequence(MinusKey),
             KeybindTypes::KeySEquals => press_shift_key_sequence(EqualKey),
         }
+    }
+}
+
+fn find_window_by_title(title: &str) -> anyhow::Result<HWND> {
+    //let title_wide: Vec<u16> = OsString::from(title.clone())
+    //    .encode_wide()
+    //    .chain(std::iter::once(0))
+    //    .collect();
+    //let _hwnd = unsafe { FindWindowW(None, title_wide.as_ptr()) };
+    //unsafe { desktop.SetWallpaper(None, &HSTRING::from(&path)) };
+     unsafe { FindWindowW(None, &HSTRING::from(title)) }
+        .map_err(|e| anyhow::anyhow!(e.message()))
+    
+    //if hwnd.0 == 0 {
+    //    None
+    //} else {
+    //    Some(hwnd)
+    //}
+    //hwnd
+}
+
+fn get_window_rect(hwnd: HWND) -> Option<RECT> {
+    let mut rect = RECT::default();
+    let success = unsafe { GetWindowRect(hwnd, &mut rect) };
+    dbg!(rect);
+    if success.is_ok() {
+        Some(rect)
+    } else {
+        None
     }
 }
