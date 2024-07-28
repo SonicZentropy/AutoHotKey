@@ -6,6 +6,7 @@ extern crate lazy_static;
 
 mod image_processing;
 mod utils;
+use tracing::warn;
 use utils::*;
 
 use eframe::{
@@ -28,10 +29,10 @@ use winit::platform::windows::EventLoopBuilderExtWindows;
 
 use crate::image_processing::*;
 
-static mut X_POS: u16 = 850;
-static mut Y_POS: u16 = 1390;
-static mut WIDTH: u16 = 91;
-static mut HEIGHT: u16 = 50;
+const X_POS: u16 = 25;
+const Y_POS: u16 = 1390;
+const WIDTH: u16 = 91;
+const HEIGHT: u16 = 50;
 
 fn main() -> eframe::Result {
    
@@ -50,7 +51,7 @@ fn main() -> eframe::Result {
         // sets this to be the default, global collector for this application.
         .init();
     
-    unsafe {update_screenshot(Some((X_POS, Y_POS, WIDTH, HEIGHT)))};
+    update_screenshot(Some((X_POS, Y_POS, WIDTH, HEIGHT)));
 
     Numpad0Key.bind(|| {
         profile!("Full Search Process", execute_search_process());
@@ -128,32 +129,32 @@ impl eframe::App for MyApp {
 
         egui::CentralPanel::default().show(ctx, |ui| {
             egui::ScrollArea::both().show(ui, |ui| {
-                unsafe {
-                    let mut x_pos = X_POS as f64;
-                    let mut y_pos = Y_POS as f64;
-                    let mut width = WIDTH as f64;
-                    let mut height = HEIGHT as f64;
+                //unsafe {
+                //    let mut x_pos = X_POS as f64;
+                //    let mut y_pos = Y_POS as f64;
+                //    let mut width = WIDTH as f64;
+                //    let mut height = HEIGHT as f64;
 
-                    ui.label("X Position");
-                    if ui.add(egui::Slider::new(&mut x_pos, 0.0..=3440.0)).changed() {
-                        X_POS = x_pos as u16;
-                    }
+                //    ui.label("X Position");
+                //    if ui.add(egui::Slider::new(&mut x_pos, 0.0..=3440.0)).changed() {
+                //        X_POS = x_pos as u16;
+                //    }
 
-                    ui.label("Y Position");
-                    if ui.add(egui::Slider::new(&mut y_pos, 0.0..=1440.0)).changed() {
-                        Y_POS = y_pos as u16;
-                    }
+                //    ui.label("Y Position");
+                //    if ui.add(egui::Slider::new(&mut y_pos, 0.0..=1440.0)).changed() {
+                //        Y_POS = y_pos as u16;
+                //    }
 
-                    ui.label("Width");
-                    if ui.add(egui::Slider::new(&mut width, 0.0..=200.0)).changed() {
-                        WIDTH = width as u16;
-                    }
-
-                    ui.label("Height");
-                    if ui.add(egui::Slider::new(&mut height, 0.0..=200.0)).changed() {
-                        HEIGHT = height as u16;
-                    }
-                }
+                //    ui.label("Width");
+                //    if ui.add(egui::Slider::new(&mut width, 0.0..=200.0)).changed() {
+                //        WIDTH = width as u16;
+                //    }
+                    
+                //    ui.label("Height");
+                //    if ui.add(egui::Slider::new(&mut height, 0.0..=200.0)).changed() {
+                //        HEIGHT = height as u16;
+                //    }
+                //}
                                
                 let screenshot = SCREEN.lock().unwrap().as_ref().unwrap().clone();
                 let color_image = dynamic_image_to_color_image(screenshot);
@@ -227,9 +228,14 @@ fn find_keybinds_parallel(
     images
         .into_par_iter()
         .filter_map(|(img, keybind)| {
+            warn!("Testing keybind: {:?}", keybind);
             match locate_image(&**img, region, min_confidence, tolerance) {
-                Some((_x, _y, _img_width, _img_height, confidence)) => Some((keybind, confidence)),
-                None => None,
+                Some((_x, _y, _img_width, _img_height, confidence)) => {
+                    warn!("Found match for keybind: {:?} with confidence: {:?}", keybind, confidence);
+                    Some((keybind, confidence))},
+                None => {
+                    warn!("No match found for keybind: {:?}", keybind);
+                    None},
             }
         })
         .max_by(|(_, confidence1), (_, confidence2)| confidence1.partial_cmp(confidence2).unwrap())
@@ -250,43 +256,43 @@ fn find_keybinds_parallel(
 
 pub(crate) fn get_next_keybind_from_screen() -> Option<KeybindTypes> {
     let images_with_keybinds: Vec<(&Arc<DynamicImage>, KeybindTypes)> = vec![
-        //(&IMG_Q, KeybindTypes::KeyQ),
-        //(&IMG_E, KeybindTypes::KeyE),
-        //(&IMG_R, KeybindTypes::KeyR),
-        //(&IMG_F, KeybindTypes::KeyF),
-        //(&IMG_Z, KeybindTypes::KeyZ),
-        //(&IMG_X, KeybindTypes::KeyX),
-        //(&IMG_C, KeybindTypes::KeyC),
-        //(&IMG_V, KeybindTypes::KeyV),
-        //(&IMG_1, KeybindTypes::Key1),
-        //(&IMG_2, KeybindTypes::Key2),
-        //(&IMG_3, KeybindTypes::Key3),
-        //(&IMG_4, KeybindTypes::Key4),
-        //(&IMG_5, KeybindTypes::Key5),
-        //(&IMG_6, KeybindTypes::Key6),
+        (&IMG_Q, KeybindTypes::KeyQ),
+        (&IMG_E, KeybindTypes::KeyE),
+        (&IMG_R, KeybindTypes::KeyR),
+        (&IMG_F, KeybindTypes::KeyF),
+        (&IMG_Z, KeybindTypes::KeyZ),
+        (&IMG_X, KeybindTypes::KeyX),
+        (&IMG_C, KeybindTypes::KeyC),
+        (&IMG_V, KeybindTypes::KeyV),
+        (&IMG_1, KeybindTypes::Key1),
+        (&IMG_2, KeybindTypes::Key2),
+        (&IMG_3, KeybindTypes::Key3),
+        (&IMG_4, KeybindTypes::Key4),
+        (&IMG_5, KeybindTypes::Key5),
+        (&IMG_6, KeybindTypes::Key6),
         (&IMG_7, KeybindTypes::Key7),
-        //(&IMG_8, KeybindTypes::Key8),
-        //(&IMG_9, KeybindTypes::Key9),
+        (&IMG_8, KeybindTypes::Key8),
+        (&IMG_9, KeybindTypes::Key9),
         (&IMG_0, KeybindTypes::Key0),
-        //(&IMG_DASH, KeybindTypes::KeyDash),
-        //(&IMG_EQUALS, KeybindTypes::KeyEquals),
-        //(&IMG_S1, KeybindTypes::KeyS1),
-        //(&IMG_S2, KeybindTypes::KeyS2),
-        //(&IMG_S3, KeybindTypes::KeyS3),
-        //(&IMG_S4, KeybindTypes::KeyS4),
-        //(&IMG_S5, KeybindTypes::KeyS5),
-        //(&IMG_S6, KeybindTypes::KeyS6),
-        //(&IMG_S7, KeybindTypes::KeyS7),
-        //(&IMG_S8, KeybindTypes::KeyS8),
-        //(&IMG_S9, KeybindTypes::KeyS9),
-        //(&IMG_S0, KeybindTypes::KeyS0),
-        //(&IMG_SDASH, KeybindTypes::KeySDash),
-        //(&IMG_SEQUALS, KeybindTypes::KeySEquals),
+        (&IMG_DASH, KeybindTypes::KeyDash),
+        (&IMG_EQUALS, KeybindTypes::KeyEquals),
+        (&IMG_S1, KeybindTypes::KeyS1),
+        (&IMG_S2, KeybindTypes::KeyS2),
+        (&IMG_S3, KeybindTypes::KeyS3),
+        (&IMG_S4, KeybindTypes::KeyS4),
+        (&IMG_S5, KeybindTypes::KeyS5),
+        (&IMG_S6, KeybindTypes::KeyS6),
+        (&IMG_S7, KeybindTypes::KeyS7),
+        (&IMG_S8, KeybindTypes::KeyS8),
+        (&IMG_S9, KeybindTypes::KeyS9),
+        (&IMG_S0, KeybindTypes::KeyS0),
+        (&IMG_SDASH, KeybindTypes::KeySDash),
+        (&IMG_SEQUALS, KeybindTypes::KeySEquals),
     ];
 
     let region = unsafe {Some((X_POS, Y_POS, WIDTH, HEIGHT))};
     let min_confidence = Some(0.95);
-    let tolerance = Some(10);
+    let tolerance = Some(0);
 
     let found_keybind =
         find_keybinds_parallel(images_with_keybinds, region, min_confidence, tolerance);

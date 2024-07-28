@@ -3,7 +3,7 @@ use std::sync::Mutex;
 // Importing necessary image processing and screenshot capturing modules.
 use image::{DynamicImage, GenericImageView, Pixel, Rgba};
 use screenshots::{DisplayInfo, Screen};
-use tracing::warn;
+use tracing::{info, warn};
 
 use crate::{HEIGHT, WIDTH, X_POS, Y_POS};
 
@@ -103,7 +103,10 @@ fn locate_on_screen(
                 matching_pixels as f32 / total_pixels as f32
             };
            
+           //warn!("Confidence: {:?}", confidence);
+           
             if confidence >= min_confidence {
+                
                 return Some((x, y, img_width, img_height, confidence));
             }
         }
@@ -138,11 +141,12 @@ pub fn locate_image(
     let img_height = img.height();
 
     //let screenshot = screenshot(x, y, width, height);
-    unsafe {update_screenshot(Some((X_POS, Y_POS, WIDTH, HEIGHT)))}; 
+    //unsafe {update_screenshot(Some((X_POS, Y_POS, WIDTH, HEIGHT)))}; 
     let screenshot = SCREEN.lock().unwrap().as_ref().unwrap().clone();
     let screen_pixels: Vec<_> = screenshot.pixels().map(|p| p.2.to_rgba()).collect();
     let screen_width = screenshot.width();
     let screen_height = screenshot.height();
+    std::mem::drop(screenshot);
 
     locate_on_screen(
         &screen_pixels,
