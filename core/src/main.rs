@@ -41,7 +41,43 @@ static mut X_POS_OFFSET: u16 = 10;
 static mut Y_POS_OFFSET: u16 = 15;
 static mut WIDTH: u16 = 5;
 static mut HEIGHT: u16 = 5;
-
+ 
+ lazy_static!{
+ static ref COLORS: Vec<(PixelColor, PixelColors)> = vec![
+        (PixelColor::white(), PixelColors::White),
+        (PixelColor::green(), PixelColors::Green),
+        (PixelColor::dark_gray(), PixelColors::DarkGray),
+        (PixelColor::blue(), PixelColors::Blue),
+        (PixelColor::black(), PixelColors::Black),
+        (PixelColor::cyan(), PixelColors::Cyan),
+        (PixelColor::yellow(), PixelColors::Yellow),
+        (PixelColor::something(), PixelColors::Something),
+        (PixelColor::gray(), PixelColors::Gray),
+        (PixelColor::pinkish(), PixelColors::Pinkish),
+        (PixelColor::mint(), PixelColors::Mint),
+        (PixelColor::dark_red(), PixelColors::DarkRed),
+        (PixelColor::dark_green(), PixelColors::DarkGreen),
+        (PixelColor::dark_blue(), PixelColors::DarkBlue),
+        (PixelColor::olive(), PixelColors::Olive),
+        (PixelColor::purple(), PixelColors::Purple),
+        (PixelColor::teal(), PixelColors::Teal),
+        (PixelColor::orange_brownish(), PixelColors::OrangeBrownish),
+        (PixelColor::dark_purple(), PixelColors::DarkPurple),
+        (PixelColor::light_green(), PixelColors::LightGreen),
+        (PixelColor::light_yellow(), PixelColors::LightYellow),
+        (PixelColor::bright_orange(), PixelColors::BrightOrange),
+        (PixelColor::light_green2(), PixelColors::LightGreen2),
+        (PixelColor::light_blue(), PixelColors::LightBlue),
+        (PixelColor::reddish_purple(), PixelColors::ReddishPurple),
+        (PixelColor::olive_drab(), PixelColors::OliveDrab),
+        (PixelColor::burnt_orange(), PixelColors::BurntOrange),
+        (PixelColor::dark_blue_violet(), PixelColors::DarkBlueViolet),
+        (PixelColor::very_dark_blue(), PixelColors::VeryDarkBlue),
+        (PixelColor::dark_magenta(), PixelColors::DarkMagenta),
+        (PixelColor::mustard_yellow(), PixelColors::MustardYellow),
+        (PixelColor::sea_green(), PixelColors::SeaGreen),
+    ];
+ }
 fn main() -> eframe::Result {
    
     tracing_subscriber::fmt()
@@ -202,90 +238,20 @@ fn dynamic_image_to_color_image(dynamic_image: DynamicImage) -> ColorImage {
     ColorImage::from_rgba_unmultiplied([width as usize, height as usize], &pixels)
 }
 
-fn find_keybinds_parallel(
-    images: Vec<(&Arc<DynamicImage>, KeybindTypes)>,
-    region: Option<(u16, u16, u16, u16)>,
-    min_confidence: Option<f32>,
-    tolerance: Option<u8>,
-) -> Option<KeybindTypes> {
-    images
-        .into_par_iter()
-        .filter_map(|(img, keybind)| {
-            trace!("Testing keybind: {:?}", keybind);
-            match locate_image(&**img, region, min_confidence, tolerance) {
-                Some((_x, _y, _img_width, _img_height, confidence)) => {
-                    trace!("Found match for keybind: {:?} with confidence: {:?}", keybind, confidence);
-                    Some((keybind, confidence))},
-                None => {
-                    trace!("No match found for keybind: {:?}", keybind);
-                    None},
-            }
-        })
-        .max_by(|(_, confidence1), (_, confidence2)| confidence1.partial_cmp(confidence2).unwrap())
-        .tap(|conf| tracing::warn!("Max found confidence: {:?}", conf))
-        .map(|(keybind, _)| keybind)
+// closest_color(pixel: PixelColor, colors: &[(PixelColor, PixelColors)]) -> (&(pixel_color: PixelColor, pixel_color_name: PixelColors), distance: f32) {
+fn closest_color(pixel: PixelColor) -> (&'static (PixelColor, PixelColors), f32) {
+    let closest = COLORS
+        .iter()
+        .min_by(|a, b| pixel.distance(&a.0).partial_cmp(&pixel.distance(&b.0)).unwrap())
+        .unwrap();
+    let min_distance = pixel.distance(&closest.0);
+    (closest, min_distance)
 }
 
-#[derive(Debug, Copy, Clone, Display)]
-#[display(fmt = "r: {:.2}, g: {:.2}, b: {:.2}, a: {:.2}", r, g, b, a)]
-pub struct PixelColor {
-    pub r: f32,
-    pub g: f32,
-    pub b: f32,
-    pub a: f32,
-}
 
-impl PixelColor {
-    fn new(r: u8, g: u8, b: u8, a: u8) -> Self {
-        PixelColor {
-            r: r as f32 / 255.0,
-            g: g as f32 / 255.0,
-            b: b as f32 / 255.0,
-            a: a as f32 / 255.0,
-        }
-    }
-    
-    fn white() -> PixelColor {
-        PixelColor {
-            r: 1.0,
-            g: 1.0,
-            b: 1.0,
-            a: 1.0,
-        }
-    }
-    
-    fn green() -> PixelColor {
-        PixelColor {
-            r: 0.0,
-            g: 1.0,
-            b: 0.0,
-            a: 1.0,
-        }
-    }
-}
 
-impl From<&Rgba<u8>> for PixelColor {
-    fn from(rgba: &Rgba<u8>) -> Self {
-        PixelColor {
-            r: rgba[0] as f32 / 255.0,
-            g: rgba[1] as f32 / 255.0,
-            b: rgba[2] as f32 / 255.0,
-            a: rgba[3] as f32 / 255.0,
-        }
-    }
-}
-
-pub fn check_pixel_colors_match(
-    pixel_color: PixelColor,
-    white_pixel_color: PixelColor,
-    tolerance: f32,
-) -> bool {
-    (pixel_color.r - white_pixel_color.r).abs() <= tolerance
-        && (pixel_color.g - white_pixel_color.g).abs() <= tolerance
-        && (pixel_color.b - white_pixel_color.b).abs() <= tolerance
-        && (pixel_color.a - white_pixel_color.a).abs() <= tolerance
-}
-
+use windows::Win32::Graphics::Gdi::GetDC;
+use windows::Win32::Graphics::Gdi::GetPixel;
 
 pub(crate) fn get_next_keybind_from_screen() -> Option<KeybindTypes> {
     let screenshot = unsafe{ screenshot(X_POS, Y_POS, WIDTH, HEIGHT)};
@@ -296,65 +262,51 @@ pub(crate) fn get_next_keybind_from_screen() -> Option<KeybindTypes> {
     let screen_pixel = *screen_idx;
     
     let screen_pixel_color = PixelColor::from(&screen_pixel);
-    let white_pixel_color = PixelColor::white();
-   
-    
-    warn!("Screen pixel color: {:?}", screen_pixel_color);
-    //warn!("White pixel color: {:?}", white_pixel_color);
-    //let res = check_pixel_colors_match(screen_pixel_color, white_pixel_color, 0.05);
-    //warn!("Check pixel colors match WHITE: {:?}", res);
-    
-    let green_pixel_color = PixelColor::green();
-    warn!("Green pixel color: {:?}", green_pixel_color);
-    let res = check_pixel_colors_match(screen_pixel_color, green_pixel_color, 0.05);
-    warn!("Check pixel colors match GREEN: {:?}", res);
-    
-    None
-    
-    // OLD CODE matching font images instead of color squares
-    //let images_with_keybinds: Vec<(&Arc<DynamicImage>, KeybindTypes)> = vec![
-    //    (&IMG_Q, KeybindTypes::KeyQ),
-    //    (&IMG_E, KeybindTypes::KeyE),
-    //    (&IMG_R, KeybindTypes::KeyR),
-    //    (&IMG_F, KeybindTypes::KeyF),
-    //    (&IMG_Z, KeybindTypes::KeyZ),
-    //    (&IMG_X, KeybindTypes::KeyX),
-    //    (&IMG_C, KeybindTypes::KeyC),
-    //    (&IMG_V, KeybindTypes::KeyV),
-    //    (&IMG_1, KeybindTypes::Key1),
-    //    (&IMG_2, KeybindTypes::Key2),
-    //    (&IMG_3, KeybindTypes::Key3),
-    //    (&IMG_4, KeybindTypes::Key4),
-    //    (&IMG_5, KeybindTypes::Key5),
-    //    (&IMG_6, KeybindTypes::Key6),
-    //    (&IMG_7, KeybindTypes::Key7),
-    //    (&IMG_8, KeybindTypes::Key8),
-    //    (&IMG_9, KeybindTypes::Key9),
-    //    (&IMG_0, KeybindTypes::Key0),
-    //    (&IMG_DASH, KeybindTypes::KeyDash),
-    //    (&IMG_EQUALS, KeybindTypes::KeyEquals),
-    //    (&IMG_S1, KeybindTypes::KeyS1),
-    //    (&IMG_S2, KeybindTypes::KeyS2),
-    //    (&IMG_S3, KeybindTypes::KeyS3),
-    //    (&IMG_S4, KeybindTypes::KeyS4),
-    //    (&IMG_S5, KeybindTypes::KeyS5),
-    //    (&IMG_S6, KeybindTypes::KeyS6),
-    //    (&IMG_S7, KeybindTypes::KeyS7),
-    //    (&IMG_S8, KeybindTypes::KeyS8),
-    //    (&IMG_S9, KeybindTypes::KeyS9),
-    //    (&IMG_S0, KeybindTypes::KeyS0),
-    //    //(&IMG_SDASH, KeybindTypes::KeySDash),
-    //    //(&IMG_SEQUALS, KeybindTypes::KeySEquals),
-    //];
+      
 
-    //let region = unsafe {Some((X_POS, Y_POS, WIDTH, HEIGHT))};
-    //let min_confidence = Some(0.95);
-    //let tolerance = Some(0);
+    let closest = closest_color(screen_pixel_color);
+    warn!("Closest color: {:?} with distance: {:?}", closest.0, closest.1);
+    use KeybindTypes::*;
     
-    //let found_keybind =
-    //    find_keybinds_parallel(images_with_keybinds, region, min_confidence, tolerance);
-
-    //found_keybind
+    let found_keybind = match closest.0.1 {
+        PixelColors::White => KeybindTypes::NOKEY,
+        PixelColors::DarkGray => Key1,
+        PixelColors::Blue => Key2,
+        PixelColors::Green => Key3,        
+        PixelColors::Black => Key4,
+        PixelColors::Cyan => Key5,
+        PixelColors::Yellow => Key6,
+        PixelColors::Something => Key7,
+        PixelColors::Gray => Key8,
+        PixelColors::Pinkish => Key9,
+        PixelColors::Mint => Key0,
+        PixelColors::DarkRed => KeyDash,
+        PixelColors::DarkGreen => KeyEquals,
+        PixelColors::DarkBlue => KeyQ,
+        PixelColors::Olive => KeyE,
+        PixelColors::Purple => KeyR,
+        PixelColors::Teal => KeyF,
+        PixelColors::OrangeBrownish => KeyZ,
+        PixelColors::DarkPurple => KeyX,
+        PixelColors::LightGreen => KeyC,
+        PixelColors::LightYellow => KeyV,
+        PixelColors::BrightOrange => KeyS1,
+        PixelColors::LightGreen2 => KeyS2,
+        PixelColors::LightBlue => KeyS3,
+        PixelColors::LightPurple => KeyS4,
+        PixelColors::ReddishPurple => KeyS5,
+        PixelColors::OliveDrab => KeyS6,
+        PixelColors::BurntOrange => KeyS7,
+        PixelColors::DarkBlueViolet => KeyS8,
+        PixelColors::VeryDarkBlue => KeyS9,
+        PixelColors::DarkMagenta => KeyS0,
+        PixelColors::MustardYellow => KeySDash,
+        PixelColors::SeaGreen => KeySEquals,
+    };
+    
+    warn!("Found keybind: {:?}", found_keybind);
+    Some(found_keybind)
+    
 }
 
 fn execute_search_process() {
@@ -396,26 +348,15 @@ fn execute_search_process() {
             KeybindTypes::KeyS0 => press_shift_key_sequence(Numrow0Key),
             KeybindTypes::KeySDash => press_shift_key_sequence(MinusKey),
             KeybindTypes::KeySEquals => press_shift_key_sequence(EqualKey),
+            KeybindTypes::NOKEY => {},
         }
     }
 }
 
-fn find_window_by_title(title: &str) -> anyhow::Result<HWND> {
-    //let title_wide: Vec<u16> = OsString::from(title.clone())
-    //    .encode_wide()
-    //    .chain(std::iter::once(0))
-    //    .collect();
-    //let _hwnd = unsafe { FindWindowW(None, title_wide.as_ptr()) };
-    //unsafe { desktop.SetWallpaper(None, &HSTRING::from(&path)) };
+
+fn find_window_by_title(title: &str) -> anyhow::Result<HWND> {  
      unsafe { FindWindowW(None, &HSTRING::from(title)) }
-        .map_err(|e| anyhow::anyhow!(e.message()))
-    
-    //if hwnd.0 == 0 {
-    //    None
-    //} else {
-    //    Some(hwnd)
-    //}
-    //hwnd
+        .map_err(|e| anyhow::anyhow!(e.message())) 
 }
 
 fn get_window_rect(hwnd: HWND) -> Option<RECT> {
@@ -426,5 +367,5 @@ fn get_window_rect(hwnd: HWND) -> Option<RECT> {
         Some(rect)
     } else {
         None
-    }
+    }    
 }

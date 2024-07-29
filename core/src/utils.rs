@@ -1,11 +1,12 @@
-use image::DynamicImage;
+use crate::image_processing::*;
+use derive_more::Display;
+use image::{DynamicImage, Rgba};
 use inputbot::{
     KeySequence,
     KeybdKey::{self, *},
     MouseButton::*,
 };
 use rayon::prelude::*;
-use crate::image_processing::*;
 use std::sync::{Arc, Mutex, MutexGuard};
 use std::{thread::sleep, time::Duration};
 
@@ -88,6 +89,7 @@ pub(crate) fn press_shift_key_sequence(key: KeybdKey) {
 
 #[derive(Debug, Copy, Clone)]
 pub enum KeybindTypes {
+    NOKEY,
     KeyQ,
     KeyE,
     KeyR,
@@ -120,4 +122,377 @@ pub enum KeybindTypes {
     KeyS0,
     KeySDash,
     KeySEquals,
+}
+
+#[derive(Debug, Copy, Clone, Display)]
+#[display(fmt = "r: {:.2}, g: {:.2}, b: {:.2}, a: {:.2}", r, g, b, a)]
+pub struct PixelColor {
+    pub r: f32,
+    pub g: f32,
+    pub b: f32,
+    pub a: f32,
+}
+
+impl PixelColor {
+    pub fn new(r: u8, g: u8, b: u8, a: u8) -> Self {
+        PixelColor {
+            r: r as f32 / 255.0,
+            g: g as f32 / 255.0,
+            b: b as f32 / 255.0,
+            a: a as f32 / 255.0,
+        }
+    }
+
+    pub fn distance(&self, other: &PixelColor) -> f32 {
+        let dr = self.r - other.r;
+        let dg = self.g - other.g;
+        let db = self.b - other.b;
+        let da = self.a - other.a;
+        (dr * dr + dg * dg + db * db + da * da).sqrt()
+    }
+
+    pub fn white() -> PixelColor {
+        PixelColor {
+            r: 1.0,
+            g: 1.0,
+            b: 1.0,
+            a: 1.0,
+        }
+    }
+
+    pub fn green() -> PixelColor {
+        PixelColor {
+            r: 0.0,
+            g: 1.0,
+            b: 0.0,
+            a: 1.0,
+        }
+    }
+
+    pub fn dark_gray() -> PixelColor {
+        PixelColor {
+            r: 0.3,
+            g: 0.3,
+            b: 0.3,
+            a: 1.0,
+        }
+    }
+
+    pub fn blue() -> PixelColor {
+        PixelColor {
+            r: 0.0,
+            g: 0.0,
+            b: 1.0,
+            a: 1.0,
+        }
+    }
+
+    pub fn black() -> PixelColor {
+        PixelColor {
+            r: 0.0,
+            g: 0.0,
+            b: 0.0,
+            a: 1.0,
+        }
+    }
+
+    pub fn cyan() -> PixelColor {
+        PixelColor {
+            r: 0.0,
+            g: 1.0,
+            b: 1.0,
+            a: 1.0,
+        }
+    }
+
+    pub fn yellow() -> PixelColor {
+        PixelColor {
+            r: 1.0,
+            g: 1.0,
+            b: 0.0,
+            a: 1.0,
+        }
+    }
+
+    pub fn something() -> PixelColor {
+        PixelColor {
+            r: 1.0,
+            g: 0.7,
+            b: 0.3,
+            a: 1.0,
+        }
+    }
+
+    pub fn gray() -> PixelColor {
+        PixelColor {
+            r: 0.5,
+            g: 0.5,
+            b: 0.5,
+            a: 1.0,
+        }
+    }
+
+    pub fn pinkish() -> PixelColor {
+        PixelColor {
+            r: 0.75,
+            g: 0.3,
+            b: 0.5,
+            a: 1.0,
+        }
+    }
+
+    pub fn mint() -> PixelColor {
+        PixelColor {
+            r: 0.3,
+            g: 0.9,
+            b: 0.7,
+            a: 1.0,
+        }
+    }
+
+    pub fn dark_red() -> PixelColor {
+        PixelColor {
+            r: 0.6,
+            g: 0.1,
+            b: 0.1,
+            a: 1.0,
+        }
+    }
+
+    pub fn dark_green() -> PixelColor {
+        PixelColor {
+            r: 0.1,
+            g: 0.6,
+            b: 0.1,
+            a: 1.0,
+        }
+    }
+
+    pub fn dark_blue() -> PixelColor {
+        PixelColor {
+            r: 0.1,
+            g: 0.1,
+            b: 0.6,
+            a: 1.0,
+        }
+    }
+
+    pub fn olive() -> PixelColor {
+        PixelColor {
+            r: 0.6,
+            g: 0.6,
+            b: 0.2,
+            a: 1.0,
+        }
+    }
+
+    pub fn purple() -> PixelColor {
+        PixelColor {
+            r: 0.6,
+            g: 0.2,
+            b: 0.6,
+            a: 1.0,
+        }
+    }
+
+    pub fn teal() -> PixelColor {
+        PixelColor {
+            r: 0.2,
+            g: 0.6,
+            b: 0.6,
+            a: 1.0,
+        }
+    }
+
+    pub fn orange_brownish() -> PixelColor {
+        PixelColor {
+            r: 0.8,
+            g: 0.4,
+            b: 0.2,
+            a: 1.0,
+        }
+    }
+
+    pub fn dark_purple() -> PixelColor {
+        PixelColor {
+            r: 0.4,
+            g: 0.2,
+            b: 0.8,
+            a: 1.0,
+        }
+    }
+
+    pub fn light_green() -> PixelColor {
+        PixelColor {
+            r: 0.2,
+            g: 0.8,
+            b: 0.4,
+            a: 1.0,
+        }
+    }
+
+    pub fn light_yellow() -> PixelColor {
+        PixelColor {
+            r: 0.8,
+            g: 0.8,
+            b: 0.4,
+            a: 1.0,
+        }
+    }
+
+    pub fn bright_orange() -> PixelColor {
+        PixelColor {
+            r: 1.0,
+            g: 0.5,
+            b: 0.0,
+            a: 1.0,
+        }
+    }
+
+    pub fn light_green2() -> PixelColor {
+        PixelColor {
+            r: 0.5,
+            g: 1.0,
+            b: 0.0,
+            a: 1.0,
+        }
+    }
+
+    pub fn light_blue() -> PixelColor {
+        PixelColor {
+            r: 0.0,
+            g: 0.5,
+            b: 1.0,
+            a: 1.0,
+        }
+    }
+
+    pub fn reddish_purple() -> PixelColor {
+        PixelColor {
+            r: 1.0,
+            g: 0.0,
+            b: 0.5,
+            a: 1.0,
+        }
+    }
+
+    pub fn olive_drab() -> PixelColor {
+        PixelColor {
+            r: 0.1,
+            g: 0.4,
+            b: 0.0,
+            a: 1.0,
+        }
+    }
+
+    pub fn burnt_orange() -> PixelColor {
+        PixelColor {
+            r: 0.4,
+            g: 0.1,
+            b: 0.0,
+            a: 1.0,
+        }
+    }
+
+    pub fn dark_blue_violet() -> PixelColor {
+        PixelColor {
+            r: 0.1,
+            g: 0.0,
+            b: 0.4,
+            a: 1.0,
+        }
+    }
+
+    pub fn very_dark_blue() -> PixelColor {
+        PixelColor {
+            r: 0.0,
+            g: 0.1,
+            b: 0.4,
+            a: 1.0,
+        }
+    }
+    
+    pub fn light_purple() -> PixelColor {
+        PixelColor {
+            r: 0.5,
+            g: 0.0,
+            b: 1.0,
+            a: 1.0,
+        }
+    }
+
+    pub fn dark_magenta() -> PixelColor {
+        PixelColor {
+            r: 0.4,
+            g: 0.1,
+            b: 0.4,
+            a: 1.0,
+        }
+    }
+
+    pub fn mustard_yellow() -> PixelColor {
+        PixelColor {
+            r: 0.4,
+            g: 0.4,
+            b: 0.1,
+            a: 1.0,
+        }
+    }
+
+    pub fn sea_green() -> PixelColor {
+        PixelColor {
+            r: 0.1,
+            g: 0.4,
+            b: 0.4,
+            a: 1.0,
+        }
+    }
+}
+
+impl From<&Rgba<u8>> for PixelColor {
+    fn from(rgba: &Rgba<u8>) -> Self {
+        PixelColor {
+            r: rgba[0] as f32 / 255.0,
+            g: rgba[1] as f32 / 255.0,
+            b: rgba[2] as f32 / 255.0,
+            a: rgba[3] as f32 / 255.0,
+        }
+    }
+}
+
+#[derive(Debug, Copy, Clone, Display)]
+pub enum PixelColors {
+    White,
+    Green,
+    DarkGray,
+    Blue,
+    Black,
+    Cyan,
+    Yellow,
+    Something,
+    Gray,
+    Pinkish,
+    Mint,
+    DarkRed,
+    DarkGreen,
+    DarkBlue,
+    Olive,
+    Purple,
+    LightPurple,
+    Teal,
+    OrangeBrownish,
+    DarkPurple,
+    LightGreen,
+    LightYellow,
+    BrightOrange,
+    LightGreen2,
+    LightBlue,
+    ReddishPurple,
+    OliveDrab,
+    BurntOrange,
+    DarkBlueViolet,
+    VeryDarkBlue,
+    DarkMagenta,
+    MustardYellow,
+    SeaGreen,
 }
