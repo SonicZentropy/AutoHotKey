@@ -13,7 +13,7 @@ lazy_static! {
 
 // Function that takes a screenshot of a specified area.
 // It takes as parameters the x, y coordinates and the width, height of the desired area.
-fn screenshot(x: u16, y: u16, width: u16, height: u16) -> DynamicImage {
+pub fn screenshot(x: u16, y: u16, width: u16, height: u16) -> DynamicImage {
     // Determine current display size
     let display = size();
     // Ensure the capture area is within the screen size
@@ -65,7 +65,7 @@ fn locate_on_screen(
     tolerance: u8,
 ) -> Option<(u32, u32, u32, u32, f32)> {
     let step_size = 1;
-
+    warn!("Screen height: {:?} img_height: {:?}", screen_height, img_height);
     for y in (0..screen_height - img_height).step_by(step_size) {
         for x in (0..screen_width - img_width).step_by(step_size) {
             let mut matching_pixels = 0;
@@ -90,7 +90,7 @@ fn locate_on_screen(
                     if img_pixel[3] < 128 {
                         continue;
                     }
-
+                    
                     total_pixels += 1;
 
                     if within_tolerance(screen_pixel[0], img_pixel[0], tolerance)

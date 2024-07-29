@@ -31,6 +31,19 @@ In `Hekili/UI.lua Hekili:CreateDisplay( id )` function, replace spell texture wi
 
  ```if false and self.flashReady and conf.flash.enabled and LSF and ( InCombatLockdown() or not conf.flash.combat ) then
                     self.flashTimer = self.flashTimer - elapsed```
+                    
+- Also set a global for the upcoming next recommendation.  This lets my own addon display a pixel square with a specific color for each keybind                    
+                    
+```lua
+  if conf.keybindings.enabled and ( i == 1 or conf.keybindings.queued ) then
+                                b.Keybinding:SetText(keybind)
+                                if i == 1 then
+                                    --print("Setting global keybind up next")
+                                    Zekili.KeybindUpNext = b.Keybind
+                                end
+                            else
+                                b.Keybinding:SetText(nil)
+                            end```
 
 
 ## InputBot Changes
