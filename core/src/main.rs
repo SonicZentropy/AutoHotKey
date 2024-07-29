@@ -253,6 +253,15 @@ impl PixelColor {
             a: 1.0,
         }
     }
+    
+    fn green() -> PixelColor {
+        PixelColor {
+            r: 0.0,
+            g: 1.0,
+            b: 0.0,
+            a: 1.0,
+        }
+    }
 }
 
 impl From<&Rgba<u8>> for PixelColor {
@@ -291,9 +300,14 @@ pub(crate) fn get_next_keybind_from_screen() -> Option<KeybindTypes> {
    
     
     warn!("Screen pixel color: {:?}", screen_pixel_color);
-    warn!("White pixel color: {:?}", white_pixel_color);
-    let res = check_pixel_colors_match(screen_pixel_color, white_pixel_color, 0.05);
-    warn!("Check pixel colors match: {:?}", res);
+    //warn!("White pixel color: {:?}", white_pixel_color);
+    //let res = check_pixel_colors_match(screen_pixel_color, white_pixel_color, 0.05);
+    //warn!("Check pixel colors match WHITE: {:?}", res);
+    
+    let green_pixel_color = PixelColor::green();
+    warn!("Green pixel color: {:?}", green_pixel_color);
+    let res = check_pixel_colors_match(screen_pixel_color, green_pixel_color, 0.05);
+    warn!("Check pixel colors match GREEN: {:?}", res);
     
     None
     
