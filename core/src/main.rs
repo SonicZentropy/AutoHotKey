@@ -189,31 +189,6 @@ impl eframe::App for MyApp {
                 );
                 
                  ui.image(&texture);
-                 
-                 let img_clone = IMG_0.clone();
-                 let inner_image = &*img_clone; // Dereference the Arc to get &DynamicImage
-                 let comparison_img = dynamic_image_to_color_image(inner_image.clone());
-                
-                let texture = ui.ctx().load_texture(
-                    "comparison",
-                    egui::ImageData::Color(Arc::new(comparison_img)),
-                    Default::default(),
-                );
-                
-                 ui.image(&texture);
-                 
-                 let img_clone = IMG_7.clone();
-                 let inner_image = &*img_clone; // Dereference the Arc to get &DynamicImage
-                 let comparison_img = dynamic_image_to_color_image(inner_image.clone());
-                
-                let texture = ui.ctx().load_texture(
-                    "comparison",
-                    egui::ImageData::Color(Arc::new(comparison_img)),
-                    Default::default(),
-                );
-                
-                 ui.image(&texture);
-                
             });
         });
     }
@@ -238,7 +213,6 @@ fn dynamic_image_to_color_image(dynamic_image: DynamicImage) -> ColorImage {
     ColorImage::from_rgba_unmultiplied([width as usize, height as usize], &pixels)
 }
 
-// closest_color(pixel: PixelColor, colors: &[(PixelColor, PixelColors)]) -> (&(pixel_color: PixelColor, pixel_color_name: PixelColors), distance: f32) {
 fn closest_color(pixel: PixelColor) -> (&'static (PixelColor, PixelColors), f32) {
     let closest = COLORS
         .iter()
