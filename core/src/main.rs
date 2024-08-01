@@ -274,11 +274,11 @@ pub(crate) fn get_next_keybind_from_screen() -> Option<KeybindTypes> {
     use KeybindTypes::*;
 
     let found_keybind = match closest.0 .1 {
-        PixelColors::White => KeybindTypes::NOKEY,
+        PixelColors::White => KeybindTypes::Key4,
+        PixelColors::Black => NOKEY,
         PixelColors::DarkGray => Key1,
         PixelColors::Blue => Key2,
         PixelColors::Green => Key3,
-        PixelColors::Black => Key4,
         PixelColors::Cyan => Key5,
         PixelColors::Yellow => Key6,
         PixelColors::Something => Key7,

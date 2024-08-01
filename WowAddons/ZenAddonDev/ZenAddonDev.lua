@@ -40,7 +40,7 @@ local function bxor(a, b)
 end
 
 -- Improved hash function to convert a string to a unique and fairly distributed RGB color
-local function StringToRGB(str)  
+local function StringToRGB(str)
     if str == "1" then
         --print("1 - Dark Gray")
         return 0.3, 0.3, 0.3 -- Dark Gray
@@ -51,8 +51,8 @@ local function StringToRGB(str)
         --print("3 - Green")
         return 0, 1, 0 -- Green
     elseif str == "4" then
-        --print("4 - Black")
-        return 0, 0, 0 -- Black
+        --print("4 - White")
+        return 1, 1, 1 -- White
     elseif str == "5" then
         --print("5 - Cyan")
         return 0, 1, 1 -- Cyan
@@ -138,8 +138,15 @@ local function StringToRGB(str)
         --print("S= - Sea Green")
         return 0.1, 0.4, 0.4 -- Sea Green
     end
-    
-    return 1.0, 1.0, 1.0 -- White
+
+    return 0.0, 0.0, 0.0 -- Black - for do nothing
+end
+
+local function IsPlayerCastingOrChanneling()
+    local isCasting = UnitCastingInfo("player") ~= nil
+    local isChanneling = UnitChannelInfo("player") ~= nil
+
+    return isCasting or isChanneling
 end
 
 if Zekili == nil then
@@ -152,6 +159,7 @@ end
 
 
 
+
 local frame = CreateFrame("Frame", "MyColorSquareFrame", UIParent)
 frame:SetSize(20, 20)  -- width, height
 frame:SetPoint("BOTTOMLEFT") -- position
@@ -160,18 +168,24 @@ frame:SetFrameStrata("FULLSCREEN_DIALOG")
 -- Setting the texture with the desired color
 local texture = frame:CreateTexture(nil, "OVERLAY")
 texture:SetAllPoints(frame) -- fill the entire frame
--- Setting the RGBA color to start at white, which is our "Do nothing" color
 
 texture:SetTexture("Interface/BUTTONS/WHITE8X8")
 texture:SetBlendMode("DISABLE")
---texture:SetColorTexture(1, 1, 1, 1)
-texture:SetVertexColor(1, 1, 1, 1)
+
+-- Black for "do nothing"
+texture:SetVertexColor(0, 0, 0, 1)
 
 
 local function OnUpdate(self, elapsed)
     -- Your code here; 'elapsed' is the time since the last update
     if Zekili == nil then return end
     --print("ZenAddonDev up next: " .. tostring(Zekili.KeybindUpNext or "NOTFOUND"))
+    
+    -- Do nothing if we're currently casting, so we don't clip fists of fury type things
+    if  IsPlayerCastingOrChanneling() then        
+        texture:SetVertexColor(0, 0, 0, 1)
+        return
+    end
     
     local r, g, b = StringToRGB(Zekili.KeybindUpNext or "")
     --print("RGB: " .. tostring(r) .. ", " .. tostring(g) .. ", " .. tostring(b))
