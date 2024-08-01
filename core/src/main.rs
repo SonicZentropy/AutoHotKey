@@ -9,6 +9,7 @@ mod utils;
 use tracing::{info, trace, warn};
 use utils::*;
 
+use derive_more::Display;
 use eframe::{
     egui::{self, ColorImage},
     EventLoopBuilderHook,
@@ -20,7 +21,6 @@ use inputbot::{
     MouseButton::*,
 };
 use rayon::prelude::*;
-use derive_more::Display;
 use std::ffi::OsString;
 use std::os::windows::ffi::OsStrExt;
 use std::os::windows::ffi::OsStringExt;
@@ -29,8 +29,11 @@ use std::{fs::File, io::BufWriter};
 use std::{thread::sleep, time::Duration};
 use tap::prelude::*;
 use tracing_subscriber::{fmt, prelude::*, registry::Registry};
-use windows::{core::HSTRING, Win32::Foundation::{BOOL, HWND, LPARAM, RECT}};
 use windows::Win32::UI::WindowsAndMessaging::{FindWindowW, GetWindowRect};
+use windows::{
+    core::HSTRING,
+    Win32::Foundation::{BOOL, HWND, LPARAM, RECT},
+};
 use winit::platform::windows::EventLoopBuilderExtWindows;
 
 use crate::image_processing::*;
@@ -41,9 +44,11 @@ static mut X_POS_OFFSET: u16 = 10;
 static mut Y_POS_OFFSET: u16 = 15;
 static mut WIDTH: u16 = 5;
 static mut HEIGHT: u16 = 5;
- 
- lazy_static!{
- static ref COLORS: Vec<(PixelColor, PixelColors)> = vec![
+
+static mut CURRENT_KEYBIND: Option<KeybindTypes> = None;
+
+lazy_static! {
+    static ref COLORS: Vec<(PixelColor, PixelColors)> = vec![
         (PixelColor::white(), PixelColors::White),
         (PixelColor::green(), PixelColors::Green),
         (PixelColor::dark_gray(), PixelColors::DarkGray),
@@ -77,9 +82,8 @@ static mut HEIGHT: u16 = 5;
         (PixelColor::mustard_yellow(), PixelColors::MustardYellow),
         (PixelColor::sea_green(), PixelColors::SeaGreen),
     ];
- }
+}
 fn main() -> eframe::Result {
-   
     tracing_subscriber::fmt()
         // enable everything
         .with_max_level(tracing::Level::INFO)
@@ -94,15 +98,18 @@ fn main() -> eframe::Result {
         .with_target(false)
         // sets this to be the default, global collector for this application.
         .init();
-    
+
     let win = find_window_by_title("World of Warcraft").unwrap();
     let rect = get_window_rect(win).unwrap();
     let width = rect.right - rect.left;
     let height = rect.bottom - rect.top;
     warn!("Window Size: {:?}", (width, height));
-    unsafe {X_POS = X_POS_OFFSET + rect.left as u16 ; Y_POS =  (rect.bottom as u16 - HEIGHT - Y_POS_OFFSET) as u16; }
-    
-    unsafe {update_screenshot(Some((X_POS, Y_POS, WIDTH, HEIGHT)))};
+    unsafe {
+        X_POS = X_POS_OFFSET + rect.left as u16;
+        Y_POS = (rect.bottom as u16 - HEIGHT - Y_POS_OFFSET) as u16;
+    }
+
+    unsafe { update_screenshot(Some((X_POS, Y_POS, WIDTH, HEIGHT))) };
 
     Numpad0Key.bind(|| {
         profile!("Full Search Process", execute_search_process());
@@ -129,16 +136,13 @@ fn main() -> eframe::Result {
     eframe::run_native(
         "Dev Tools",
         options,
-        Box::new(|_cc| {
-            Ok(Box::<MyApp>::default())
-        }),
+        Box::new(|_cc| Ok(Box::<MyApp>::default())),
     )
     .unwrap();
-    
+
     info!("Exiting safely!");
     Ok(())
 }
-
 
 #[derive(Default)]
 struct MyApp {}
@@ -157,38 +161,59 @@ impl eframe::App for MyApp {
                     let mut y_pos = Y_POS as f64;
                     let mut width = WIDTH as f64;
                     let mut height = HEIGHT as f64;
-                
+
                     ui.label("X Position");
-                    if ui.add(egui::Slider::new(&mut x_pos, 0.0..=3440.0)).changed() {
+                    if ui
+                        .add(egui::Slider::new(&mut x_pos, 0.0..=3440.0))
+                        .changed()
+                    {
                         X_POS = x_pos as u16;
                     }
-                
+
                     ui.label("Y Position");
-                    if ui.add(egui::Slider::new(&mut y_pos, 0.0..=1440.0)).changed() {
+                    if ui
+                        .add(egui::Slider::new(&mut y_pos, 0.0..=1440.0))
+                        .changed()
+                    {
                         Y_POS = y_pos as u16;
                     }
-                
+
                     ui.label("Width");
                     if ui.add(egui::Slider::new(&mut width, 0.0..=200.0)).changed() {
                         WIDTH = width as u16;
                     }
-                    
+
                     ui.label("Height");
-                    if ui.add(egui::Slider::new(&mut height, 0.0..=200.0)).changed() {
+                    if ui
+                        .add(egui::Slider::new(&mut height, 0.0..=200.0))
+                        .changed()
+                    {
                         HEIGHT = height as u16;
                     }
                 }
-                               
+
                 let screenshot = SCREEN.lock().unwrap().as_ref().unwrap().clone();
                 let color_image = dynamic_image_to_color_image(screenshot);
-                
+
                 let texture = ui.ctx().load_texture(
                     "logo",
                     egui::ImageData::Color(Arc::new(color_image)),
                     Default::default(),
                 );
-                
-                 ui.image(&texture);
+
+                ui.image(&texture);
+
+                // Add spacing between the image and the text
+                ui.add_space(10.0);
+
+                // Safely access and display the CURRENT_KEYBIND
+                unsafe {
+                    if let Some(ref current_keybind) = CURRENT_KEYBIND {
+                        ui.label(format!("CURRENT_KEYBIND: {:?}", current_keybind));
+                    } else {
+                        ui.label("CURRENT_KEYBIND: None");
+                    }
+                }
             });
         });
     }
@@ -216,37 +241,43 @@ fn dynamic_image_to_color_image(dynamic_image: DynamicImage) -> ColorImage {
 fn closest_color(pixel: PixelColor) -> (&'static (PixelColor, PixelColors), f32) {
     let closest = COLORS
         .iter()
-        .min_by(|a, b| pixel.distance(&a.0).partial_cmp(&pixel.distance(&b.0)).unwrap())
+        .min_by(|a, b| {
+            pixel
+                .distance(&a.0)
+                .partial_cmp(&pixel.distance(&b.0))
+                .unwrap()
+        })
         .unwrap();
     let min_distance = pixel.distance(&closest.0);
     (closest, min_distance)
 }
 
-
-
 use windows::Win32::Graphics::Gdi::GetDC;
 use windows::Win32::Graphics::Gdi::GetPixel;
 
 pub(crate) fn get_next_keybind_from_screen() -> Option<KeybindTypes> {
-    let screenshot = unsafe{ screenshot(X_POS, Y_POS, WIDTH, HEIGHT)};
+    let screenshot = unsafe { screenshot(X_POS, Y_POS, WIDTH, HEIGHT) };
     let width = screenshot.width();
     let height = screenshot.height();
     let screen_pixels: Vec<_> = screenshot.pixels().map(|p| p.2.to_rgba()).collect();
-    let screen_idx = unsafe { screen_pixels.get_unchecked( (width /2) as usize + (height /2) as usize) };
+    let screen_idx =
+        unsafe { screen_pixels.get_unchecked((width / 2) as usize + (height / 2) as usize) };
     let screen_pixel = *screen_idx;
-    
+
     let screen_pixel_color = PixelColor::from(&screen_pixel);
-      
 
     let closest = closest_color(screen_pixel_color);
-    warn!("Closest color: {:?} with distance: {:?}", closest.0, closest.1);
+    warn!(
+        "Closest color: {:?} with distance: {:?}",
+        closest.0, closest.1
+    );
     use KeybindTypes::*;
-    
-    let found_keybind = match closest.0.1 {
+
+    let found_keybind = match closest.0 .1 {
         PixelColors::White => KeybindTypes::NOKEY,
         PixelColors::DarkGray => Key1,
         PixelColors::Blue => Key2,
-        PixelColors::Green => Key3,        
+        PixelColors::Green => Key3,
         PixelColors::Black => Key4,
         PixelColors::Cyan => Key5,
         PixelColors::Yellow => Key6,
@@ -277,15 +308,14 @@ pub(crate) fn get_next_keybind_from_screen() -> Option<KeybindTypes> {
         PixelColors::MustardYellow => KeySDash,
         PixelColors::SeaGreen => KeySEquals,
     };
-    
+
     warn!("Found keybind: {:?}", found_keybind);
+    unsafe { CURRENT_KEYBIND = Some(found_keybind) };
     Some(found_keybind)
-    
 }
 
 fn execute_search_process() {
-
-    let region = unsafe {Some((X_POS, Y_POS, WIDTH, HEIGHT))} ;
+    let region = unsafe { Some((X_POS, Y_POS, WIDTH, HEIGHT)) };
     update_screenshot(region);
 
     if let Some(keybind) = get_next_keybind_from_screen() {
@@ -322,15 +352,13 @@ fn execute_search_process() {
             KeybindTypes::KeyS0 => press_shift_key_sequence(Numrow0Key),
             KeybindTypes::KeySDash => press_shift_key_sequence(MinusKey),
             KeybindTypes::KeySEquals => press_shift_key_sequence(EqualKey),
-            KeybindTypes::NOKEY => {},
+            KeybindTypes::NOKEY => {}
         }
     }
 }
 
-
-fn find_window_by_title(title: &str) -> anyhow::Result<HWND> {  
-     unsafe { FindWindowW(None, &HSTRING::from(title)) }
-        .map_err(|e| anyhow::anyhow!(e.message())) 
+fn find_window_by_title(title: &str) -> anyhow::Result<HWND> {
+    unsafe { FindWindowW(None, &HSTRING::from(title)) }.map_err(|e| anyhow::anyhow!(e.message()))
 }
 
 fn get_window_rect(hwnd: HWND) -> Option<RECT> {
@@ -341,5 +369,5 @@ fn get_window_rect(hwnd: HWND) -> Option<RECT> {
         Some(rect)
     } else {
         None
-    }    
+    }
 }
