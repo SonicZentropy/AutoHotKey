@@ -150,7 +150,7 @@ impl PixelColor {
         let da = self.a - other.a;
         (dr * dr + dg * dg + db * db + da * da).sqrt()
     }
-
+    
     pub fn white() -> PixelColor {
         PixelColor {
             r: 1.0,
@@ -159,16 +159,8 @@ impl PixelColor {
             a: 1.0,
         }
     }
-
-    pub fn green() -> PixelColor {
-        PixelColor {
-            r: 0.0,
-            g: 1.0,
-            b: 0.0,
-            a: 1.0,
-        }
-    }
-
+    
+    // Key1
     pub fn dark_gray() -> PixelColor {
         PixelColor {
             r: 0.3,
@@ -177,12 +169,23 @@ impl PixelColor {
             a: 1.0,
         }
     }
-
+    
+    // Key2
     pub fn blue() -> PixelColor {
         PixelColor {
             r: 0.0,
             g: 0.0,
             b: 1.0,
+            a: 1.0,
+        }
+    }
+    
+    // Key3
+    pub fn green() -> PixelColor {
+        PixelColor {
+            r: 0.0,
+            g: 1.0,
+            b: 0.0,
             a: 1.0,
         }
     }

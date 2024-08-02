@@ -2,6 +2,8 @@
 local addon, ns = ...
 local Zekili = _G["Zekili"]
 
+local debugPrint = false
+
 local function dumpTable(tbl, indent)
     indent = indent or ""
 
@@ -153,45 +155,40 @@ if Zekili == nil then
     print("Zekili not loaded!")
 else
     print("Zekili loaded!")
-    --dumpTable(Zekili, " ")
-    --print("Zekili up next: " .. tostring(Zekili.KeybindUpNext or "NOTFOUND"))
 end
 
-
-
-
-local frame = CreateFrame("Frame", "MyColorSquareFrame", UIParent)
-frame:SetSize(20, 20)  -- width, height
-frame:SetPoint("BOTTOMLEFT") -- position
+local frame = CreateFrame("Frame", "TutSquareFrame", UIParent)
+frame:SetSize(20, 20) 
+frame:SetPoint("BOTTOMLEFT")
 frame:SetFrameStrata("FULLSCREEN_DIALOG")
 
--- Setting the texture with the desired color
-local texture = frame:CreateTexture(nil, "OVERLAY")
-texture:SetAllPoints(frame) -- fill the entire frame
-
-texture:SetTexture("Interface/BUTTONS/WHITE8X8")
+local texture = frame:CreateTexture(nil, "ARTWORK")
 texture:SetBlendMode("DISABLE")
+texture:SetAllPoints(frame) 
+texture:SetColorTexture(0, 0, 1)
+texture:SetAlpha(1.0)
 
--- Black for "do nothing"
-texture:SetVertexColor(0, 0, 0, 1)
-
-
+local lastPrintTime = 0
 local function OnUpdate(self, elapsed)
-    -- Your code here; 'elapsed' is the time since the last update
+    -- Accumulate elapsed time
+    lastPrintTime = lastPrintTime + elapsed
+
     if Zekili == nil then return end
-    --print("ZenAddonDev up next: " .. tostring(Zekili.KeybindUpNext or "NOTFOUND"))
-    
+
     -- Do nothing if we're currently casting, so we don't clip fists of fury type things
-    if  IsPlayerCastingOrChanneling() then        
-        texture:SetVertexColor(0, 0, 0, 1)
+    if IsPlayerCastingOrChanneling() then
+        texture:SetColorTexture(0, 0, 1)
         return
     end
-    
+
     local r, g, b = StringToRGB(Zekili.KeybindUpNext or "")
-    --print("RGB: " .. tostring(r) .. ", " .. tostring(g) .. ", " .. tostring(b))
-    --texture:SetColorTexture(r, g, b, 1)
-    texture:SetBlendMode("DISABLE")
-    texture:SetVertexColor(r, g, b, 1)
-    
+
+    if debugPrint and lastPrintTime > 1 then
+        print("Key: >" ..
+        tostring(Zekili.KeybindUpNext) .. "< RGB: " .. tostring(r) .. ", " .. tostring(g) .. ", " .. tostring(b))
+        lastPrintTime = 0
+    end
+    texture:SetColorTexture(r, g, b, 1)
 end
+
 frame:SetScript("OnUpdate", OnUpdate)

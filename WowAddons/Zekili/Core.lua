@@ -1547,7 +1547,7 @@ function Zekili.Update( initial )
 
             for i = 1, numRecs do
                 local chosen_depth = 0
-                
+
                 Queue[ i ] = Queue[ i ] or {}
 
                 local slot = Queue[ i ]

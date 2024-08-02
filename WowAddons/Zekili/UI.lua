@@ -920,7 +920,7 @@ do
 
         elseif id == "AOE" and Zekili:GetToggleState( "mode" ) == "reactive" and Zekili:GetNumTargets() < aoe then
             return 0
-        
+
         elseif zoneType == "pvp" or zoneType == "arena" then
             if not conf.visibility.advanced then return conf.visibility.pvp.alpha end
 
@@ -1008,9 +1008,7 @@ do
                         b.Keybind, b.KeybindFrom = Zekili:GetBindingForAction( a, conf, i )
 
                         if i == 1 or conf.keybindings.queued then
-                            b.Keybinding:SetText(b.Keybind)
-                            --print("Set KEYBIND UP NEXT!")
-                            --Zekili.KeybindUpNext = b.Keybind
+                            b.Keybinding:SetText( b.Keybind )
                         else
                             b.Keybinding:SetText( nil )
                         end
@@ -1160,11 +1158,11 @@ do
                             if conf.keybindings.enabled and ( i == 1 or conf.keybindings.queued ) then
                                 b.Keybinding:SetText(keybind)
                                 if i == 1 then
-                                    --print("Setting global keybind up next")
                                     Zekili.KeybindUpNext = b.Keybind
                                 end
                             else
                                 b.Keybinding:SetText(nil)
+                                Zekili.KeybindUpNext = ""
                             end
 
                             if conf.glow.enabled and ( i == 1 or conf.glow.queued ) and IsSpellOverlayed( ability.id ) then
@@ -1634,7 +1632,7 @@ do
 
         function d:RefreshCooldowns( event )
             local gStart = GetSpellCooldown( 61304 )
-            local cStart = ( select( 4, UnitCastingInfo( "player" ) ) or select( 4, UnitCastingInfo( "player" ) ) or 0 ) / 1000
+            local cStart = ( select( 4, UnitCastingInfo( "player" ) ) or select( 4, UnitChannelInfo( "player" ) ) or 0 ) / 1000
 
             local now = GetTime()
             local conf = Zekili.DB.profile.displays[ self.id ]

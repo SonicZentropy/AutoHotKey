@@ -66,6 +66,7 @@ lazy_static! {
         (PixelColor::olive(), PixelColors::Olive),
         (PixelColor::purple(), PixelColors::Purple),
         (PixelColor::teal(), PixelColors::Teal),
+        (PixelColor::light_purple(), PixelColors::LightPurple),
         (PixelColor::orange_brownish(), PixelColors::OrangeBrownish),
         (PixelColor::dark_purple(), PixelColors::DarkPurple),
         (PixelColor::light_green(), PixelColors::LightGreen),
@@ -263,22 +264,24 @@ pub(crate) fn get_next_keybind_from_screen() -> Option<KeybindTypes> {
     let screen_idx =
         unsafe { screen_pixels.get_unchecked((width / 2) as usize + (height / 2) as usize) };
     let screen_pixel = *screen_idx;
-
+    dbg!(screen_pixel);
+    
     let screen_pixel_color = PixelColor::from(&screen_pixel);
+    //warn!("Screen pixel color: {:?}", screen_pixel_color);
 
     let closest = closest_color(screen_pixel_color);
-    warn!(
-        "Closest color: {:?} with distance: {:?}",
-        closest.0, closest.1
-    );
+    //warn!(
+    //    "Closest color: {:?} with distance: {:?}",
+    //    closest.0, closest.1
+    //);
     use KeybindTypes::*;
 
     let found_keybind = match closest.0 .1 {
-        PixelColors::White => KeybindTypes::Key4,
         PixelColors::Black => NOKEY,
         PixelColors::DarkGray => Key1,
         PixelColors::Blue => Key2,
         PixelColors::Green => Key3,
+        PixelColors::White => KeybindTypes::Key4,        
         PixelColors::Cyan => Key5,
         PixelColors::Yellow => Key6,
         PixelColors::Something => Key7,
@@ -309,7 +312,7 @@ pub(crate) fn get_next_keybind_from_screen() -> Option<KeybindTypes> {
         PixelColors::SeaGreen => KeySEquals,
     };
 
-    warn!("Found keybind: {:?}", found_keybind);
+    info!("Found keybind: {:?}", found_keybind);
     unsafe { CURRENT_KEYBIND = Some(found_keybind) };
     Some(found_keybind)
 }

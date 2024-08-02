@@ -573,7 +573,8 @@ spec:RegisterAuras( {
         id = 32390,
         duration = 16,
         type = "Magic",
-        max_stack = 3,
+        max_stack = function() return talent.drain_soul.enabled and 4 or 2 end,
+        copy = { 453206 }
     },
     -- If the target dies and yields experience or honor, Shadowburn restores ${$245731s1/10} Soul Shard and refunds a charge.
     -- https://wowhead.com/beta/spell=17877
@@ -845,12 +846,6 @@ spec:RegisterStateExpr( "time_to_shard", function ()
 
     return 1 / ( 0.16 / sqrt( num_agony ) * ( num_agony == 1 and 1.15 or 1 ) * num_agony / debuff.agony.tick_time )
 end )
-
-
-local SoulSwapSource = "nobody"
-local SoulSwapCorruption = false
-local SoulSwapAgony = false
-local SoulSwapUnstableAffliction = false
 
 spec:RegisterHook( "COMBAT_LOG_EVENT_UNFILTERED", function( _, subtype, _, sourceGUID, sourceName, _, _, destGUID, destName, destFlags, _, spellID, spellName, _, amount, interrupt, a, b, c, d, offhand, multistrike, ... )
     if sourceGUID == GUID then
