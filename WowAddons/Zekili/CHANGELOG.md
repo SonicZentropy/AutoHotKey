@@ -1,7 +1,12 @@
 # Zekili
 
-## [v11.0.0-1.0.0d](https://github.com/Zekili/zekili/tree/v11.0.0-1.0.0d) (2024-08-01)
-[Full Changelog](https://github.com/Zekili/zekili/compare/v11.0.0-1.0.0c...v11.0.0-1.0.0d) [Previous Releases](https://github.com/Zekili/zekili/releases)
+## [v11.0.0-1.0.4](https://github.com/Zekili/zekili/tree/v11.0.0-1.0.4) (2024-08-09)
+[Full Changelog](https://github.com/Zekili/zekili/compare/v11.0.0-1.0.3...v11.0.0-1.0.4) [Previous Releases](https://github.com/Zekili/zekili/releases)
 
-- Respect Hunter's Mark setting; Sv: Use Harpoon  
-- Fix (some of) trinket proc type expressions  
+- Unholy priority update  
+- Marksmanship priority update  
+- Shadow priority update  
+- Assassin, Outlaw updates  
+- Ret: Fix Templar Slash texture  
+- Survival: Fix Serpent Sting ID, loosen KC requirements  
+- MM uses Counter Shot, not Muzzle  

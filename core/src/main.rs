@@ -84,6 +84,20 @@ lazy_static! {
         (PixelColor::sea_green(), PixelColors::SeaGreen),
     ];
 }
+
+pub(crate) fn update_screen_position() {
+    let win = find_window_by_title("World of Warcraft").unwrap();
+    let rect = get_window_rect(win).unwrap();
+    let width = rect.right - rect.left;
+    let height = rect.bottom - rect.top;
+    warn!("Window Size: {:?}", (width, height));
+    unsafe {
+        X_POS = X_POS_OFFSET + rect.left as u16;
+        Y_POS = (rect.bottom as u16 - HEIGHT - Y_POS_OFFSET) as u16;
+    }
+}
+
+
 fn main() -> eframe::Result {
     tracing_subscriber::fmt()
         // enable everything
@@ -99,16 +113,9 @@ fn main() -> eframe::Result {
         .with_target(false)
         // sets this to be the default, global collector for this application.
         .init();
-
-    let win = find_window_by_title("World of Warcraft").unwrap();
-    let rect = get_window_rect(win).unwrap();
-    let width = rect.right - rect.left;
-    let height = rect.bottom - rect.top;
-    warn!("Window Size: {:?}", (width, height));
-    unsafe {
-        X_POS = X_POS_OFFSET + rect.left as u16;
-        Y_POS = (rect.bottom as u16 - HEIGHT - Y_POS_OFFSET) as u16;
-    }
+    
+    update_screen_position();
+   
 
     unsafe { update_screenshot(Some((X_POS, Y_POS, WIDTH, HEIGHT))) };
 
@@ -128,7 +135,7 @@ fn main() -> eframe::Result {
 
     let options = eframe::NativeOptions {
         viewport: egui::ViewportBuilder::default()
-            .with_inner_size([200.0, 200.0])
+            .with_inner_size([200.0, 250.0])
             //.with_mouse_passthrough(true)
             //.with_transparent(true)
             .with_decorations(true),
@@ -214,6 +221,11 @@ impl eframe::App for MyApp {
                     } else {
                         ui.label("CURRENT_KEYBIND: None");
                     }
+                }
+                
+                // Button that rescans screen position
+                if ui.button("Rescan").clicked() {
+                    update_screen_position();
                 }
             });
         });

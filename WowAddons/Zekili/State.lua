@@ -124,7 +124,7 @@ state.off_hand = {
 
 state.gcd = {}
 
-state.hero_tree = setmetatable( {}, { __index = function( t, k ) return false end } ) -- TODO: Update hero tree detection for 11.0 launch.
+state.hero_tree = setmetatable( {}, { __index = function( t, k ) return state.talent[ k ].enabled end } ) -- TODO: Update hero tree detection for 11.0 launch.
 
 state.history = {
     casts = {},
@@ -2566,7 +2566,7 @@ do
 
                 if totemIcon then
                     -- This is actually a totem; check them.
-                    local present, name, start, duration
+                    local present, name, start, duration, icon
 
                     for i = 1, 5 do
                         present, name, start, duration, icon = GetTotemInfo( i )
@@ -5001,8 +5001,10 @@ do
 
             elseif k == "stack_pct" then
                 if t.remains == 0 then return 0 end
-                if aura then aura.max_stack = max( aura.max_stack or 1, t.count ) end
-                return ( 100 * t.count / aura and aura.max_stack or t.count )
+                if aura then
+                    return ( 100 * t.count / max( aura and aura.max_stack or 1, t.count ) )
+                end
+                return 100
 
             elseif k == "value" then
                 if t.remains == 0 then return 0 end
@@ -5929,7 +5931,7 @@ do
                 elseif type == "CHANNEL_START" then
                     time = start
 
-                elseif type == "CHANNEL_FINISH" or type == "CAST_FINISH" then
+                elseif not time and ( type == "CHANNEL_FINISH" or type == "CAST_FINISH" ) then
                     time = start + ability.cast
 
                 end

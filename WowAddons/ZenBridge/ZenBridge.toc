@@ -1,0 +1,8 @@
+## Interface: 100207
+## Version: 1.0.0
+## Title: ZenBridge
+## Notes: Bridge addon for wow
+## Author: Zentropy
+
+ZenBridge.lua
+

@@ -1,8 +1,0 @@
-## Interface: 100207
-## Version: 1.0.0
-## Title: ZenAddonDev
-## Notes: My first addon
-## Author: YourName
-
-ZenAddonDev.lua
-
