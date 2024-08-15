@@ -11,6 +11,9 @@
 - Set a global for the upcoming next recommendation.  This lets my own addon display a pixel square with a specific color for each keybind
 
 ```lua
+  local ZenBridge = _G["ZenBridge"]
+  
+  
   if conf.keybindings.enabled and ( i == 1 or conf.keybindings.queued ) then
                                 b.Keybinding:SetText(keybind)
                                 if i == 1 then --- NOTE THIS CHECK IS NECESSARY

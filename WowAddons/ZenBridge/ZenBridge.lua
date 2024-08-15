@@ -1,49 +1,14 @@
 -- Creating the main frame
 local addon, ns = ...
+
 local Zekili = _G["Zekili"]
 
 local debugPrint = false
 
 -- Use the _G table to define a global variable
-_G["ZenBridge"] = _G["ZenBridge"] or {}
-_G["ZenBridge"].KeybindUpNext = ""
+--_G["ZenBridge"] = _G[addon] or {}
+--ns.KeybindUpNext = ""
 
-local function dumpTable(tbl, indent)
-    indent = indent or ""
-
-    for key, value in pairs(tbl) do
-        local formatting = indent .. tostring(key) .. ": "
-
-        if type(value) == "table" then
-            print(formatting)
-            dumpTable(value, indent .. "    ")
-        else
-            print(formatting .. tostring(value))
-        end
-    end
-end
-
--- Right shift function
-local function rshift(x, bits)
-    return math.floor(x / (2 ^ bits))
-end
-
--- XOR function
-local function bxor(a, b)
-    local result = 0
-    local power = 1
-    while a > 0 or b > 0 do
-        local a_bit = a % 2
-        local b_bit = b % 2
-        if a_bit ~= b_bit then
-            result = result + power
-        end
-        a = math.floor(a / 2)
-        b = math.floor(b / 2)
-        power = power * 2
-    end
-    return result
-end
 
 -- Improved hash function to convert a string to a unique and fairly distributed RGB color
 local function StringToRGB(str)
@@ -143,6 +108,8 @@ local function StringToRGB(str)
     elseif str == "S=" then
         --print("S= - Sea Green")
         return 0.1, 0.4, 0.4 -- Sea Green
+    elseif str == "NONE" then
+        return 0.0, 0.0, 0.0 -- Black - for do nothing
     end
 
     return 0.0, 0.0, 0.0 -- Black - for do nothing
@@ -151,15 +118,17 @@ end
 local function IsPlayerCastingOrChanneling()
     local isCasting = UnitCastingInfo("player") ~= nil
     local isChanneling = UnitChannelInfo("player") ~= nil
-
+    
     return isCasting or isChanneling
 end
+
 
 if Zekili == nil then
     print("Zekili not loaded!")
 else
     print("Zekili loaded!")
 end
+
 
 local frame = CreateFrame("Frame", "TutSquareFrame", UIParent)
 frame:SetSize(20, 20) 
@@ -184,12 +153,15 @@ local function OnUpdate(self, elapsed)
         texture:SetColorTexture(0, 0, 0)
         return
     end
-
-    local r, g, b = StringToRGB(Zekili.KeybindUpNext or "")
+    
+    local keybindUpNext = Zekili.KeybindUpNext
+    --local keybindUpNext = addon.KeybindUpNext
+    
+    local r, g, b = StringToRGB(keybindUpNext or "NONE")
 
     if debugPrint and lastPrintTime > 1 then
         print("Key: >" ..
-        tostring(Zekili.KeybindUpNext) .. "< RGB: " .. tostring(r) .. ", " .. tostring(g) .. ", " .. tostring(b))
+        tostring(keybindUpNext) .. "< RGB: " .. tostring(r) .. ", " .. tostring(g) .. ", " .. tostring(b))
         lastPrintTime = 0
     end
     texture:SetColorTexture(r, g, b, 1)

@@ -3,7 +3,7 @@
 
 local addon, ns = ...
 local Zekili = _G[addon]
-
+local ZenBridge = _G["ZenBridge"]
 local class = Zekili.Class
 local state = Zekili.State
 
@@ -976,7 +976,7 @@ do
         d.numIcons = conf.numIcons
         d.firstForce = 0
         d.threadLocked = false
-
+        
         local scale = self:GetScale()
         local border = 2
 
@@ -1008,17 +1008,24 @@ do
                         b.Keybind, b.KeybindFrom = Zekili:GetBindingForAction( a, conf, i )
 
                         if i == 1 or conf.keybindings.queued then
-                            b.Keybinding:SetText( b.Keybind )
+                            b.Keybinding:SetText(b.Keybind)
+                            if i == 1 then --- NOTE THIS CHECK IS NECESSARY
+                            print("11111111111111111111111111111111")
+                              Zekili.KeybindUpNext = b.Keybind
+                            
+                            end
                         else
-                            b.Keybinding:SetText( nil )
+                            b.Keybinding:SetText(nil)
+                            Zekili.KeybindUpNext = ""
                         end
                     else
-                        b.Keybinding:SetText( nil )
+                        b.Keybinding:SetText(nil)
+                        Zekili.KeybindUpNext = ""
                     end
                 end
             end
         end
-
+        
         function d:IsThreadLocked()
             return self.threadLocked
         end
@@ -1157,11 +1164,13 @@ do
 
                             if conf.keybindings.enabled and ( i == 1 or conf.keybindings.queued ) then
                                 b.Keybinding:SetText(keybind)
-                                if i == 1 then  --- NOTE THIS CHECK IS NECESSARY
+                                if i == 1 then --- NOTE THIS CHECK IS NECESSARY
                                     Zekili.KeybindUpNext = b.Keybind
+                                    --ZenBridge.KeybindUpNext = b.Keybind
                                 end
                             else
                                 b.Keybinding:SetText(nil)
+                                Zekili.KeybindUpNext = ""
                             end
 
                             if conf.glow.enabled and ( i == 1 or conf.glow.queued ) and IsSpellOverlayed( ability.id ) then
