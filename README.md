@@ -10,6 +10,8 @@
 
 - Set a global for the upcoming next recommendation.  This lets my own addon display a pixel square with a specific color for each keybind
 
+- Each b.Keybinding:SetText(keybind) call in UI.lua has a global set after it, similarly the SetText(nil) gets KeybindUpNext set to "" EXCEPT the ones in d:UpdateKeybindings()
+
 ```lua
   local ZenBridge = _G["ZenBridge"]
   
@@ -21,6 +23,7 @@
                                 end
                             else
                                 b.Keybinding:SetText(nil)
+                                Zekili.KeybindUpNext = ""
                             end```
 
 

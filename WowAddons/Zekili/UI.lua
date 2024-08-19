@@ -1010,17 +1010,15 @@ do
                         if i == 1 or conf.keybindings.queued then
                             b.Keybinding:SetText(b.Keybind)
                             if i == 1 then --- NOTE THIS CHECK IS NECESSARY
-                            print("11111111111111111111111111111111")
-                              Zekili.KeybindUpNext = b.Keybind
-                            
+                              Zekili.KeybindUpNext = b.Keybind                            
                             end
                         else
                             b.Keybinding:SetText(nil)
-                            Zekili.KeybindUpNext = ""
+                            --Zekili.KeybindUpNext = ""
                         end
                     else
                         b.Keybinding:SetText(nil)
-                        Zekili.KeybindUpNext = ""
+                        --Zekili.KeybindUpNext = ""
                     end
                 end
             end
