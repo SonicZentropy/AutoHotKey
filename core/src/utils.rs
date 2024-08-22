@@ -35,15 +35,6 @@ macro_rules! create_image_refs {
 }
 
 create_image_refs! {
-    IMG_Q => "Q",
-    IMG_E => "E",
-    IMG_R => "R",
-    IMG_F => "F",
-    IMG_Z => "Z",
-    IMG_X => "X",
-    IMG_C => "C",
-    IMG_V => "V",
-
     IMG_1 => "1",
     IMG_2 => "2",
     IMG_3 => "3",
@@ -57,6 +48,19 @@ create_image_refs! {
     IMG_DASH => "dash",
     IMG_EQUALS => "equals",
 
+    IMG_Q => "Q",
+    IMG_E => "E",
+    IMG_R => "R",
+    IMG_F => "F",
+    IMG_Z => "Z",
+    IMG_X => "X",
+    IMG_C => "C",
+    IMG_V => "V",
+    IMG_SZ => "SZ",
+    IMG_SX => "SX",
+    IMG_SC => "SC",
+    IMG_SV => "SV",
+
     IMG_S1 => "S1",
     IMG_S2 => "S2",
     IMG_S3 => "S3",
@@ -68,7 +72,20 @@ create_image_refs! {
     IMG_S9 => "S9",
     IMG_S0 => "S0",
     IMG_SDASH => "SDASH",
-    IMG_SEQUALS => "SEQUALS"
+    IMG_SEQUALS => "SEQUALS",
+
+    IMG_C1 => "C1",
+    IMG_C2 => "C2",
+    IMG_C3 => "C3",
+    IMG_C4 => "C4",
+    IMG_C5 => "C5",
+    IMG_C6 => "C6",
+    IMG_C7 => "C7",
+    IMG_C8 => "C8",
+    IMG_C9 => "C9",
+    IMG_C0 => "C0",
+    IMG_CDASH => "CDASH",
+    IMG_CEQUALS => "CEQUALS"
 }
 
 pub(crate) fn press_key(key: KeybdKey) {
@@ -83,6 +100,16 @@ pub(crate) fn press_shift_key_sequence(key: KeybdKey) {
     key.press();
     sleep(Duration::from_millis(20));
     LShiftKey.release();
+    sleep(Duration::from_millis(20));
+    key.release();
+}
+
+pub(crate) fn press_ctrl_key_sequence(key: KeybdKey) {
+    LControlKey.press();
+    sleep(Duration::from_millis(20));
+    key.press();
+    sleep(Duration::from_millis(20));
+    LControlKey.release();
     sleep(Duration::from_millis(20));
     key.release();
 }
@@ -122,6 +149,22 @@ pub enum KeybindTypes {
     KeyS0,
     KeySDash,
     KeySEquals,
+    KeySZ,
+    KeySX,
+    KeySC,
+    KeySV,
+    KeyC1,
+    KeyC2,
+    KeyC3,
+    KeyC4,
+    KeyC5,
+    KeyC6,
+    KeyC7,
+    KeyC8,
+    KeyC9,
+    KeyC0,
+    KeyCDash,
+    KeyCEquals,
 }
 
 #[derive(Debug, Copy, Clone, Display)]
@@ -450,6 +493,151 @@ impl PixelColor {
             a: 1.0,
         }
     }
+    
+    // AI Generated Below
+    pub fn bright_green() -> PixelColor {
+        PixelColor {
+            r: 0.0,
+            g: 1.0,
+            b: 0.5,
+            a: 1.0,
+        }
+    }
+
+    pub fn dark_yellow() -> PixelColor {
+        PixelColor {
+            r: 0.5,
+            g: 0.5,
+            b: 0.0,
+            a: 1.0,
+        }
+    }
+
+    pub fn bright_purple() -> PixelColor {
+        PixelColor {
+            r: 0.5,
+            g: 0.0,
+            b: 0.5,
+            a: 1.0,
+        }
+    }
+
+    pub fn bright_cyan() -> PixelColor {
+        PixelColor {
+            r: 0.0,
+            g: 0.5,
+            b: 0.5,
+            a: 1.0,
+        }
+    }
+
+    pub fn dark_mint() -> PixelColor {
+        PixelColor {
+            r: 0.0,
+            g: 0.5,
+            b: 0.4,
+            a: 1.0,
+        }
+    }
+
+    pub fn bright_blue() -> PixelColor {
+        PixelColor {
+            r: 0.0,
+            g: 0.5,
+            b: 0.75,
+            a: 1.0,
+        }
+    }
+
+    pub fn olive_green() -> PixelColor {
+        PixelColor {
+            r: 0.5,
+            g: 0.75,
+            b: 0.0,
+            a: 1.0,
+        }
+    }
+
+    pub fn light_olive() -> PixelColor {
+        PixelColor {
+            r: 0.75,
+            g: 0.75,
+            b: 0.25,
+            a: 1.0,
+        }
+    }
+
+    pub fn darker_red() -> PixelColor {
+        PixelColor {
+            r: 0.5,
+            g: 0.0,
+            b: 0.0,
+            a: 1.0,
+        }
+    }
+
+    pub fn light_brown() -> PixelColor {
+        PixelColor {
+            r: 0.5,
+            g: 0.25,
+            b: 0.0,
+            a: 1.0,
+        }
+    }
+
+    pub fn dark_cyan() -> PixelColor {
+        PixelColor {
+            r: 0.0,
+            g: 0.25,
+            b: 0.5,
+            a: 1.0,
+        }
+    }
+
+    pub fn light_pink() -> PixelColor {
+        PixelColor {
+            r: 1.0,
+            g: 0.75,
+            b: 0.75,
+            a: 1.0,
+        }
+    }
+
+    pub fn bright_mint() -> PixelColor {
+        PixelColor {
+            r: 0.0,
+            g: 1.0,
+            b: 0.75,
+            a: 1.0,
+        }
+    }
+
+    pub fn light_orange() -> PixelColor {
+        PixelColor {
+            r: 1.0,
+            g: 0.5,
+            b: 0.25,
+            a: 1.0,
+        }
+    }
+
+    pub fn dark_black() -> PixelColor {
+        PixelColor {
+            r: 0.25,
+            g: 0.25,
+            b: 0.25,
+            a: 1.0,
+        }
+    }
+
+    pub fn light_blue_green() -> PixelColor {
+        PixelColor {
+            r: 0.25,
+            g: 1.0,
+            b: 0.75,
+            a: 1.0,
+        }
+}
 }
 
 impl From<&Rgba<u8>> for PixelColor {
@@ -498,4 +686,21 @@ pub enum PixelColors {
     DarkMagenta,
     MustardYellow,
     SeaGreen,
+    // AI Generated Below
+    BrightGreen,
+    DarkYellow,
+    BrightPurple,
+    BrightCyan,
+    DarkMint,
+    BrightBlue,
+    OliveGreen,
+    LightOlive,
+    DarkerRed,
+    LightBrown,
+    DarkCyan,
+    LightPink,
+    BrightMint,
+    LightOrange,
+    DarkBlack,
+    LightBlueGreen
 }

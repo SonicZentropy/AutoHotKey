@@ -110,6 +110,55 @@ local function StringToRGB(str)
         return 0.1, 0.4, 0.4 -- Sea Green
     elseif str == "NONE" then
         return 0.0, 0.0, 0.0 -- Black - for do nothing
+    -- AI Generated Below
+    elseif str == "SZ" then
+        --print("SZ - Bright Green")
+        return 0, 1, 0.5 -- Bright Green
+    elseif str == "SX" then
+        --print("SX - Dark Yellow")
+        return 0.5, 0.5, 0 -- Dark Yellow
+    elseif str == "SC" then
+        --print("SC - Bright Purple")
+        return 0.5, 0, 0.5 -- Bright Purple
+    elseif str == "SV" then
+        --print("SV - Bright Cyan")
+        return 0, 0.5, 0.5 -- Bright Cyan
+    elseif str == "C1" then
+        --print("C1 - Dark Mint")
+        return 0, 0.5, 0.4 -- Dark Mint
+    elseif str == "C2" then
+        --print("C2 - Bright Blue")
+        return 0, 0.5, 0.75 -- Bright Blue
+    elseif str == "C3" then
+        --print("C3 - Olive Green")
+        return 0.5, 0.75, 0 -- Olive Green
+    elseif str == "C4" then
+        --print("C4 - Light Olive")
+        return 0.75, 0.75, 0.25 -- Light Olive
+    elseif str == "C5" then
+        --print("C5 - Dark Red")
+        return 0.5, 0, 0 -- Darker Red
+    elseif str == "C6" then
+        --print("C6 - Light Brown")
+        return 0.5, 0.25, 0 -- Light Brown
+    elseif str == "C7" then
+        --print("C7 - Dark Cyan")
+        return 0, 0.25, 0.5 -- Dark Cyan
+    elseif str == "C8" then
+        --print("C8 - Light Pink")
+        return 1, 0.75, 0.75 -- Light Pink
+    elseif str == "C9" then
+        --print("C9 - Bright Mint")
+        return 0, 1, 0.75 -- Bright Mint
+    elseif str == "C0" then
+        --print("C0 - Light Orange")
+        return 1, 0.5, 0.25 -- Light Orange
+    elseif str == "C-" then
+        --print("C- - Dark Black")
+        return 0.25, 0.25, 0.25 -- Dark Black
+    elseif str == "C=" then
+        --print("C= - Light Blue Green")
+        return 0.25, 1, 0.75 -- Light Blue Green
     end
 
     return 0.0, 0.0, 0.0 -- Black - for do nothing

@@ -82,6 +82,23 @@ lazy_static! {
         (PixelColor::dark_magenta(), PixelColors::DarkMagenta),
         (PixelColor::mustard_yellow(), PixelColors::MustardYellow),
         (PixelColor::sea_green(), PixelColors::SeaGreen),
+        // AI Generated Below
+        (PixelColor::bright_green(), PixelColors::BrightGreen),
+        (PixelColor::dark_yellow(), PixelColors::DarkYellow),
+        (PixelColor::bright_purple(), PixelColors::BrightPurple),
+        (PixelColor::bright_cyan(), PixelColors::BrightCyan),
+        (PixelColor::dark_mint(), PixelColors::DarkMint),
+        (PixelColor::bright_blue(), PixelColors::BrightBlue),
+        (PixelColor::olive_green(), PixelColors::OliveGreen),
+        (PixelColor::light_olive(), PixelColors::LightOlive),
+        (PixelColor::darker_red(), PixelColors::DarkerRed),
+        (PixelColor::light_brown(), PixelColors::LightBrown),
+        (PixelColor::dark_cyan(), PixelColors::DarkCyan),
+        (PixelColor::light_pink(), PixelColors::LightPink),
+        (PixelColor::bright_mint(), PixelColors::BrightMint),
+        (PixelColor::light_orange(), PixelColors::LightOrange),
+        (PixelColor::dark_black(), PixelColors::DarkBlack),
+        (PixelColor::light_blue_green(), PixelColors::LightBlueGreen),
     ];
 }
 
@@ -96,7 +113,6 @@ pub(crate) fn update_screen_position() {
         Y_POS = (rect.bottom as u16 - HEIGHT - Y_POS_OFFSET) as u16;
     }
 }
-
 
 fn main() -> eframe::Result {
     tracing_subscriber::fmt()
@@ -113,13 +129,13 @@ fn main() -> eframe::Result {
         .with_target(false)
         // sets this to be the default, global collector for this application.
         .init();
-    
+
     update_screen_position();
-   
 
     unsafe { update_screenshot(Some((X_POS, Y_POS, WIDTH, HEIGHT))) };
 
     Numpad0Key.bind(|| {
+        info!("In Numpad0Key down bind");
         profile!("Full Search Process", execute_search_process());
         //fastrace::flush();
     });
@@ -222,7 +238,7 @@ impl eframe::App for MyApp {
                         ui.label("CURRENT_KEYBIND: None");
                     }
                 }
-                
+
                 // Button that rescans screen position
                 if ui.button("Rescan").clicked() {
                     update_screen_position();
@@ -277,7 +293,7 @@ pub(crate) fn get_next_keybind_from_screen() -> Option<KeybindTypes> {
         unsafe { screen_pixels.get_unchecked((width / 2) as usize + (height / 2) as usize) };
     let screen_pixel = *screen_idx;
     dbg!(screen_pixel);
-    
+
     let screen_pixel_color = PixelColor::from(&screen_pixel);
     //warn!("Screen pixel color: {:?}", screen_pixel_color);
 
@@ -288,12 +304,12 @@ pub(crate) fn get_next_keybind_from_screen() -> Option<KeybindTypes> {
     //);
     use KeybindTypes::*;
 
-    let found_keybind = match closest.0 .1 {
+    let found_keybind = match closest.0.1 {
         PixelColors::Black => NOKEY,
         PixelColors::DarkGray => Key1,
         PixelColors::Blue => Key2,
         PixelColors::Green => Key3,
-        PixelColors::White => KeybindTypes::Key4,        
+        PixelColors::White => KeybindTypes::Key4,
         PixelColors::Cyan => Key5,
         PixelColors::Yellow => Key6,
         PixelColors::Something => Key7,
@@ -322,6 +338,22 @@ pub(crate) fn get_next_keybind_from_screen() -> Option<KeybindTypes> {
         PixelColors::DarkMagenta => KeyS0,
         PixelColors::MustardYellow => KeySDash,
         PixelColors::SeaGreen => KeySEquals,
+        PixelColors::BrightGreen => KeySZ,
+        PixelColors::DarkYellow => KeySX,
+        PixelColors::BrightPurple => KeySC,
+        PixelColors::BrightCyan => KeySV,
+        PixelColors::DarkMint => KeyC1,
+        PixelColors::BrightBlue => KeyC2,
+        PixelColors::OliveGreen => KeyC3,
+        PixelColors::LightOlive => KeyC4,
+        PixelColors::DarkerRed => KeyC5,
+        PixelColors::LightBrown => KeyC6,
+        PixelColors::DarkCyan => KeyC7,
+        PixelColors::LightPink => KeyC8,
+        PixelColors::BrightMint => KeyC9,
+        PixelColors::LightOrange => KeyC0,
+        PixelColors::DarkBlack => KeyCDash,
+        PixelColors::LightBlueGreen => KeyCEquals,
     };
 
     info!("Found keybind: {:?}", found_keybind);
@@ -368,6 +400,22 @@ fn execute_search_process() {
             KeybindTypes::KeySDash => press_shift_key_sequence(MinusKey),
             KeybindTypes::KeySEquals => press_shift_key_sequence(EqualKey),
             KeybindTypes::NOKEY => {}
+            KeybindTypes::KeySZ => press_shift_key_sequence(ZKey),
+            KeybindTypes::KeySX => press_shift_key_sequence(XKey),
+            KeybindTypes::KeySC => press_shift_key_sequence(CKey),
+            KeybindTypes::KeySV => press_shift_key_sequence(VKey),
+            KeybindTypes::KeyC1 => press_ctrl_key_sequence(Numrow1Key),
+            KeybindTypes::KeyC2 => press_ctrl_key_sequence(Numrow2Key),
+            KeybindTypes::KeyC3 => press_ctrl_key_sequence(Numrow3Key),
+            KeybindTypes::KeyC4 => press_ctrl_key_sequence(Numrow4Key),
+            KeybindTypes::KeyC5 => press_ctrl_key_sequence(Numrow5Key),
+            KeybindTypes::KeyC6 => press_ctrl_key_sequence(Numrow6Key),
+            KeybindTypes::KeyC7 => press_ctrl_key_sequence(Numrow7Key),
+            KeybindTypes::KeyC8 => press_ctrl_key_sequence(Numrow8Key),
+            KeybindTypes::KeyC9 => press_ctrl_key_sequence(Numrow9Key),
+            KeybindTypes::KeyC0 => press_ctrl_key_sequence(Numrow0Key),
+            KeybindTypes::KeyCDash => press_ctrl_key_sequence(MinusKey),
+            KeybindTypes::KeyCEquals => press_ctrl_key_sequence(EqualKey),            
         }
     }
 }
