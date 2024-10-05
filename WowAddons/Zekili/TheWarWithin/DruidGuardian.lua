@@ -160,7 +160,7 @@ spec:RegisterTalents( {
     untamed_savagery              = { 82152, 372943, 1 }, -- Increases the damage and radius of Thrash by 25%.
     ursocs_endurance              = { 82130, 393611, 1 }, -- Increases the duration of Barkskin and Ironfur by 2.0 sec.
     ursocs_fury                   = { 82151, 377210, 1 }, -- Thrash and Maul grant you an absorb shield for 25% of the damage dealt for 15 sec.
-    ursocs_guidance               = { 82135, 393414, 1 }, --  Incarnation: Guardian of Ursoc: Every 25 Rage you spend reduces the cooldown of Incarnation: Guardian of Ursoc by 1 sec.  Convoke the Spirits: Convoke the Spirits' cooldown is reduced by 50% and its duration and number of spells cast is reduced by 25%. Convoke the Spirits has an increased chance to use an exceptional spell or ability.
+    ursocs_guidance               = { 82135, 393414, 1 }, -- Incarnation: Guardian of Ursoc: Every 25 Rage you spend reduces the cooldown of Incarnation: Guardian of Ursoc by 1 sec.  Convoke the Spirits: Convoke the Spirits' cooldown is reduced by 50% and its duration and number of spells cast is reduced by 25%. Convoke the Spirits has an increased chance to use an exceptional spell or ability.
     vicious_cycle                 = { 82158, 371999, 1 }, -- Mangle increases the damage of your next cast of Maul or Raze, and casting Maul or Raze increases the damage of your next Mangle by 15%. Stacks up to 3.
     vulnerable_flesh              = { 82159, 372618, 2 }, -- Maul and Raze have an additional 30% chance to critically strike.
 
@@ -240,7 +240,7 @@ spec:RegisterAuras( {
     -- Armor increased by $w4%.; Stamina increased by $1178s2%.; Immune to Polymorph effects.$?$w13<0[; Arcane damage taken reduced by $w14% and all other magic damage taken reduced by $w13%.][]
     barkskin = {
         id = 22812,
-        duration = function() return ( talent.improved_barkskin.enabled and 12 or 8 ) + talent.ursocs_endurance.rank end,
+        duration = function() return ( talent.improved_barkskin.enabled and 12 or 8 ) + ( talent.ursocs_endurance.enabled and 2 or 0 ) end,
         type = "Magic",
         max_stack = 1
     },
@@ -331,6 +331,16 @@ spec:RegisterAuras( {
         mechanic = "root",
         type = "Magic",
         max_stack = 1
+    },
+    feline_potential = {
+        id = 441702,
+        duration = 15,
+        max_stack = 1
+    },
+    feline_potential_counter = {
+        id = 441701,
+        duration = 3600,
+        max_stack = 6
     },
     -- Bleeding for $w2 damage every $t2 sec.
     -- https://wowhead.com/beta/spell=274838
@@ -478,7 +488,7 @@ spec:RegisterAuras( {
     -- https://wowhead.com/beta/spell=192081
     ironfur = {
         id = 192081,
-        duration = function() return ( buff.guardian_of_elune.up and 9 or 7 ) + talent.ursocs_endurance.rank end,
+        duration = function() return 7 + ( buff.guardian_of_elune.up and 3 or 0 ) + ( talent.ursocs_endurance.enabled and 2 or 0 ) end,
         max_stack = 5,
     },
     -- Agility increased by $w1% and armor granted by Ironfur increased by $w2%.
@@ -560,6 +570,11 @@ spec:RegisterAuras( {
     rage_of_the_sleeper = {
         id = 200851,
         duration = 8,
+        max_stack = 1
+    },
+    ravage = {
+        id = 441602,
+        duration = 15,
         max_stack = 1
     },
     -- Heals $w2 every $t2 sec.
@@ -885,6 +900,10 @@ end )
 spec:RegisterStateFunction( "shift", function( form )
     if conduit.tireless_pursuit.enabled and ( buff.cat_form.up or buff.travel_form.up ) then applyBuff( "tireless_pursuit" ) end
 
+    if buff.bear_form.up and form == "cat_form" and talent.wildshape_mastery.enabled then
+        applyBuff( "wildshape_mastery" )
+    end
+
     removeBuff( "cat_form" )
     removeBuff( "bear_form" )
     removeBuff( "travel_form" )
@@ -893,6 +912,12 @@ spec:RegisterStateFunction( "shift", function( form )
     removeBuff( "aquatic_form" )
     removeBuff( "stag_form" )
     applyBuff( form )
+
+    if form == "cat_form" and buff.feline_potential_counter.stack_pct == 100 then
+        applyBuff( "feline_potential" )
+        removeBuff( "feline_potential_counter" )
+        gain( 5, "combo_points" )
+    end
 end )
 
 spec:RegisterStateExpr( "ironfur_damage_threshold", function ()
@@ -1028,11 +1053,13 @@ end )
 
 
 spec:RegisterHook( "spend", function( amt, resource )
-    if talent.after_the_wildfire.enabled and resource == "rage" and amt > 0 then
-        buff.after_the_wildfire.v1 = buff.after_the_wildfire.v1 - amt
-        if buff.after_the_wildfire.v1 < 0 then
-            -- Heal ticked.
-            buff.after_the_wildfire.v1 = buff.after_the_wildfire.v1 + 200
+    if resource == "rage" and amt > 0 then
+        if talent.after_the_wildfire.enabled and buff.after_the_wildfire.up then
+            buff.after_the_wildfire.v1 = buff.after_the_wildfire.v1 - amt
+            if buff.after_the_wildfire.v1 < 0 then
+                -- Heal ticked.
+                buff.after_the_wildfire.v1 = buff.after_the_wildfire.v1 + 200
+            end
         end
     end
 end )
@@ -1187,6 +1214,7 @@ spec:RegisterAbilities( {
 
         handler = function ()
             shift( "cat_form" )
+
             if pvptalent.master_shapeshifter.enabled and talent.feral_affinity.enabled then
                 applyBuff( "master_shapeshifter_feral" )
             end
@@ -1465,6 +1493,8 @@ spec:RegisterAbilities( {
         end,
 
         usable = function ()
+            -- allow offensive ironfur with specific talents
+            if talent.thorns_of_iron.enabled and talent.reinforced_fur.enabled then return true end
             if settings.ironfur_damage_threshold > 0 and incoming_damage_5s < health.max * settings.ironfur_damage_threshold * 0.01 * ( solo and 0.5 or 1 ) then return false, "player has not taken preferred damage in 5s" end
             return true
         end,
@@ -1536,6 +1566,7 @@ spec:RegisterAbilities( {
 
         handler = function ()
             if talent.fluid_form.enabled and buff.bear_form.down then shift( "bear_form" ) end
+            if talent.wildpower_surge.enabled then addStack( "feline_potential_counter" ) end
 
             removeBuff( "vicious_cycle_mangle" )
             addStack( "vicious_cycle_maul" )
@@ -1571,7 +1602,8 @@ spec:RegisterAbilities( {
 
     -- Talent: Maul the target for $s2 Physical damage.
     maul = {
-        id = 6807,
+        id = function() return buff.ravage.up and 441605 or 6807 end,
+        known = 6807,
         cast = 0,
         cooldown = 0,
         gcd = "spell",
@@ -1585,6 +1617,7 @@ spec:RegisterAbilities( {
 
         talent = "maul",
         startsCombat = true,
+        texture = function() return buff.ravage.up and 5927623 or 132136 end,
         form = "bear_form",
 
         usable = function ()
@@ -1596,6 +1629,8 @@ spec:RegisterAbilities( {
             addStack( "vicious_cycle_mangle" )
             removeBuff( "savage_combatant" )
             removeBuff( "vicious_cycle_maul" )
+            removeBuff( "ravage" )
+
             if buff.tooth_and_claw.up then
                 removeStack( "tooth_and_claw" )
                 applyDebuff( "target", "tooth_and_claw_debuff" )
@@ -1605,6 +1640,8 @@ spec:RegisterAbilities( {
             if talent.ursocs_fury.enabled then applyBuff( "ursocs_fury" ) end
             if pvptalent.sharpened_claws.enabled or essence.conflict_and_strife.major then applyBuff( "sharpened_claws" ) end
         end,
+
+        copy = { 6807, "ravage", 441605}
     },
 
     -- Talent: Invokes the spirit of Ursoc to stun the target for $d. Usable in all shapeshift forms.
@@ -1706,6 +1743,9 @@ spec:RegisterAbilities( {
             if debuff.thrash_bear.stack < 2 then return false, "target has fewer than 2 thrash stacks" end
             return true
         end,
+
+        cycle = "thrash_bear",
+        cycle_to = true,
 
         handler = function ()
             if debuff.thrash_bear.count > 2 then debuff.thrash_bear.count = debuff.thrash_bear.count - 2
@@ -1954,8 +1994,8 @@ spec:RegisterAbilities( {
         id = 61336,
         cast = 0,
         charges = function() return talent.improved_survival_instincts.enabled and 2 or nil end,
-        cooldown = function () return ( essence.vision_of_perfection.enabled and 0.87 or 1 ) * ( talent.survival_of_the_fittest.enabled and ( 2/3 ) or 1 ) * 180 end,
-        recharge = function () return talent.improved_survival_instincts.enabled and ( ( essence.vision_of_perfection.enabled and 0.87 or 1 ) * ( talent.survival_of_the_fittest.enabled and ( 2/3 ) or 1 ) * 180 ) or nil end,
+        cooldown = function () return ( essence.vision_of_perfection.enabled and 0.87 or 1 ) * ( 1 - 0.12 * talent.survival_of_the_fittest.rank ) * 180 end,
+        recharge = function () return talent.improved_survival_instincts.enabled and ( ( essence.vision_of_perfection.enabled and 0.87 or 1 ) * ( 1 - 0.12 * talent.survival_of_the_fittest.rank ) * 180 ) or nil end,
         gcd = "off",
         school = "physical",
 
@@ -2277,4 +2317,4 @@ spec:RegisterSetting( "owlweave_bear", false, {
 } ) ]]
 
 
-spec:RegisterPack( "Guardian", 20240730, [[Zekili:TwztVXPouy4FlrrAuQUnmazANKOKU4Exu1SOBOs3Dag4WG1y(q(JzuII8V9EmmFydmTDr3Ga7x)Eo2NJFioi(hXrfeje)9q)Wv(RVZ3Z)HW7d(uCK81oioQJKVLSbFPHuJp)QIWlOKgZeVYAjfgdeTkEoozLu2jEC5YnuzLkZlVTEPGwRyejTTjNtkLMVZxghLPOm53AIZMl6RxfhruYQwECueT()qJPffWGAqKhhzuFR)6BdV7rD6pQaD6)t44dmUum1yuHu0VZGsIIjXx)E)oLKBYemH3QySKmIOkocAizmOi(FJLyAyRsjGeQeQfJeDNTiAtoH3qg(Wr2kBzzaxa8TJK8jBjvaHltAltKvqYEkRyK4pBlgJOIdIKD0nu2iHRTfM32SRDl0BQOJYPYXBN7nYppsuoQb4usFgXKvED5sD6t601(NTLdnWEcZS(h(ZxVoDHo9gDAMQS0Re94nkuKWHnOB8(ZqVI29n603FxNYX2opScsZPdRpex)h6TqsA2sB2CoDM1ltYf4FXSBisOBZNMtIHqX3r3ryj0gHel74bPjab)1cqgHVvGd1BRtNyNITd98nyuPlWPv0CGDS)rWaOd4J170tYuneEsgqQhlZPVmJJxNyyMMuQMy4NV4U)W27yj)QdvDkVTb9Xt19RQYw3Vg03hS1xmyO7sAU7XPSIJxWn7VHvpUp)OU6wmcuoy7hhWokrLrlo8R5m8ceHVbWAossmUD5UEJV7GeSnSMccD6x0Pb2fjSkAin(2NX1iMAmkkWvqZg24YFOttI9(DKoN2eXEAhmJmj2NXbeANrMsmRXEZFbBk0L1HTvLT86X(JraBJfgrha(H4)z2J8tSWHyPVv31YLqb2eOthCtN2dZ90VyYU2sQ5qyykH3P09FEE54eu)YCQoLA6xojah(8)dSh9e)3EqlEV9Wh472dnHNBpPd)2EIz416xU(6JNh9zRKu3bfMBK8w8)EJMEdVDVJLhy1FKw(8zs0tifYsZSa0jRyXn)gY97VBFF(Pq)pS4ihW(4Ecj1ejZ6x4gUzw7ri5F(kobpDotMYkTN(mA0j22KqNMIbiLjNoKalU5Qr4UPhn2oyD514YvhOz2soYP(Odp65aJElEL7U8nWmTls6lbo2IOh3VnKMlKBovrloIOdYn)SDv)T84F(]] )
+spec:RegisterPack( "Guardian", 20240921, [[Zekili:vZ1wpkoow4Fl5fe0D1ujbOUmc4HzL2vt)qVslJ08gqiyGOkKGsCQAQsO8BFp2oxC8Ledv1DpT0OPBsSp(C97CS9PZsNL)5YfB9WOLFZ12DS9JUodTVB8Oj3VCb(1tOLlo55)K3E4Ve5De())NmVKTbErKx8AyS3wcbsJZs8HxEaJpL(B3E7(a8HSnd9JpEBAWXSqpCqCKFI3om53(3UCXMSGq8FeTCJ6v)ULl8YWhItwUyrWX)fq5GTBrSHJs9xUGm8Vy)4xCD(T81)p0ZOe8T7c(78VM)1Yx5mbE1VJ8sYx)VJtoMVook8181b7YxhfNVEh9zbP5R98XbpJQN6dFXD8n5Rj)jHeegiFD2jcFwpO7)I7i4L)5bu(6)ISg)fiZbGAjmifNsukhdWb7Pso8RVrv0OiVnHOTl)9Ll8tcWOKapqn7f9uq0(819YxBLV(zp4PWOggSBfrlTL(IGiqzcJA1wVJG1y1eGVNdpojoAxws5tXhsqPhIlMZMSD7gwmIHjOJEbrWSMMVEu(6pLV(GxkiqsdmfdgC6WMagbFk)VO4LlXGHsRGCa5fIpm8KpMo974MFcAFs8l4decm66iqe6fVqY8hBKMSfATdi2BbOTRaUciBcZgbuEY1q57N0MbYEOdtzZM0rV)UMp24L8ukqwYsFN2LMACsZsEo4zVWvGjedlfoD424xIQTEL0Q(XIka72zt3jA5t5fh4ymWzqSv7U2uwlX7zyLgMDIYaSGTvGE)yaIT4o1l1rVSW2DY6NVg7fIIWdbwnbVkEh41Jw9ceOmSycLrsfJlj4u9BgKV(8zdjbL73HcdIqRofJHjeakb)4SiGxkJtMbQwLcgjoRwWKwjvrcvAHyiAlibjPkjA8veGRsTz)Y)JiUb(v(OyVK9i8qCWrauiE12aett7wPbG5KG2rGlilVbtAGoP8(Ijt1OaiXReXmYdNLGK07)tGFhl4FOLLb1)R(HaTPRtkXrVv4Ng8xbpVngyWdjEPhwrmE8ORnuBHWiiHL(HEVKcHmrmxlxgH0tLXMqfNUOYirvstcXRsk9r5iK5qN(XqUjaGcyna7PiAineHoH4Yqb2Wh4qjtGeQHeMPibuhqL8XiQXAVNqGYxeMfbJhM0rEIcJ6bdGGibYNIFbLScWi3JKrp89WnIxvcPqFzHBUvx0UMZ9JJEo(jethEkaypcU83EKx62GssrjpjiAo28Jbq09sIyjbfgNEK9QazwTd1Ky1(IcejM3SK0y)6usvM)2hpVJajTvHQPW6sfiMdmJWSaDIhfDgJTlrgR1LkuvQGMmqwiMk1mtHr8dIvmC0IRgxaQIqmQnT1uRQfRkbUBDZajFpiYLUU6l7ZGQeamkx5QeC0Jfxkl44y8HvErBPqzLqEZRWevni(sLHH9581793skjQuLROeDgkBN13K49gIY56XlLiWmHCfmelFVqcOOmSGaWSJiCPyj9Cln4LUfPsJuyvSe2QqXJR8aNyxoSQi9tEzPOvS1SwXQvhA3yDuLLO0FSArF0UD6vGQ(lGGPUEdN716Quto(yhgUSiiuB(SgNwEeVFOQbxHnPbr9YWpD)PX6M5D5uAullBIS1acDtXWwm3d7JsnrDC6MQMrYFeQ4wdfnuNoOrMbUttWrFzwFuE3wMXI)OuN)AYo6nGp2zoyZlcUN6TrxA4VkLHfBJpKtbOXg04eNDOKy)G4S0vBaENE(d2)4KkRwemRwKnH6w)W4NRslRt1cQDQ(u)oj6e655aMTHLCKu7h3zVmsP4mxL3nffrQCPYkYC1xxmLl2hN0w1PooxuzY6SpINU00YtxY0nfE0lAFitG0xWDBLO0xN2K3xtrvuQpUfHcTVAt5afgm9f)Bwrbtjfw7AUTO6K(S0eXvI049eAO4zvPnGR6exYc2YOMKnn9qcIEEHU631Wpjr(9iwe9evQ64aDextdinxuG(QNBd4P5XB8DztKsQUQ95XdA9MUZq9hhJjws6)iykJ0wduCXc6R3SduXwW(Uw(Rdi1RXwOsKBTcTlNX71YECRfQlJZnGMxBcKUeizf2i9f)jLDAwJRjv4Sxg165NQSolncWyj)fftSq4sJZclZaaWJOuCd9Sg9tJ4y2giGyXhEqBaiRMhntBuhtZmUDGke9r6lutvTd6no6U9TtzHpd07nK6ZJz0y(dpNNOnp88r6twZkO0lKqe)QkeBuyO0n9vOU2ajO3gIstxrUKWWG9hWkCKlV)qcBOp76fxZqL9Tyx3AZ(BjCyLaH4502tJtFlqZK9VsnH3ZwmXkQQWlGTy8cY7z6Dmnt40wzvymsFra)APd66GrntTuvp5i9jdBTaxyR08xERwvGb8sX(dhPphLQv0p(4MyOS1GimlmF87MrKpdGX6tduIDbidYx8xLhIRnNoVCOuk3AEHo9AuaZvNFOt3oYGU4LO59VK(sWjufq6ytAwdZxQIn8PgkujghM0uy7GK34LLDJsfN(uwy4QnaeTa6SBJrrQ9cjIFRj9aoji6jegCDsdJXC)gl3BacZXvyoUK5OpnrFDh5YfCqdCPqHD5r(tS8nOxocYDkvCLgRiTXgRz2wXA8pU2zdxCh6kirswKwku4Wap8ucIec7jBWo6bckFBYOWSXTSXGhrkcxp)YiD6FRyDllOuremPfdJsjli5invHnNGcIaNpF0ws)huNR9zVWmWRnmfwa7IFUCHJkphJyYAKjfS5PKGJWUZjDQYfK)ORZmQfrOTESJs0RO5RQLFLndvlDqsWrKWT5zWzaubBqD5aTpuuxk5nfTAQdu3(lq0dOXtxU4poEkobty)XmiP4O810w5Cy(xjoSX7cigm2Rshw5b)5z3k6ZM)vvJQ0OFdXEpR0N8gQwFMZn1gJz23eSBwRoO9A150K1V2DRloqHVxpTQ)ET7ZPMZKCh4wDT(z9SK9Wut(khbkzbFPz2NpBPp05RvKbMCDcKgpLMWG)jKldg8xpEdbGFwzoHohHl)iya0eUSVkC)ZNncZFapjfr0zg)AOC(XkaDZgkzT50i0KXux(SqcJwunAXf01RzU85osZtPPU)1yRhC(CNtZGZ4C2Dcm90rYcBrPg30y7GqetPcGVcLE9733QOw1EYDO4ChxGZ7ZTzgndAGiFDFvuNY(vKq1VtR84k9VMLwsJXTRyIsIBnboqzBioDsnOIutmoZ98z1ZACBZYr3SgvlqkB0rzbQrtiYGNOD1ypt2)48hKPxr7iQ0fsA019OO0Ru0Gy8HuAWH7jU9o1Hke0KAOYoX0lLnoylPxYHEj9ofQqQS0VVbaFeJqVlRbdNFN9GcqvP2kCqpc3mFSDV(LYFl9IhjWYaEScdxaz)Yxmdgvjnv4mx1yEFC5AUOedtDvy7FdvZnQUcH5ofmL6RoyQZN37dsT0XipZP70sc4vcJFwf2KYwVt2hN1DeQsxyPRn06zXu4vnGgZ8nXUNvRTCMc51UGwQpKOZNPe(rBvZec2)PZGAvNe1NGBv)(LboQm7gHnpQQwA9T)IIO7UILD)UZs6nJo1P3019yft3Xr987E6FukKwCemqlmqga6Q9wS6E5(4e7)PTykuKnpq0ASztQAqQM6ExISyPOFTK5pyaVBMYsjxzPKTQYXFLR1fOaAxUlYuQnAs3DKoBKuIqoxd(UJsrwDYTVvLxVOxOefshhdlBWKnMn9oJplHovmqDvIsEPXukpN4UFQk74cuRYgn6vUqyotsamD2exturWExTK8iTu1csYUJTC8hsQ1Nq)q483bpk4FYt1lHiSsxvfyvUhK3rHPcIhuuzDW3Bn3g)h7svNp)78cPvM0VnbLXQAImnD10gABMErpZ23mgqvfVeMYKvxZCVmaiDm2fVTNwIZuLotIngRAFXCbL679dzjI6VsGEM(WdsoEooCVEKIx39k25HyjcYln(Q(grCJFTrz9h2yvYwf9jsVI6g4o2XcbSL(d59JSt1Vq5Zsi1wn2FSWT82YTfGOD4W87T5l5PNIBRxHs8YtP(DK9BBdTgkpf1ZQjHEDdqiZ(MrF565fjmFxvmF81UovD6a7yszHDInkbZw4Alp7QwlG)ymvByeIihZDwLkNq1ngyc5uCgv8HMxeN5mqoGL)svQVpMzCBFT8iMTKYj0lq6R4XCDFjyyRSWxbMPJ(e9R)sZxwCq8Q4lI)zXNWfcRv)Tfz6D6hp9l2IPdx5hLfE1GjeH)y1vmV7NOsZzp05t1F2t0qz5VbkvbRA(2SuyY5)US0qgSvZlUt(e)3GLnEPOT)3i(V7sPNq(K)n8pMET2l))p]] )

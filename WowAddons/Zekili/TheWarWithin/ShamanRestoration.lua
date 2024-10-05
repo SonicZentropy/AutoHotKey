@@ -9,7 +9,8 @@ local class, state = Zekili.Class, Zekili.State
 
 local spec = Zekili:NewSpecialization( 264 )
 
-local GetWeaponEnchantInfo = _G.GetWeaponEnchantInfo
+local GetSpecializationInfoByID, GetWeaponEnchantInfo = _G.GetSpecializationInfoByID, _G.GetWeaponEnchantInfo
+local strformat = string.format
 
 spec:RegisterResource( Enum.PowerType.Mana )
 
@@ -186,7 +187,7 @@ spec:RegisterAuras( {
     },
     downpour = {
         id = 462488,
-        duration = 10,
+        duration = 12,
         max_stack = 1
     },
     downpour_hot = {
@@ -201,14 +202,14 @@ spec:RegisterAuras( {
     },
     earthliving_weapon_hot = {
         id = 382024,
-        duration = 12,
+        duration = 6,
         max_stack = 1
     },
     -- Your Healing Rain is currently active.  $?$w1!=0[Magic damage taken reduced by $w1%.][]
     -- https://wowhead.com/beta/spell=73920
     healing_rain = {
         id = 73920,
-        duration = 10,
+        duration = function () return 24 and talent.surging_totem.enabled or 10 end,
         max_stack = 1
     },
     master_of_the_elements = {
@@ -241,6 +242,12 @@ spec:RegisterAuras( {
         id = 236502,
         duration = 3600,
         max_stack = 2
+    },
+    tidecallers_guard = {
+        id = 457493,
+        duration = 3600,
+        max_stack = 1,
+        copy = 457496
     },
     unleash_life = {
         id = 73685,
@@ -312,6 +319,7 @@ spec:RegisterTotem( "cloudburst_totem", 971076 )
 spec:RegisterTotem( "earthen_wall_totem", 136098 )
 spec:RegisterTotem( "poison_cleansing_totem", 136070 )
 spec:RegisterTotem( "stoneskin_totem", 4667425 )
+spec:RegisterTotem( "surging_totem", 5927655 )
 
 spec:RegisterStateExpr( "recall_totem_1", function()
     return recallTotem1
@@ -321,11 +329,22 @@ spec:RegisterStateExpr( "recall_totem_2", function()
     return recallTotem2
 end )
 
+spec:RegisterStateExpr( "earth_shield", function()
+    return "earth_shield"
+end )
+
+spec:RegisterStateExpr( "lightning_shield", function()
+    return "lightning_shield"
+end )
+
 spec:RegisterHook( "reset_precast", function ()
-    local mh, _, _, mh_enchant = GetWeaponEnchantInfo()
+    local mh, _, _, mh_enchant, oh, _, _, oh_enchant = GetWeaponEnchantInfo()
 
     if mh and mh_enchant == 6498 then applyBuff( "earthliving_weapon" ) end
     if buff.earthliving_weapon.down and ( now - action.earthliving_weapon.lastCast < 1 ) then applyBuff( "earthliving_weapon" ) end
+
+    if oh and oh_enchant == 7528 then applyBuff( "tidecallers_guard" ) end
+    if buff.tidecallers_guard.down and action.tidecallers_guard.time_since < 1 then applyBuff( "tidecallers_guard" ) end
 
     recall_totem_1 = nil
     recall_totem_2 = nil
@@ -407,10 +426,12 @@ spec:RegisterAbilities( {
         texture = 136042,
 
         handler = function ()
+            if buff.tidebringer.up and buff.natures_swiftness.down and buff.ancestral_swiftness.down then removeStack( "tidebringer" ) end
             removeStack( "tidal_waves" )
-            removeStack( "tidebringer" )
             removeBuff( "swelling_rain" ) -- T30
             removeStack( "natures_swiftness" )
+            removeStack( "ancestral_swiftness" )
+            removeStack( "high_tide" )
 
             if set_bonus.tier31_2pc > 0 then applyDebuff( "target", "tidal_reservoir" ) end
         end,
@@ -465,9 +486,9 @@ spec:RegisterAbilities( {
     -- A burst of water at your Healing Rain's location heals up to 5 injured allies within 12 yards for (275% of Spell power) and increases their maximum health by 10% for 6 sec.
     downpour = {
         id = 462603,
-        known = function() return talent.downpour.enabled and 73920 or nil end,
+        known = 73920,
         cast = 0,
-        cooldown = 10, -- ???
+        cooldown = function() return talent.surging_totem.enabled and 24 or 10 end,
         gcd = "off",
 
         spend = 0.03,
@@ -476,6 +497,7 @@ spec:RegisterAbilities( {
         startsCombat = false,
         texture = 1698701,
         buff = "downpour",
+        talent = "downpour",
 
         handler = function ()
             removeBuff( "downpour" )
@@ -626,19 +648,23 @@ spec:RegisterAbilities( {
         startsCombat = false,
         texture = 136037,
         nobuff = "downpour",
+        notalent = "surging_totem",
 
         handler = function ()
+            
             applyBuff( "healing_rain" )
 
-            if talent.downpour.enabled then applyBuff( "downpour" ) end
-
+            if talent.downpour.enabled then 
+                applyBuff( "downpour" )
+                setCooldown( "downpour", 0 )
+            end
             if set_bonus.tier30_4pc > 0 and active_dot.riptide > 0 then
                 applyBuff( "rainstorm", nil, active_dot.riptide )
                 applyBuff( "swelling_rain", nil, active_dot.riptide )
             end
         end,
 
-        bind = "downpour"
+        bind = { "downpour", "surging_totem" }
     },
 
     -- Talent: Summons a totem at your feet for $d that heals $?s147074[two injured party or raid members][an injured party or raid member] within $52042A1 yards for $52042s1 every $5672t1 sec.    If you already know $?s157153[$@spellname157153][$@spellname5394], instead gain $392915s1 additional $Lcharge:charges; of $?s157153[$@spellname157153][$@spellname5394].
@@ -648,9 +674,10 @@ spec:RegisterAbilities( {
         charges = function()
             if talent.healing_stream_totem.rank + talent.healing_stream_totem_2.rank > 1 then return 2 end
         end,
-        cooldown = 30,
-        recharge = function()
-            if talent.healing_stream_totem.rank + talent.healing_stream_totem_2.rank > 1 then return 30 end
+        cooldown = function () return 30 - ( talent.totemic_surge.enabled and 6 or 0 ) end,
+        recharge = function() 
+            if talent.healing_stream_totem.rank + talent.healing_stream_totem_2.rank > 1 then return ( 30 - talent.totemic_surge.enabled and 6 or 0 )
+            else return nil end
         end,
         gcd = "totem",
 
@@ -858,7 +885,7 @@ spec:RegisterAbilities( {
     riptide = {
         id = 61295,
         cast = 0,
-        charges = 2,
+        charges = function () return 2 + ( talent.elemental_reverb.enabled and 1 or 0 ) end,
         cooldown = 6,
         recharge = 6,
         gcd = "spell",
@@ -898,6 +925,46 @@ spec:RegisterAbilities( {
             summonTotem( "spirit_link_totem" )
         end,
     },
+
+    surging_totem = {
+        id = 444995,
+        cast = 0,
+        cooldown = 24,
+        gcd = "totem",
+
+        spend = 0.11,
+        spendType = "mana",
+        talent = "surging_totem",
+        startsCombat = false,
+        texture = 5927655,
+
+        handler = function ()
+            summonTotem( "surging_totem" )
+            
+            if talent.downpour.enabled then
+                setCooldown( "downpour", 0 )
+                applyBuff( "downpour" )
+            end
+        end,
+
+        bind = { "healing_rain", "downpour" }
+    },
+
+    tidecallers_guard = {
+        id = 457481,
+        cast = 0,
+        cooldown = 0,
+        gcd = "spell",
+
+        startsCombat = false,
+        talent = "supportive_imbuements",
+        nobuff = "tidecallers_guard",
+        equipped = "shield",
+
+        handler = function ()
+            applyBuff( "tidecallers_guard" )
+        end,
+    },
 	
 	-- Talent: Resets the cooldown of your most recently used totem with a base cooldown shorter than 3 minutes.
     totemic_recall = {
@@ -906,7 +973,7 @@ spec:RegisterAbilities( {
         cooldown = function() return talent.call_of_the_elements.enabled and 120 or 180 end,
         gcd = "spell",
         school = "nature",
-
+        toggle = function() if settings.healing_mode then return "cooldowns" end end,
         talent = "totemic_recall",
         startsCombat = false,
 
@@ -989,12 +1056,41 @@ spec:RegisterAbilities( {
 } )
 
 
-spec:RegisterSetting( "experimental_msg", nil, {
+--[[spec:RegisterSetting( "experimental_msg", nil, {
     type = "description",
     name = "|cFFFF0000WARNING|r:  Healer support in this addon is focused on DPS output only.  This is more useful for solo content or downtime when your healing output is less critical in a group/encounter.  Use at your own risk.",
     width = "full",
+} )--]]
+
+spec:RegisterSetting( "experimental_msg", nil, {
+    type = "description",
+    name = strformat( "%s %s supports a healing maintenance with the Totemic %s build.  It will recommend using %s and %s, keep %s / %s recharging, and use %s with to enhance particular spells.  Your %s will also be maintained.",
+        select( 7, GetSpecializationInfoByID( spec.id ) ), ( UnitClass( "player" ) ), Zekili:GetSpellLinkWithTexture( spec.abilities.chain_heal.id ), Zekili:GetSpellLinkWithTexture( spec.abilities.healing_rain.id ),
+        Zekili:GetSpellLinkWithTexture( spec.abilities.surging_totem.id ), Zekili:GetSpellLinkWithTexture( spec.abilities.riptide.id ), Zekili:GetSpellLinkWithTexture( spec.abilities.healing_stream_totem.id ),
+        Zekili:GetSpellLinkWithTexture( spec.abilities.unleash_life.id ), Zekili:GetSpellLinkWithTexture( spec.talents.earth_shield[2] ) ),
+    width = "full",
 } )
 
+spec:RegisterSetting( "healing_mode", false, {
+    name = "Healing Helper Mode",
+    desc = "If checked, healing abilities may be recommended using the default priority package.",
+    type = "toggle",
+    width = "full",
+} )
+
+spec:RegisterSetting( "second_shield", "earth_shield", {
+    name = strformat( "|T236224:0|t Preferred Second %s", _G.SHIELDSLOT ),
+    desc = strformat( "Specify which %s spell to use after %s when %s is talented.", _G.SHIELDSLOT, Zekili:GetSpellLinkWithTexture( spec.abilities.water_shield.id ),
+        Zekili:GetSpellLinkWithTexture( spec.talents.elemental_orbit[2] ) ),
+    type = "select",
+    values = function()
+        return {
+            earth_shield = class.abilityList.earth_shield,
+            lightning_shield = class.abilityList.lightning_shield,
+        }
+    end,
+    width = "full"
+} )
 
 spec:RegisterRanges( "lightning_bolt", "flame_shock", "wind_shear", "primal_strike" )
 
@@ -1018,4 +1114,4 @@ spec:RegisterOptions( {
 } )
 
 
-spec:RegisterPack( "Restoration Shaman", 20240730, [[Zekili:nBvWUnUnq0VLGc4KGKv1Y2BY2I4CO9stqXEOAb6njrlnYMWuIQKu2nag8BVdPSLOOLZwSx29sIWmp)Mhho8rghg)L4OCIcI)8SPZwm9X5tdM(PPZdNhhPERgIJQjzBjRXpQiL4F)lqQ4cIIYR0PrBiLKkdM3yCsUHljVrKH4IJw1qzQxQIxnEbMHyRHmm8dlIJ2qZZHwSGmloYG9dtF8dZN(R60VSb0P)nrG)HQ2qnfuWlOmSmKmJsKb1ciJxUIOUB5pdeHAdJUJwTozpqQrL(6y42JQsKi3qbw(90ILRAkkcCdg0uFNnOLr)Gm66nQktr6s8u4DkcdQubadkX)tyjCXkQkqqQ2oUk8P57NsC5(7Tk6WpoOAUDa81USymznvqv7jSTGqMSwqYG7l5MPGLHMLd(TLZGCQurQYGNFq)6pPtFPcxHIMALoLxOtZisLmWL490QCCnHcZn6jj0hPrcjufukDdUIX55jfnI3gefLii2IAZnAbvaw8UbnkvQeyNlJWydiHSoHxKOe0STdQjkvMzFqqOvMv(vTTHjh3liz0CBUb1MHhVXvjpB79zVLXGefrSguY2MNb4oibQGskiFA(ebuia5gYkgy7IongbTKlYPOI3t2bUfHr2rsw1iKkdN3mK0LHho4fz2K2jlZpt2GYbNPUDsoxf4i3abuIlg5ZMDUefTeMKX5SC((QebGm6QGlnDn4G4koZkq0FIXo1hcY2GvjPd1tZoC4QJDuVuUS6L6Rs7ZHxAx50S8G8coUMhMpoAhoDHao54gI(R7jcd7Y4iRzkTSMlWb(coAQEDouqAyQR1Pc4FAWHWCDQKxI4inkEj6aGbqDwTgmNm(tAfMk04m)78kSy28x7pDH0P4JepaQmtn5y(Bc)3B7jCX4e61G8O1l75KRF9f7I1q5StZP6ugT9yECK9l71GTTb8ZpBVw8ivX)2PptABXMazOvdiOK4OZSv0PpRtF40vtMB5oZxY(RmmHfsHBtEvZCfOGw3(Zh1EQN9EZjdtZnmDkvRdLlZiIfUi6CS8a9rxq9oyEOEyaQohnpup6IQZHZd0NCbn0XZd5VmOOUoGEadN61v73YUsN22)1PtWPPlmF2xgx)ul1(JhDlV(JRU1BORMo9jD6CBPDmrr8UUUhNmc9hnovPENuVXLJEdbhhMp3p2vy30EEWvBlXdI60dhgnZmRQp3twNERnZfCMTNi6CNTih6qBxQdMD98P93BxCX9231C126N1U8UQBN)cwion7b3myfWh)wfa2jc7z2lTLA7XQE)HZ9EgDABy)5X)3C0FbYqouMhzF8bxDoId2Dg8cBpb4p223Eg7rL607oov59WY(eJ84s7MzOfY78ithNsNI25v(dMg9POZX(hmD6Y9zxy8(NDF4RDfLD2dF4XgUio6pGTug1gl()c]] )
+spec:RegisterPack( "Restoration Shaman", 20240916, [[Zekili:vJ1sVnUnq4FlgfWBcsQAKZZTiohAV0nOypuVa9MKOLOTjIKOlfv8gad9BVZq9IKIsRtrxu0ljYCgoV4mFC4e4h8LGvjejn4ZlUAXnx9r)788xCZd(3hSs(2EAWQ9K4xiBHpYjzWF)dAHKlisgpVkA1osgjh55TuojbLvbVued8fSADjlv(P8G1UuWT3ChW7EAmS8D3eSAhljHwZlTioyfY7pE19)41x9ZvrFzhTk6pjc4pm5ogQqbFdlfudjgTKcV9cAmpBnrEXYFIseYDPSxz5Bdpqj7bl9zx8jzj0ysAkvueUTKisCZ2bW4fHf7y00KlzBwUUCZgp9f9k3FHArLITxmLTDNmhTLocp6FHKKsZLE0uAg8FsAixSMj9eK8xoE8SzU0X8cQucYPWBhLKIcmJNqp3TrBRv0Wp77TLFEVjwaMsEsZgxAlj32SUr8FR9Ql(PS1oH6MP9CvzYZDuH1k2Zem5bs6lQ0objMEzghZvx6Jon8TsMEjScjjpM(0Dvp)dFkhccIY9YQi(MQOysHSWtxShykRhml9vfL5H1)kmfe3Lyj8YMShuzoZO0fqRh0VszbnKjPzf6lUoLZtc3ukEZyvWdPIxa5QV6gMGQ4xFr0rlKc40blineczBiFtOuWIFXqNfLITOjl5G1GotZbnjMLekimdRU1)W1rENvhYNp1E2KcrliMYJF5Y43ItPHsIylvwuFqHm(knKMtZy0IhVEUGUrql2rwNAgcfSmUiHb(2bYRgKsjVscxxkGtgmD3uIl9pE0ALfZRZZXTHUpfYWpFEcx6PzREcAg4jfpHjjHswgDEmNNMWpKhkOGe1TGXsJnqqwZtvgiaxNM2ge8I3bAjSJRhxC84SMWPfjDPAr6Bk2N8h7iPTOXGUGd(Sn9(IZM0aGtmCShUQQdqVmpLsk2bAEdgwpEuTAlBi8R5cnr5hx4s6WLIKq86L(StCjV9XYhF4wx7qXhlgoHWcaCdaqYRHBJtQX6O5q2dgMq(CjGHCHcXfN1ry83Do)oiCRSxWpDTfN4inrSXIGUKJrnRlg0Rth1l1UIOPablb0jnnS)CxxHCkAR5EzRDEkxImFeZHMJWfjNpvSaWfPKmnCo8dpJqjAfZQ)Y1Ug7uLThpZrz2Iq41Sgwgc1JfJsimJ8vxYupjqdugtQvW47OH1y9CrrR3F8yNwoaqbfaIz(2(cmOFOo6MEDllxFQvRpDTZiDVw1blACfnWcx0037qQnrTGvVc3fc0ABc(k)GvhiceHRiyLQ)ww2EUaUFFdh6Z9dj0nKYu5hQIe0)QeUYmPkQGNb8rkL8mONiyb4SiholGgb(DwoqY3hAw(x55GYu0)G91BG4KChR3Esa0pZ)RN3lWf)BlW7DlqluFlXArDOWRE(tQOhkYBGqK6COkcXQWOtWk1x4Zt6Apd(XNvp(PM5GvdF1aSwTIc(LajCYPZ9G3oyX81iZ9RSkgA6Jkye8zrdBQTk6IQiNOsDeC0CBv0JqevXYeODvrhpcbQQOznsAGUNdPwoBem68EhwFxOdEZOo4zJPNVN(45MUHbsCv0smxWu29E2akG3D7)Z8oDLALsR5v3niFVV1pR8371zT(vaMCiH3SxNR0vjnE6UDRbQusBiBLp6e2wfMw0BpT07QkDQ52oUu7(HB73Uv3ztxUorByAObgDVnD5H1jGPeNm1BqRA9IQVNUUZ5t(0OxkwT5vdBgwp3NMnni3W4gzRKOh0zuV1ol((iYxmzFnJq04TrYH18Kr687uROM7UA1YW8VYWYkOPB(2wMgu7aSGtVkwX70DnQWNnT3XRdD31OslZWBBNO3XHNH6mO074vHJ1aPYHNQ7sT0YMMOqfnEH6P0PznWZeDBwJ00DL509DQy(63py2tQDPD3QEbPYlVrVWP3khGa30LOle46pdRFfSfWO9iMuM0DA10dNrLAxOKafz3lu)SNo5MGC2VXPbe1ERtli7uxsvdM2fMBhDLftgxl2pkRPUrSF0wtb51nQlx4DTmzo6lNaqDAvFwyVJs)rAoFmq8PlOb0I6ubDeQjKTbUVRs4UOv)WDCa03mdS2AU54dJ6M3gWV(a6AssnlJSMdND4BYo(STHLQ7yW6Ehuw0x7BmPU224gzEDQIWUz2P40CUD9Us)CdvM(7OTo)7hVKCQXWPJloR7uFK3LPzOgZquzap8p1aGOJVDdpDKvIwvw1dtnec0zMMr8zXvNSm6h14ay52ELSFIzxFRwk9uq7RbtTVs0sZyosPChh0WVrFHLYuRf83)]] )

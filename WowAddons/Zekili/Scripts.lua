@@ -441,16 +441,16 @@ do
     local timely = {
         { "^(d?e?buff%.[a-z0-9_]+)%.down$"     , "%1.remains"      },
         { "^(dot%.[a-z0-9_]+)%.down$"          , "%1.remains"      },
-        { "^!(d?e?buff%.[a-z0-9_]+)%.up$"      , "%1.remains"      },
-        { "^!(dot%.[a-z0-9_]+)%.up$"           , "%1.remains"      },
-        { "^!(d?e?buff%.[a-z0-9_]+)%.react$"   , "%1.remains"      },
-        { "^!(dot%.[a-z0-9_]+)%.react$"        , "%1.remains"      },
-        { "^!(d?e?buff%.[a-z0-9_]+)%.ticking$" , "%1.remains"      },
-        { "^!(dot%.[a-z0-9_]+)%.ticking$"      , "%1.remains"      },
+        { "^!?(d?e?buff%.[a-z0-9_]+)%.up$"     , "%1.remains"      },
+        { "^!?(dot%.[a-z0-9_]+)%.up$"          , "%1.remains"      },
+        { "^!?(d?e?buff%.[a-z0-9_]+)%.react$"  , "%1.remains"      },
+        { "^!?(dot%.[a-z0-9_]+)%.react$"       , "%1.remains"      },
+        { "^!?(d?e?buff%.[a-z0-9_]+)%.ticking$", "%1.remains"      },
+        { "^!?(dot%.[a-z0-9_]+)%.ticking$"     , "%1.remains"      },
         { "^!?(d?e?buff%.[a-z0-9_]+)%.remains$", "%1.remains"      },
-        { "^!ticking"                          , "remains"         },
+        { "^!?ticking"                         , "remains"         },
         { "^!?remains$"                        , "remains"         },
-        { "^!up$"                              , "remains"         },
+        { "^!?up$"                             , "remains"         },
         { "^down$"                             , "remains"         },
         { "^refreshable$"                      , "time_to_refresh" },
         { "^time>=?(.-)$"                      , "0.01+%1-time"    },
@@ -461,7 +461,8 @@ do
 
         { "^(.-)%.deficit<=?(.-)$"         , "0.01+%1.timeTo(%1.max-(%2))" },
         { "^(.-)%.deficit>=?(.-)$"         , "0.01+%1.timeTo(%1.max-(%2))" },
-        { "^(.-)%.percent[<>=]+(.-)$"      , "0.01+%1.timeTo(%1.max*(%2/100))" },
+        { "^target%.health%.pe?r?ce?n?t[<>=]+(.-)$"
+                                           , "0.01+target['time_to_pct_' .. %1]" },
 
         { "^cooldown%.([a-z0-9_]+)%.ready$"                      , "cooldown.%1.remains"                      },
         { "^cooldown%.([a-z0-9_]+)%.up$"                         , "cooldown.%1.remains"                      },
@@ -510,6 +511,8 @@ do
         { "^!?stealthed%.(rogue)$"                  , "stealthed.%1_remains"                                          },
         { "^!?stealthed%.(ambush)$"                 , "stealthed.%1_remains"                                          },
         { "^!?stealthed%.(all)$"                    , "stealthed.%1_remains"                                          },
+
+        { "^!?death_and_decay.ticking$"             , "death_and_decay.remains"                                       }, -- DKs
 
         { "^!?time_to_hpg$"           , "time_to_hpg"          }, -- Retribution Paladin
         { "^!?time_to_hpg[<=]=?(.-)$" , "time_to_hpg-%1"       }, -- Retribution Paladin
@@ -626,7 +629,7 @@ do
             for key in pairs( GetResourceInfo() ) do
                 if lhs == key then
                     if comp == ">" then
-                        return true, "0.01 + " .. lhs .. ".timeTo( " .. rhs .. " )"
+                        return true, "0.01 + " .. lhs .. ".timeTo( " .. rhs .. " ), " .. lhs .. ".timeTo( 1 + ( " .. rhs .. " ) )"
                     elseif moreOrEqual[ comp ] then
                         return true, lhs .. ".timeTo( " .. rhs .. " )"
                     end
@@ -634,16 +637,32 @@ do
 
                 if rhs == key then
                     if comp == "<" then
-                        return true, "0.01 + " .. rhs .. ".timeTo( " .. lhs .. " )"
+                        return true, "0.01 + " .. rhs .. ".timeTo( " .. lhs .. " ), " .. rhs .. ".timeTo( 1 + ( " .. lhs .. " ) )"
                     elseif lessOrEqual[ comp ] then
                         return true, rhs .. ".timeTo( " .. lhs .. " )"
+                    end
+                end
+
+                if lhs == ( key .. ".percent" ) or lhs == ( key .. ".pct" ) then
+                    if comp == ">" then
+                        return true, "0.01 + " .. key .. ".timeTo( " .. key .. ".max * ( " .. rhs .. " / 100 ) ), " .. key .. ".timeTo( 1 + " .. key .. ".max * ( ( " .. rhs .. " ) / 100 ) )"
+                    elseif moreOrEqual[ comp ] then
+                        return true, key .. ".timeTo( " .. key .. ".max * ( " .. rhs .. " / 100 ) ), " .. key .. ".timeTo( 1 + " .. key .. ".max * ( ( " .. rhs .. " ) / 100 ) )"
+                    end
+                end
+
+                if rhs == ( key .. ".percent" ) or rhs == ( key .. ".pct" ) then
+                    if comp == "<" then
+                        return true, "0.01 + " .. key .. ".timeTo( " .. key .. ".max * ( " .. lhs .. " / 100 ) ), " .. key .. ".timeTo( 1 + " .. key .. ".max * ( ( " .. lhs .. " ) / 100 ) )"
+                    elseif lessOrEqual[ comp ] then
+                        return true, key .. ".timeTo( " .. key .. ".max * ( " .. lhs .. " / 100 ) ), " .. key .. ".timeTo( 1 + " .. key .. ".max * ( ( " .. lhs .. " ) / 100 ) )"
                     end
                 end
             end
 
             if lhs == "rune" then
                 if comp == ">" then
-                    return true, "0.01 + rune.timeTo( " .. rhs .. " )"
+                    return true, "0.01 + rune.timeTo( " .. rhs .. " ), rune.timeTo( 1 + ( " .. rhs .. " ) )"
                 elseif moreOrEqual[ comp ] then
                     return true, "rune.timeTo( " .. rhs .. " )"
                 end
@@ -651,7 +670,7 @@ do
 
             if rhs == "rune" then
                 if comp == "<" then
-                    return true, "0.01 + rune.timeTo( " .. lhs .. " )"
+                    return true, "0.01 + rune.timeTo( " .. lhs .. " ), rune.timeTo( 1 + ( " .. lhs .. " ) )"
                 elseif lessOrEqual[ comp ] then
                     return true, "rune.timeTo( " .. lhs .. " )"
                 end
@@ -1627,7 +1646,7 @@ function scripts:LoadScripts()
                     local script = ConvertScript( data, true, scriptID )
 
                     if script.Error then
-                        Zekili:Error( "Error in " .. scriptID .. " conditions:  " .. script.Error )
+                        Zekili:Error( "Error in " .. scriptID .. " conditions:  " .. ( script.rs or "null" ) .. "\n\n" .. script.Error )
                     end
 
                     script.action = data.action
@@ -1847,7 +1866,7 @@ function Zekili:LoadScript( pack, list, id )
     local script = ConvertScript( data, true, scriptID )
 
     if script.Error then
-        Zekili:Error( "Error in " .. scriptID .. " conditions:  " .. script.SimC .. "\n    " .. script.Error )
+        Zekili:Error( "Error in " .. scriptID .. " conditions:  " .. ( script.rs or "null" ) .. "\n\n" .. script.Error )
     end
 
     if data.action == "call_action_list" or data.action == "run_action_list" then

@@ -7,6 +7,7 @@ local addon, ns = ...
 local Zekili = _G[ addon ]
 local class, state = Zekili.Class, Zekili.State
 
+local GetSpellInfo = C_Spell.GetSpellInfo
 local strformat = string.format
 
 local spec = Zekili:NewSpecialization( 64 )
@@ -275,7 +276,7 @@ spec:RegisterAuras( {
     deaths_chill = {
         id = 454371,
         duration = function() return buff.icy_veins.up and buff.icy_veins.remains or spec.auras.icy_veins.duration end,
-        max_stack = 10
+        max_stack = 15
     },
     -- Talent: Disoriented.
     -- https://wowhead.com/beta/spell=31661
@@ -284,6 +285,11 @@ spec:RegisterAuras( {
         duration = 4,
         type = "Magic",
         max_stack = 1
+    },
+    embedded_frost_splinter = {
+        id = 443740,
+        duration = 18,
+        max_stack = 8
     },
     fingers_of_frost = {
         id = 44544,
@@ -863,8 +869,8 @@ end, state )
 
 
 spec:RegisterHook( "reset_precast", function ()
-    if pet.rune_of_power.up then applyBuff( "rune_of_power", pet.rune_of_power.remains )
-    else removeBuff( "rune_of_power" ) end
+    --[[ if pet.rune_of_power.up then applyBuff( "rune_of_power", pet.rune_of_power.remains )
+    else removeBuff( "rune_of_power" ) end --]]
 
     frost_info.last_target_virtual = frost_info.last_target_actual
     -- frost_info.virtual_brain_freeze = frost_info.real_brain_freeze
@@ -1094,11 +1100,14 @@ spec:RegisterAbilities( {
 
     -- Launches a bolt of frost at the enemy, causing 890 Frost damage and slowing movement speed by 60% for 8 sec.
     frostbolt = {
-        id = 116,
-        cast = function () return 2 * ( 1 - 0.04 * buff.slick_ice.stack ) * haste end,
+        id = function() return talent.frostfire_bolt.enabled and 431044 or 116 end,
+        cast = function ()
+            if buff.frostfire_empowerment.up then return 0 end
+            return 2 * ( 1 - 0.04 * buff.slick_ice.stack ) * haste
+        end,
         cooldown = 0,
         gcd = "spell",
-        school = "frost",
+        school = function() return talent.frostfire_bolt.enabled and "frostfire" or "frost" end,
 
         spend = 0.02,
         spendType = "mana",
@@ -1113,6 +1122,17 @@ spec:RegisterAbilities( {
 
         handler = function ()
             addStack( "icicles" )
+
+            if action.frostbolt.cast_time > 0 then removeStack( "ice_floes" ) end
+
+            if buff.frostfire_empowerment.up then
+                applyBuff( "frost_mastery", nil, 6 )
+                if talent.excess_frost.enabled then applyBuff( "excess_frost" ) end
+                applyBuff( "fire_mastery", nil, 6 )
+                if talent.excess_fire.enabled then applyBuff( "excess_fire" ) end
+                removeBuff( "frostfire_empowerment" )
+            end
+
             if talent.glacial_spike.enabled and buff.icicles.stack == buff.icicles.max_stack then
                 applyBuff( "glacial_spike_usable" )
             end
@@ -1121,7 +1141,6 @@ spec:RegisterAbilities( {
                 addStack( "deaths_chill", buff.icy_veins.remains, 1 )
             end
 
-            removeBuff( "ice_floes" )
 
             if buff.cold_front_ready.up then
                 spec.abilities.frozen_orb.handler()
@@ -1151,12 +1170,14 @@ spec:RegisterAbilities( {
 
         impact = function ()
             applyDebuff( "target", "chilled" )
-            --[[ if debuff.winters_chill.stack > 0 and action.frostbolt.lastCast > action.flurry.lastCast then
-                removeDebuffStack( "target", "winters_chill" )
-            end ]]
+            removeDebuffStack( "target", "winters_chill" )
+
+            if talent.frostfire_bolt.enabled then
+                applyDebuff( "target", "frostfire_bolt" )
+            end
         end,
 
-        copy = 228597
+        copy = { 116, 228597, "frostfire_bolt", 431044 }
     },
 
     -- Launches an orb of swirling ice up to 40 yards forward which deals up to 5,687 Frost damage to all enemies it passes through. Deals reduced damage beyond 8 targets. Grants 1 charge of Fingers of Frost when it first damages an enemy. While Frozen Orb is active, you gain Fingers of Frost every 2 sec. Enemies damaged by the Frozen Orb are slowed by 40% for 3 sec.
@@ -1215,9 +1236,9 @@ spec:RegisterAbilities( {
         startsCombat = true,
         velocity = 40,
 
-        usable = function() 
+        usable = function()
             if moving and settings.prevent_hardcasts and action.glacial_spike.cast_time > buff.ice_floes.remains then return false, "prevent_hardcasts during movement and ice_floes is down" end
-            return buff.icicles.stack == 5 or buff.glacial_spike_usable.up, "requires 5 icicles or glacial_spike!" 
+            return buff.icicles.stack == 5 or buff.glacial_spike_usable.up, "requires 5 icicles or glacial_spike!"
         end,
 
         handler = function ()
@@ -1283,12 +1304,20 @@ spec:RegisterAbilities( {
             return true
         end,
 
-        start = function ()
+        handler = function ()
             applyDebuff( "target", "chilled" )
+
+            if buff.excess_frost.up then
+                applyDebuff( "target", "living_bomb" )
+                removeBuff( "excess_frost" )
+            end
 
             if buff.fingers_of_frost.up or debuff.frozen.up then
                 if talent.chain_reaction.enabled then addStack( "chain_reaction" ) end
-                if talent.thermal_void.enabled and buff.icy_veins.up then buff.icy_veins.expires = buff.icy_veins.expires + 0.5 end
+                if talent.thermal_void.enabled and buff.icy_veins.up then
+                    buff.icy_veins.expires = buff.icy_veins.expires + 0.5
+                    pet.water_elemental.expires = buff.icy_veins.expires
+                end
             end
 
             if not talent.glacial_spike.enabled then removeStack( "icicles" ) end
@@ -1297,10 +1326,16 @@ spec:RegisterAbilities( {
             if azerite.whiteout.enabled then
                 cooldown.frozen_orb.expires = max( 0, cooldown.frozen_orb.expires - 0.5 )
             end
+
+            if buff.fingers_of_frost.up then
+                removeStack( "fingers_of_frost" )
+                if talent.cryopathy.enabled then addStack( "cryopathy" ) end
+                if set_bonus.tier29_4pc > 0 then applyBuff( "touch_of_ice" ) end
+            end
         end,
 
         impact = function ()
-            if ( buff.fingers_of_frost.up or debuff.frozen.up ) and talent.hailstones.rank == 2 then
+            if ( buff.fingers_of_frost.up or debuff.frozen.up ) and talent.hailstones.enabled then
                 addStack( "icicles" )
                 if talent.glacial_spike.enabled and buff.icicles.stack == buff.icicles.max_stack then
                     applyBuff( "glacial_spike_usable" )
@@ -1308,12 +1343,6 @@ spec:RegisterAbilities( {
             end
 
             removeDebuffStack( "target", "winters_chill" )
-
-            if buff.fingers_of_frost.up then
-                removeStack( "fingers_of_frost" )
-                if talent.cryopathy.enabled then addStack( "cryopathy" ) end
-                if set_bonus.tier29_4pc > 0 then applyBuff( "touch_of_ice" ) end
-            end
         end,
 
         copy = 228598
@@ -1376,18 +1405,18 @@ spec:RegisterAbilities( {
 
             if talent.bone_chilling.enabled then addStack( "bone_chilling" ) end
             if talent.cryopathy.enabled then addStack( "cryopathy", nil, 10 ) end
-            if talent.rune_of_power.enabled then applyBuff( "rune_of_power" ) end
+           -- if talent.rune_of_power.enabled then applyBuff( "rune_of_power" ) end
 
             if pvptalent.ice_form.enabled then applyBuff( "ice_form" )
             else
+                if buff.icy_veins.down then stat.haste = stat.haste + 0.30 end
                 applyBuff( "icy_veins" )
-                stat.haste = stat.haste + 0.30
 
-                if talent.snap_freeze.enabled then
+               --[[ if talent.snap_freeze.enabled then
                     if talent.flurry.enabled then gainCharges( "flurry", 1 ) end
                     addStack( "brain_freeze" )
                     addStack( "fingers_of_frost" )
-                end
+                end --]]
             end
 
             if azerite.frigid_grasp.enabled then
@@ -1455,7 +1484,7 @@ spec:RegisterAbilities( {
 
         startsCombat = true,
 
-        
+
         usable = function ()
             if moving and settings.prevent_hardcasts and action.shifting_power.cast_time > buff.ice_floes.remains then return false, "prevent_hardcasts during movement and ice_floes is down" end
             return true
@@ -1512,6 +1541,10 @@ spec:RegisterAbilities( {
             if talent.bone_chilling.enabled then addStack( "bone_chilling" ) end
         end,
     },
+
+    splinterstorm = {
+
+    }, -- TODO: Support action.splinterstorm.in_flight
 
     --[[ Summons a Water Elemental to follow and fight for you.
     water_elemental = {
@@ -1595,18 +1628,21 @@ spec:RegisterOptions( {
     package = "Frost Mage",
 } )
 
+
+local ice_floes = GetSpellInfo( 108839 )
+
 spec:RegisterSetting( "prevent_hardcasts", false, {
-    name = strformat( "%s, %s, %s: Instant-Only When Moving", 
+    name = strformat( "%s, %s, %s: Instant-Only When Moving",
         Zekili:GetSpellLinkWithTexture( spec.abilities.blizzard.id ),
         Zekili:GetSpellLinkWithTexture( spec.abilities.glacial_spike.id ),
         Zekili:GetSpellLinkWithTexture( spec.abilities.frostbolt.id )
     ),
     desc = strformat( "If checked, non-instant %s, %s, %s casts will not be recommended while you are moving.\n\nAn exception is made if %s is talented and active and your cast "
-        .. "would be complete before |W%s|w expires.", 
-        Zekili:GetSpellLinkWithTexture( spec.abilities.blizzard.id ), 
+        .. "would be complete before |W%s|w expires.",
+        Zekili:GetSpellLinkWithTexture( spec.abilities.blizzard.id ),
         Zekili:GetSpellLinkWithTexture( spec.abilities.glacial_spike.id ),
         Zekili:GetSpellLinkWithTexture( spec.abilities.frostbolt.id ),
-        Zekili:GetSpellLinkWithTexture( 108839 ), ( GetSpellInfo( 108839 ) ) 
+        Zekili:GetSpellLinkWithTexture( 108839 ), ( ice_floes and ice_floes.name or "Ice Floes" )
     ),
     type = "toggle",
     width = "full"
@@ -1652,4 +1688,4 @@ end ) ]]
 } ) ]]
 
 
-spec:RegisterPack( "Frost Mage", 20240805, [[Zekili:TVvwpooUr4FlglGgBKz84J(Cs3(HSabygKmV4jipeSwIwI2wP1HJiv3JhyOF7Pi1fjfjTCFS7cSl2fd6wQyvflwhFSu1RMU6BRwgGO4vFD2Kzxm5MjxoEYvxE1fxTAj9WE8QL7r(pG2c)qckg(3)EwkHw49p5pAp6qukkGXdsAEMp8ODu6EYN(4h3gs3LVESFA8hjHX5riAyAIFgAdL97(FC1Y15Hr0pNSATEf4Yvlr50DPzRwUmm(NbohgeGljht8xTKr(hMC9hMD7Nk8(2oCH3)gLb)di4WKvlJcjucF3H3GYJOWp(v(Uf5ZuLvl9tZtO4mYECu0QL4e06iCWQ)2kkOjm6AFs7sqrrUL)IlJ)LsXT0Y4hqyRDUYA9ZcbPeIk5YJyxCcooetk8wCFH31fEofEdk8iyQ760KCYyAioB(e3z79l8oESWt3YUGVmkkcNqhh6JDzAgoBCTCxsOzH(u2oUr5ZYtmQ7Oumt3V4S09zCLq9n3bVz(zRa(ry0JCD4sd2EBRg(v2)Tmo9rCmysAoR1UxQPACaWbuIp45SOWB6KwzTokm5bDocTmzD(MnCl)MOumzCq6tjTRV55noeIVjj9rKIdNzdFmkbnEVpLRJZNO1KZpmALbkZhLaV(77JsjSNuBvRjytyg2DDeIzfLuJRuv1iM5rMiAZHLvJ8(m8JUB9dgpD8MO8SSdLoZcp2pfuY0nU(PrbIrLXqKaHMMfBlsSKNIc0pf4dCk4MHrmZfyNgY)FrnHL8ADAu5RRocdHTdzm4j4)qPPCEH3OoA72iKFikYLSp8bC5BhALfgeWDfExYFP)ou2wmXDtw5Ecfv4vgubcFeSFoalZLYicYJbwAn5w0Cu1AqQYoiP41ji4AqaMRGpfYtd66VlmkI7iBu5BY8WF5MWKTSfcNHCd74896vBvV7MqA0HMflQ5z4yuycWDxjDJl)P6fHAwJobQQ7JlR9qkvMkN0XQErSZzJQZO2TIKvUjuYSc1X216EmRwZg0KHx0q1EeY0TA9vMKsnMiPHWB(boXnnBnt9U2O6vjswujgsWssq7L8AAKOqKARa5jsLPRvW6iZ2zT5SDZftyiKgb2z3yCN1tnsYYlUj1B4Tzgg9kEu2YsjId9p4(igOOLsMpKqXmYUWnuMbEF6t4mMj62ZoyXIJou38mskzkXrnmi7zCn4SOpLWuZfN0cPstrAgxMjv5SUaIsHZPMYmBfXydCfEvvggmRLupvK5qLYRn(LDkM1gauB3T5UpYCWMz8rN8Seiytgg)d2AnLLYmw6Nj7bGD)4hOSa7yUQIcQdSQ8oRl3hGr0D1LlBtBFBPCnsY9CskT211CQ9MghMa4fd3UJwNZqrfeZcCJi2FjjvVz04UATePvJz3mI6C)usj26LaQok4qVQim7s78rGYjkELsygnx6TXJqe)tP20c8rA3Aa9KDWHsvDbjITxXvwRQpms3SHZ9soOja3SqfZFzUC4RJylxAFGiXDgB0lZ1G6rLvBf36upY6vegyagCJ8ofs4tIY2qEUY7VyVmLvORnMP6CAs2i2zvm672QBBo39qbvUjBQ9n6ijD6mnW1zwxNHyjc5EE8SUvI2mOHrATOMlByMtmrjNqq0CsZGl8g5sdJpfsKUOFyA051yLloR8qdKoTmKgyQ5S)60GRB5sqgABAcXDDgRudNxMtW23UviWFDDRy619c0LAUTNbOlwt70a6Qj9Y(0WiUNscoIc3ypN0XDsdnUXicqYHgplJeUJryncJYGGO00GOCWTSSIK1L)i45PIpPLbvriv9itZwXkcoPYbnqrQuOuszO7ggOfxXRECLq259P0Qtut4JdaVQ41Hjb4mxqVJz6hDh2DlZBZLdRxjZe()LhUFpoyCYH4CmXnpHhBYcfHGJKGQ6zcvSSqy1TPu2fl4TtR0S1hf0slowJJsZYG)HWxfjpPStTs465zvwuNyxgnwDJUk1gJSZk(UsbaNntgpvBi5DYnqSnvQsdbR8buIdLcw5EFUBYz6Sev3irf43IZEaoluO6wrQ4iIjU)38GT8iwLW)jsjjcZWCzRsLup)zjKjqY8iEdZLjLY7J8Vfn10kcLt3Ge79X753e0UxAuDDDky3R(MEsitwbCD(4bmdh4KAYBsls1crWmcHt0n0AUj1mvRPd(ZoI2GR4p4DevhJMjETMUFArX3Yd8zkklnGAROApRi7J4BegL8RYlszFosRqLlkSAGvAnfsNYIT8X8Loh2PLlTOVgyTBlQ395p8Dx2YfWFoTx(exp(1VxYAtpB52Y6Cbn1m5596EnMatEg3Rb27GRZAu3XEO6(wS9mex7RkCP2DhhMLLM5ggZN2dj6oVXCOpjvgiKxb4rEgoqNJ8js(1Vo8QYevaWc9nLBoz3ZI9MYzu56z3UA5tOmM3dagMp7jHX7tZGYJBsZk8Ex1mN8oMBgCFLmMYtszOWr500yeL9a)DiW3LmU4l)JWe4vZ)uH3pNMaYI)631XCbSJMQ7f1wiGGHt)(iGJfFrJw14u8BNEzLJkN7kS1GxXj2ZOu85TBNQx3eR(ROy6agOUJnY1M07DyANsdQ88c98uSiLct1v)sLRx(MS)VspxLYlRWwTOY7yxN8wX4zVvm2WX2lGXAD8jNzu(B1(1qS(lMVg8OeH3OWwDGJu561VjE)38QNb1ahLaj3j)Pg069KVQq4vyTje(9K7VWZSBFtYdAGRVOm2g45ZE)RnWVC68oVG))mi1OZ5l6a)12HNDGhsyxTjDtiRb2SFjoKqGip4yoFVGJWwaDBwOpWEiU8bmfoT9k8(mTCrCOGW9fcy6fDhcEmguZdmEhMcaLHFkmXpkpGHpghs3HZ(eOaEFOW7)8ViygNWXKF59fEpTl0FNi1OKdTsTWljLX8Vd5i8dPrT8nG9tmHJBf6FTWd09kX8Tswa1m)fgtdeF0mbj)eV9in7OkwsRjLBn4pkjpEnUmIikLc2ZpZJCyp466(Ev4XNCC4LSVzc2F1xV6c29P4g86Riqg3GL(VC)hvVsvXx0rL4LP0tr9DxEF4M7LVHYI7N50P2GZGMm7siJpEuDXZ1lVMR50vG3D)mM3w1QaAfNwEPNRCN03ZUn69(berIuMD7sAaK5VVCkXVFQUD81od0nu8D3Dx010CsHxMK0Q8N5OAsMFs2sOcwTXWoKB5ABhhtoAsj5mu)GBD8O2H2Q5GxG0rQITLCMqhyQzihpoO9RhRWcr)XNfdKCW6mvvodnmSu3D7XJgE1936mOug6MEQro6NBQf34OPYF3dQgRP1DSZWbAodpE0Y8p5yP7GlMDP51wrXenhVSp6ctpBS(oDhOPwvv5mZ0ERJCQBFLSKgOzwHKCITZu(r3lMTodm0dVoYtUjLmzARbRlMoPJcZ)wiIlS8ZH4mW2WT40TFNTjRu2kgJHKOtiosKPx6yCAGwunjqM3rdBenekRt5g5CwB6H6(0GaRn1UwTUC8gV2SB1SQJh1oToleMuNJhn9PuS4J3T4IPqO2JSo7a5zMrBXn1LOogmSfvpnnlMpX5KmOjDyN0AARqx3UyX6vqvBG(CcaLbW2vvrR7yJ0CSyFYxQYHBBQxC0mXlwww10Uu7HjmNlJu3eLtEctt1pglGusjehPb)4URMy3w0JzbHhqD6ruXPpJNYOJhL0VfZSREMgoeoOdiEyXLod6obdkSSnVaBj3nz80oWG6OgTdh0x(PFQghDZltEm9bMJn4wKarpSZUs9LNmgqnVjV2HNFUk)4YVd3zXxiIKFHi2XdjhUsqwdV7(Qk(lZ72HyPZBAgCf13OmSkDSR1ZNI6lKhjfPWrog1Uat6CgkvoxeaHgEvD(k9hmrj(xLK8dhQB2p0usdUEXiZakoECO2LOHr3bLX68hf39ZgnsZ2OTgHMDI2kSghLd9vPn(Xf7QlIxzxN6yOk09t1WR(vTFy560pIggl7PZokFlb9B6YdNzTfcf3Wcqx19LL1jZ(CHOtGpZkEA41Mm5DRJoxJcAbUOEXnuZfYKW0RBpm6zzqzluGKox15UztEUUvNByMPqehl3v8KiYKeTrqz69KvX)06X1Biq1pJNy(Gl)peCoum1)MXLUKGWQA(t)wWkl(hjUXfX2R61JZez4mTCP9V5BJAa)Gw0yqOVofF48X4vOmhRAoL95uCsTjkI0QClfR1X0wvrBTJ(CvhIKv)xVQwC5kvXQFvO4RRxPrE5vNi0FDRmv5N)7ZQsKNtNHBAmSWN8R1kP(56C0B(QUET8y3PP5YQwYULpRHakoBDTnBqSNCJoLn83RLA7F8HTCaVjLuj0(xoLq1xkTmeXAzu(KsT6)p]] )
+spec:RegisterPack( "Frost Mage", 20240924, [[Zekili:TZvwVTros4FlcdqpsysuKAB5Jbw(HDawGjy35fpa7BQvRwu29M(qBZUDIde0V9TizFWJI9HKDqMDdMbXjIKvvSo)yrkVA(Q)C1dB9ZjR(d3zUxo7w3lNo)25x5E9QhYFzpz1d79d(K)JWFjXpg(Z)Ewkn)46)j)J27)suQ)wgnOPfzbWh9uE(E6V(Hp8yy(tfBMgKg)bAyCrKFEyAsqM)UC2)o4dREytryu(VNSAdMaSW9Qvp4xK)uA2QhEim(3akhUDlrmDcny1dSP)(z3(E3l)1JR)T0yciwpKNMfF8Jh)y1GZM)UJRz)8gXpDDHjZO3X1f7zSTzY3ip4(SW0SW8xmN21V39wyA)5tKJR)x(zWFa70WKvpefsZPmvrqeX)zc83(dU2LK4VjISD1Fdgbijjl0h0CzKN9Emy705t3fvKLbm6WbgBR)4G0eIx6oVG0OTGQiGP)akW2NEu22CvoOYSYGGuyDPFoXlJaR94ANJRhx9)YmNzo3KgLBWF(i7cZiEIHNWPXMID7Mggec7r6uAo4BCC99lpU(c(e0iXJr(bH(rE09HFIigDCRKWcdU746f8bdEYp7rc1BxMqF4hDCnSsxoZN0OLeQuqj8cqgVC2Iatdyoav2fwvz5(rKKCvPEA5m5SFlHlDFombwb1l4PWOOPmLSvjheUlBgCxyYJSfcwvU2DAX(gzomG4f5NWIHWe7lTk2zKy)WeG0EkcgN5ZBOFM)l1mgNflSYclBTfvUvcEu6jpv31Jz3TkKswnffptGUQDbYqD24U4wjzJoUU0SkV)BSQmzRsEvNIqIPQ(vzPFLK4LMTHjEx3LNel0LqHW1e)9kos1CukCUHH3d2TzQZRHXytRnpaXmyBGNjEKesCiHwgVjNvrkxdSZUPZ0kDirkAE5njUIVn1WKxrtzdjvMCyWlEptGz0mtMp0Sgfe9PWD5mf8(0ptYyQOBhCWslo6ZNnqp9I9CTYOUs3AXZO3zDMBVcgMl1LQeoj9zFov4LPKcIeLCKjmBw6zMR9o9JI8e)dpwrwrPwpbEK40NjXGtXk2)9am43DLD7o6S96kVXLTlRkFUeFtgSjbVtc5ReU7zVGd0zj3wlQoYED1A(ZNa5lbekvn2rSY6nejMhAZCLuklxcL4VeahE1Hj8dqb)auqpafGriHYUCpZCrzzXjzk74Yr5jnycklfIYeuSv09r8ncBMmzszM9XKwgXlZmwUa2qOQcfR8MOWV(v)STTx7V54nviker5mE0iIBj(5pvLgOweNmeR7)7dWQlmrdeHLDmbFZqyvJeQ3br2WtDrVWtPxl4uWtr96cs1BdINEbhrZCy2aGwHQPfOwAWhBr4ACZCfYrhZAU8(KeVHSDlzRW3YRktMy6E7zQn2sMntztO45yh9bAchh90DGCUvAWtenWLAoEvf(u98wiplTiB1zAVy(WIRSx1Dyi(vmT92Qz9Cc2lzEcPW68eNAEY9FxCN2UOj6PRKWgPn5jbSL8BEVsBPhXEcPT2s25xe1K4QX8uW9L2tyEskS9K4AWwA7XMyj1VUQWcfCv2KMuqNMhsYUyMN7(a7WrUSDavSZ(MfgWuGsHVfjwLD)0ooWaMq4IcC8U6U3QbvtbsYGLqO4tzR0B9CiduohSy0id2Zw9AVVfzB1ZQ1Rf3u5Up3dX3ZvVr7i1qRN3vXCSCvd8Ed()QcWYhLQ3j)rvO)1UMDz8YjxZgjWZWbUFreIA0(DvwvphqVkWPwwLvYO1SjD1IJXAgXAfpwNglDT1oEp6zDNiBnv7AH98fJ1pDNPtvdBdPP5prYIddGHZi6NA3GwiNueMapzaBHT0aj75zgehAiVCNlSxT36PH4dO0XIMoQDRu2aSPSKpfH9tion1dMYAxCu4JpP3KAJwfC)X13iJUaR9jybaTIAOvLPzdwWCO16WsJZdl5W2x6v7CCxu3bEBKYO3p1TntUz89tSKy8mTalBKBIw4LsYs7LpKC1BQcluckqfg11La0Fud87EO9klQsvLpq6UDCQlOasMk7mvUTm2RC86WwXs7ttZff)QKRUlc1s)bTIJOpNo0YTRuTvevSrUBg9XasOwouogVLw7HuKTnnOucpJRZsjwrrMv8uX3sODMQLEbAVLKsqDkdMKnx5zaG)iV8W4tR7K2R9minj6UDyh08YbLFqR0AVYSHhdp3EfdbQl4KeSN71C90NwX8GT7U2oEL5x1l0C2oA4aqZXAEbcAUYJrU)LyFk3K(zYgPKaAFUcCQwkGpxGdyhREVN8LaiA6zzWtkLAzAUlWaZvjRPHr84Kesu(t(zfuzbgzqTinK54j2LVuh0zDIpXMOYLkVjknDBubeX2C5pwx(ZGQuhTvdbejpAfvOsPKALFNk0RKYSVpL)te8Hcf8wiOpEdC(vsMhiAXSDaGg27r4ZZ94NjPHy9AYkUnK)tr4(9KTttEjUGq9ks4PXyPvGy9KTLLnLkm2YelDL02Wmapy4bf7VnKO0Sm4pOCjLwKi6TMegARZqk)apR79v3aUkaZMeHT0ejobaBZSPZrtDCNAdlAO51Y5mQ9b0YzCJ8KkOepGVX6t6w5jX9d92vWo5PA6hLJCUbCHjzFcmdON5SAACS(uV)DX2h5jH0MR6BecYwZ5U(SuU5lwDlkuZlI3lu1PMZJmaCnB8n7dSFwGpK2LvZcSIb6YIIOehMLLM5fgZFXZkZBy99Tp3iUCrlGgfzvDYqTEhg5Vy1apXxxExsySYLQD0AdaQM10TqvhM5XafjiBjFclxUXrrjWXdtjIwMPwSM)51gaJY4Qgj7kGxXc6U2lOBhqrSFI)uElPaD0f2FtgUgoUKVShsfvMZ(k9ahVnr(uDF6R1vvLDMtnMbwfRGeBsvphFG7F2pJbYdYvWF17Hay(mqQ3LMDC9pl6Y8pZadc5XZykjAklrMFrEASFo7dcEYhWYsNE8J)JWeyOl4Vy)eGv8H)zmeEafZtTmwL9aMZ45FzsnDVcNUYnrvJSyV0bDQEnovLDq0OkMVJovVXgvRpjMbrn68vpP5jV)p(redoNgdWy7(gzS)HtKvdEt1fnAAw2PNuu5ztPru03VvpPR(J6sJ02EZx9K6NPn7wCQk3)rnQI1AYEs1ZkW3cnp59pAGF5TQpSOFlrPNHh6LT7jHPbrVx2Eg3Fg0fvl6NoWILZFtYCyLQNHxOLm9A3DIUbh)Mv6Pv)mJfx8MOBTqv1(qzKefRjvF7OSfV)ZUA6CloAY9ivJUyDx1GSw8hoF51cHFfuXZFT92qZVuDeSHLKXYU(1v0Qpq(WKTx)siwOO2zUnmYONixEp)78TlJK3wDHNhxZ)EbddZ6fjjaoV2LSwtKUlSPRz0P1QMFz5h07oXXpInl5(sGpJQ2a8UWDlvpx59lDDmuwoJW3OhoOV4lW5xDhdmz4DlDz6NYvbZv(L4P85A9V(DSo0TmylvEsAV)jXCG6QVt8qRwohBhFTZiShCN5U7stvtNmV(1w1Qi46ORvUOIxkij6KDNgV6KS8hEMcvpjPJMlzRNc2fU9UPRisewojIZy83gYHdOVlKA3vPPorNTntNX0XJS8ApoCyeoAKjokRrPccSO6lDYGXYXE9IcisEtWKXJZWzSL3CXD3E4GLHwERZibpWEegtCWV9M7VXbbpLP5T2g06oguNiw(dhA5zu40YtO4E3fhomU1h7W9ZN5GwL2otlj9mPeIYlCcIxg7AIzB8AZPJ5lEOzVR5eytzzWNQoCQYPripMaLyP2jkFZD2K1zKL7c2GFQpJagpB7viaMVUJmASpQVZaNryxhV2NkEBbgmHF3kYsN4MVTUplJi1E3a1UqYYqzeQMyHAT5nPTzFA(IaoCa91aCV0lb4WbBp4HZDp3M)PzvvBU)szrTeX1DXeLg57GLJXrxGU2QFLb7qXKuHZMvR7N(Pk4E0Pawfynv3VMyUamys2oakNNpnGKSfSQV4rjzfXiz3R98zPYtPuhL7Y8o3fnYhgVuVHEEzpRmqJ0ZNnBYjYtJl2UEJ1(LRxgl02fR7GCP6TSSNfxOEv8O0vPprFtiU3BMKIFj6O6IRM1UUOh3)n3O09TE70NB8gmykY39UTlE2UjBECeKT4(foJmU3ADs2KPGTK7MnDUbAtdXO5Pjyr(OyXrHjpN(j2fEb(ljqodMrvSr4j6HdjTRGwAe5gC1pw8cmgeDH8quktbd2nArCSq1u6mPpuj9vPDZ1MBms9nLRpI2LJBOWRUpC9buVcCzC31hjPXEP86Xfa81Y0Bjr)Yzow)oFOGjOohAVq1ilInv7qKst8V2)ADi75jZa5gEJqt(wPSsQX3ydR6L5w03nVED0XvXaDckelYtzAr8Vyg4Srd5UrOVIHu9mt99RCXs2B8cL5kogsgfPVIflxCMU0g(ownz6v)vutDIbOoU8S1Si0Q372XJ7oCu74mokkDUv7(LxmXEemCKl0LGqO7w4y(7STLUYhHQFo8yqhBjNKPKaaqTHHgrwusw0)4p58b90jxiClCglwh(VUuScHhtpQ2Zd8nTW442GjxEdlDYySFlpGXZ(0ENooMxRNZhg2EPj)aRTN0sgxLtDIZUXiTxsPLby7HjNKcLTqPPyau)o3zNQB1qdZSfI40spS68WHkS265dX9K1ZjFcjKR(moAPx84panMey8w1u61G0QQFYzsAz5hNM1fX2ROd(QCawx8TO2leJVtlFOz3FHzWcovAEgzw3CCFinaN08FPL2i8nhCjvrwXbsoUnKK1yCWgDUZqaaHizFdqKsZTJgLpwlirn1EDgPxTQtg6ZzaQKZ4bMu00L16jn6uGUdvG6rt8mbNtZTcivOE7DUVZZAOrNx3a7xlGQaA0tJqATQTvaVOWprbzoYwj0j4T9Tkcpf)BkNQfqXB6BdKy0mv9j5tVdhpFOVAz5EZH9sXRH)9bKx6PC1)1TDx6LC2OL0FfMo4Qp1AvL)(1d51dORjnXMR3XArlFhHCrKt6sh(9ko((hF0woG3e86uz8RDGv3APQURtX)6gS6)c]] )

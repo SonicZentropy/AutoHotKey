@@ -3,6 +3,7 @@
 ## Title: ZenBridge
 ## Notes: Bridge addon for wow
 ## Author: Zentropy
+## SavedVariablesPerCharacter: ZenBridgeMythicPlusEndDetectorDB
 
 ZenBridge.lua
 

@@ -12,10 +12,11 @@ local spec = Zekili:NewSpecialization( 66 )
 
 local strformat = string.format
 
+local GetSpellInfo = ns.GetUnpackedSpellInfo
+
 spec:RegisterResource( Enum.PowerType.HolyPower )
 spec:RegisterResource( Enum.PowerType.Mana )
 
--- Talents
 -- Talents
 spec:RegisterTalents( {
     -- Paladin
@@ -45,7 +46,7 @@ spec:RegisterTalents( {
     judgment_of_light               = { 81608, 183778, 1 }, -- Judgment causes the next 5 successful attacks against the target to heal the attacker for 3,499.
     justification                   = { 81509, 377043, 1 }, -- Judgment's damage is increased by 10%.
     lay_on_hands                    = { 81597, 633   , 1 }, -- Heals a friendly target for an amount equal to 100% your maximum health. Cannot be used on a target with Forbearance. Causes Forbearance for 30 sec.
-    lightforged_blessing            = { 93168, 406468, 1 }, -- Shield of the Righteous heals you and up to 4 nearby allies for 1% of maximum health.
+    lightforged_blessing            = { 93168, 406468, 1 }, -- Shield of the Righteous heals you and up to 2 nearby allies for 1% of maximum health.
     obduracy                        = { 81630, 385427, 1 }, -- Speed increased by 2% and damage taken from area of effect attacks reduced by 2%.
     of_dusk_and_dawn                = { 93356, 409441, 1 }, -- When you cast 3 Holy Power generating abilities, you gain Blessing of Dawn. When you consume Blessing of Dawn, you gain Blessing of Dusk. Blessing of Dawn Your next Holy Power spending ability deals 30% additional increased damage and healing. This effect stacks. Blessing of Dusk Damage taken reduced by 5%, armor increased by 10%, and Holy Power generating abilities cool down 10% faster For 10 sec.
     punishment                      = { 93165, 403530, 1 }, -- Successfully interrupting an enemy with Rebuke or Avenger's Shield casts an extra Blessed Hammer.
@@ -204,7 +205,7 @@ spec:RegisterAuras( {
         alias = { "avenging_wrath", "sentinel" },
         aliasMode = "first", -- use duration info from the first buff that's up, as they should all be equal.
         aliasType = "buff",
-        duration = 20,
+        duration = 16,
     },
     -- Talent: Block chance increased by $s1%.
     -- https://wowhead.com/beta/spell=385724
@@ -857,6 +858,33 @@ spec:RegisterStateExpr( "last_shield", function () return action.shield_of_the_r
 
 spec:RegisterStateExpr( "consecration", function () return buff.consecration end )
 
+local holy_power_generators_used = 0
+
+spec:RegisterCombatLogEvent( function( _, subtype, _,  sourceGUID, sourceName, _, _, destGUID, destName, destFlags, _, spellID, spellName, _, amount, overEnergize, powerType )
+    if sourceGUID ~= state.GUID then return end
+
+    if subtype == "SPELL_ENERGIZE" and powerType == Enum.PowerType.HolyPower and ( amount + overEnergize ) > 0 then
+        local ability = class.abilities[ spellName ]
+
+        if ability and ability.key ~= "arcane_torrent" and ability.key ~= "divine_toll" then
+            holy_power_generators_used = ( holy_power_generators_used + 1 ) % 3
+            return
+        end
+    elseif spellID == class.auras.blessing_of_dawn.id and ( subtype == "SPELL_AURA_APPLIED" or subtype == "SPELL_AURA_REFRESH" or subtype == "SPELL_AURA_APPLIED_DOSE" ) then
+        holy_power_generators_used = max( 0, holy_power_generators_used - 3 )
+        return
+    end
+end )
+
+spec:RegisterStateExpr( "hpg_used", function() return holy_power_generators_used end )
+
+spec:RegisterStateExpr( "hpg_to_2dawn", function()
+    return max( -1, 6 - hpg_used - ( buff.blessing_of_dawn.stack * 3 ) )
+end )
+
+rawset( state, "holy_bulwark", "holy_bulwark" )
+rawset( state, "sacred_weapon", "sacred_weapon" )
+
 spec:RegisterHook( "reset_precast", function ()
     last_consecration = nil
     last_blessed_hammer = nil
@@ -870,16 +898,22 @@ spec:RegisterHook( "reset_precast", function ()
 
     if talent.righteous_protector.enabled then
         local lastAbility = prev.last and class.abilities[ prev.last ]
-        if lastAbility and lastAbility.spendType == "holy_power" and now - ability.lastCast < 1 then
+        if lastAbility and lastAbility.spendType == "holy_power" and now - lastAbility.lastCast < 1 then
             applyBuff( "righteous_protector_icd" )
-            buff.righteous_protector_icd.expires = ability.lastCast + 1
+            buff.righteous_protector_icd.expires = lastAbility.lastCast + 1
         end
     end
 
-    if talent.holy_bulwark.enabled then
-        if IsActiveSpell( 432478 ) then applyBuff( "sacred_weapon_ready" )
+    if talent.holy_armaments.enabled then
+        if IsActiveSpell( 432472 ) then applyBuff( "sacred_weapon_ready" )
         else applyBuff( "holy_bulwark_ready" ) end
     end
+
+    if IsActiveSpell( 429826 ) then applyBuff( "hammer_of_light_free" ) end
+    if IsActiveSpell( 427453 ) then applyBuff( "hammer_of_light_ready", 12 - ( query_time - action.eye_of_tyr.lastCast ) ) end
+
+    hpg_used = nil
+    hpg_to_2dawn = nil
 end )
 
 
@@ -888,15 +922,16 @@ spec:RegisterStateExpr( "next_armament", function()
     return "holy_bulwark"
 end )
 
-spec:RegisterStateExpr( "sacred_weapon", function() return "sacred_weapon" end )
-spec:RegisterStateExpr( "holy_bulwark" , function() return "holy_bulwark"  end )
+spec:RegisterStateExpr( "judgment_holy_power", function()
+    return 1 + ( buff.bastion_of_light.up and 2 or 0 ) + ( ( buff.avenging_wrath.up or buff.sentinel.up ) and talent.sanctified_wrath.enabled and 1 or 0 )
+end )
 
 
 spec:RegisterHook( "spend", function( amt, resource )
     if amt > 0 and resource == "holy_power" then
         if talent.righteous_protector.enabled then
-            reduceCooldown( "avenging_wrath", 2 )
-            reduceCooldown( "guardian_of_ancient_kings", 2 )
+            reduceCooldown( "avenging_wrath", 1.5 )
+            reduceCooldown( "guardian_of_ancient_kings", 1.5 )
             applyBuff( "righteous_protector_icd" )
         end
         if talent.fist_of_justice.enabled then
@@ -925,10 +960,22 @@ spec:RegisterHook( "spend", function( amt, resource )
     end
 end )
 
+
 -- TODO: Need to count HoPo generators and stack Blessing of Dawn on third cast.
 spec:RegisterHook( "gain", function( amt, resource, overcap )
-    if amt > 0 and resource == "holy_power" and buff.blessing_of_dusk.up then
-        applyBuff( "fading_light" )
+    if amt > 0 and resource == "holy_power" then
+        if buff.blessing_of_dusk.up then
+            applyBuff( "fading_light" )
+        end
+
+        if this_action ~= "arcane_torrent" and this_action ~= "divine_toll" then
+            if hpg_used == 2 then
+                hpg_used = 0
+                addStack( "blessing_of_dawn" )
+            else
+                hpg_used = hpg_used + 1
+            end
+        end
     end
 end )
 
@@ -1306,12 +1353,20 @@ spec:RegisterAbilities( {
 
         talent = "eye_of_tyr",
         startsCombat = true,
-        toggle = "defensives",
+        nobuff = function() return buff.hammer_of_light_free.up and "hammer_of_light_free" or "hammer_of_light_ready" end,
+
+        toggle = function()
+            if not talent.lights_guidance.enabled then return "defensives" end
+        end,
 
         handler = function ()
             applyDebuff( "target", "eye_of_tyr" )
             active_dot.eye_of_tyr = active_enemies
+
+            if talent.lights_guidance.enabled then applyBuff( "hammer_of_light_ready" ) end
         end,
+
+        bind = "hammer_of_light"
     },
 
     -- Quickly heal a friendly target for $?$c1&$?a134735[${$s1*1}][$s1].
@@ -1501,37 +1556,34 @@ spec:RegisterAbilities( {
 
     -- [432496] While wielding a Holy Bulwark, gain an absorb shield for ${$s2/10}.1% of your max health and an additional ${$s4/10}.1% every $t2 sec. Lasts $d.
     holy_armaments = {
-        id = 432459,
+        id = function() return buff.holy_bulwark_ready.up and 432459 or 432472 end,
+        known = 432459,
         cast = 0.0,
         cooldown = 60,
         charges = 2,
         recharge = 60,
         gcd = "spell",
 
-        talent = "holy_armaments",
         startsCombat = false,
         buff = function()
             if buff.holy_bulwark_ready.up then return "holy_bulwark_ready" end
             return "sacred_weapon_ready"
         end,
+        texture = function() return buff.holy_bulwark_ready.up and 5927636 or 5927637 end,
 
         handler = function ()
             if buff.holy_bulwark_ready.up then
                 applyBuff( "holy_bulwark" )
-                applyBuff( "sacred_weapon_ready" )
                 removeBuff( "holy_bulwark_ready" )
-                -- Assuming shared CD.
-                setCooldown( "sacred_weapon", 60 )
+                applyBuff( "sacred_weapon_ready" )
             else
                 applyBuff( "sacred_weapon" )
-                applyBuff( "holy_bulwark_ready" )
                 removeBuff( "sacred_weapon_ready" )
-                -- Assuming shared CD.
-                setCooldown( "holy_bulwark", 60 )
+                applyBuff( "holy_bulwark_ready" )
             end
         end,
 
-        copy = { 432472, "holy_bulwark", "sacred_weapon" }
+        copy = { "holy_bulwark", 432459, "sacred_weapon", 432472 }
     },
 
     -- Judges the target, dealing 2,824 Holy damage, and causing them to take 20% increased damage from your next Holy Power ability. Generates 1 Holy Power.
@@ -1553,10 +1605,12 @@ spec:RegisterAbilities( {
         handler = function ()
             if talent.greater_judgment.enabled then applyDebuff( "target", "judgment" ) end
             removeBuff( "recompense" )
-            gain( 1 + ( buff.bastion_of_light.up and 2 or 0 ) + ( ( buff.avenging_wrath.up or buff.sentinel.up ) and talent.sanctified_wrath.enabled and 1 or 0 ), "holy_power" )
+            gain( judgment_holy_power, "holy_power" )
             removeStack( "bastion_of_light" )
             if talent.judgment_of_light.enabled then applyDebuff( "target", "judgment_of_light", nil, 5 ) end
         end,
+
+        copy = 220637
     },
 
     -- Talent: Heals a friendly target for an amount equal to 100% your maximum health. Cannot be used on a target with Forbearance. Causes Forbearance for 30 sec.
@@ -1826,4 +1880,4 @@ spec:RegisterOptions( {
 } )
 
 
-spec:RegisterPack( "Protection Paladin", 20270723, [[Zekili:vR1xZjoos8plP2QiH6YYGnHK52kWd7SVmPUAQToMRU3WiSfG2yS4KStcvLYF2Vws(psYY2aB2PU7LmaQvl1)7x3T6zP3YVVCrekfV8B(J9VB8d(tg5pE6DtNSCr6Xd4LloGcFgTf(qcAp83FNrtXHPeAs(QFhfJIijcAogtrrcEXPzSqGUDPPh4)YN(0ws6US1JcP7)eNSplgj2AidTjv89WpTCX6msC6xtwU29fXF5cuw6okB5IfK9Fb4mjkcRihZdxUqq(pp(HF2FYVKV677W5R(3ig8h4Gf3TycpLlLs8guwCk8XVjLAKukwUGHxN9mCJXjO1X4OL)6Yu4oiOO(xQioefhhO(sGGZk(hO0nHuACe91eUGdtUeoKYijpJtLm4UlHb8uuseIfbmaw4addk(1OMcDe(fQKdOmgYLSxsymz7UuEWFKfTDpoj1I0j6KIyHOeCqkLXAs5D6ugst4yWjq9nd6MAj10dGqHtR37ligrSQ4tXzW)4b8JrsXWpxPahL6nAhIhuArYxniFL1AGQkDek5yq0bUC9BYxDLgv(oO693nytj7hfLPeM8vZNzWchumuXMMhvjTsz00HiGFmjmGhtfM1VD)zRJ8DQJ87qh5s6BQJCPjn0ro1aZ7tj6qf5DwQOuTiHsxFnfwTUaoI1zB2mIVd9m46UdhSdJEbNWhLDqDjUPtkg06Qm8Eejb0hpMVYF0Dvcvj)2H2VhZcOBcKHybByySblDsGoxN0lpzyu0XozQIcBUw7jzrFxqJ8DeCCKGuHAGjihtZ4kyAg5GIQ)fhaOxijnFfDdyHfi2)ZsQZxHcdPmiRYwyjQXkfPEOSRHV81V8B3kKP08vzcwsGpG4iqujBeFtqdkFLqPLV6aJgcAPFnB7wmCSKeW6RU23kUaeGwY2ekdRy8Wr6Ui3i1Vfo(OyaABuLWfCO8onQqJOmiv(0oOmGegvRXb4IXs7iyH2rJpgCG(kMjJr8RSVst3AexIyxAlQ8qLRgrEHaGVhYyhOCLJKIPx1JVHRCv1cFc(T0aeBpsa(lVTCuidhf8kgDGMOHjOcd0xSziKXQ6oD3BCvfbqBbpGGxbaHDLYIUxPqrvER6mzzDERAzIFadzqtrSTqM2rT42kTatQdCwNf)kI9SGUAB6Mm2Xraqt4ZkG)jnmJIak4SpggJlprbCKJeDA4ZkNSImVBZirOKqCPdwTSHpILx7JSQKcndBLQqRCSpCgkRWDIBnxjF(k75Mmq)bLwixkiLShcXEewEl4yVh9MB59ZTkVG7HPjrA)XmiXsboX8QJwAl2tf3sH0TnMYo6Wz3fyTwHkM8xC7(7DD7aUYqKOa8lc7ckkIpc)MOSs1DYEnIkfN3ydF2Ia0uACS4a9g3VrWHw0ZOkoBbX0m7zJuBK2tVgmdTJrXzc20o6qHNkjzpfQavHkvHdoOfnd4OC3uLM7uJeNjJIC7371wOVfiHzAOVd(hImerVGssH2Bu5Iqc3hiXZR7iH7a)5medwglO83KMpi9qc)aPSofrcQTKxWYDQq3GnxGmsktUfMjligiQchvKXParPB0wPquqPuLwfpQchhOLRXc2ScFvQ(gl1vTd6CIa9NeoERG4DHG7zaGbxqohodfqMTJ9dUX6SQ7WCpF2Obewghfb7Idvp2O5pV2rdQRb4SD6VF8hNtVVn6r9nSa)JKi09gLwwZSxHkSQGpL8R9kKTYMnT1(9eSX)06YlvRtxhLNxYGcA8SGJl7UzuJk)L(TEg(QoCdLPWkQbQ01vaknwVE6EoeF3Dmwx3NO6QQUy6QQMkI66eHihXh4A6KoQeVGg)ZtV5)JqV55UlYFy6nFL3x9l10z3HMHQwpfIrjrxwjcpm19Y6XQ2paJ9d0yQEw649zAhMOHQTMThOL5)TZVA4t5In6je8Mw5zOQtSOWOIFR)CxkwmSSaVg7PU6N6nPNuSuV5EvR6KRjYSFdRco7U89ldF3Q8q7N4PpdNvBNTAruLcuNM1QNsxDh09rRBP(CnJ3qy41XuQ6HiHiUxadLyf1R7oDmqlutJijfeCkF1wY(dugevTHczAUU6PlVgcpW)NmIS2kov4dHYsP7rPIFakhc8b4JYF6FilpB6VKV6l0e40KlFDjgJ5ZhDTQ0TRB51LGLVX7THNit1F9RwySfjNeZB(aCnyUtsojM74v3CC1DrZFPSVxg745eDOvU479LY(tGXD6(1yzJB79)4z6Fs3U2y(hsat738lZ49xm77LXxAWYjEVVu2Fcm(IGuZFYbAFXU4NhyVx)Mkz9KDzNkjWqx(XX4kw63V5XnlDqGXD9JJXsJZxL2fbNMkElEHRq(k5muHLLf3ecvNCVy2I0neXiMueXhvLX(Vn7tgJxm)jxKyxnTtImBX0nn6Tz6MIYoeUvmWOzfkG62eUvoKSzE3s2mZTZ9G2bWgCZvTdD((7DefoFwhqldF)9RCJZ)Nre91frF3IytPqteBk)1IOdPyEhIVUeAnS2NQKrqYuJNx)xShaUsMl3nVFslrB6NYYHiQDLQKeEtNyH6TZEgNpZheB3Dk((7n7sC(dtB(Zq1(oVmMvM7MgvBDI7zl9r4Cxw9)i2(nD0mWJEWT(gr)EZ9gdFQY27M85EthoCGfvn7RBqfb290vVsl9ZnCOB5sRPRMMUw6CB(SjUzMDVuTRKF)9E0ipoBY48N(PFQeb28GijVqFghGFdAllbfhioeL7Q8z6cijBY4xGvUQNT22yP96Z6HdLHiadSgXOGnx164ya)IwxBqlRuQE8hD3WY93YC0h0(ILCzsR8OC2OUzIXmZbUawQ8v))XCTDA2AXrxgLFdG937mV18N7zE3ZgpCq9dkp3hSaQPR2C22fR0yU2dhCvN2m3EMgJBqizgZ7yMXenG8DogZHMhRRXF849f3RgbB6GpAxPQCggJ5tvfYPbenr5E2ZKPb8knv(JtCEzQNUGScHohaDpH(wjForjUySwY8JnhV8JZkgTSt(ALVq6325aLN7x4C1CqYLExo)F7JRd3kfYnNtYDVXNNRXPi9oPrVezjQS1WFpDFcxt9AGdrB2DqjaNMBSiFkaG()otK9Iqq0hu7GcV5z(d6R0hzI(l44SaS6exQfyjNNR5Cx7ju38fTD64zoN1tWp7QZ1r7(XNJJMJZ3yyOvL(4CcQUdan6rvWan42P9gpQxlvzJjajqY)askEp)w5aSk7zrcwEt7J8AM3aNvMlYEzm7UhND3yr9pDWkFJEBnFSaOlM2Y2bl1othEocRFFcR)hNW6z0L7hKWkh9XY)l]] )
+spec:RegisterPack( "Protection Paladin", 20270908.1, [[Zekili:TVr7UTnoYNLGc4AJn11sjojTi2a7T4aAdkkwSzpC4(JLPTOT5gzjFusj1lm8Z(ndP(GuIusonTxxGfOOj2C4WzgoFYzYmNz)(S79jj0zF2DK7LJE3OBg6oY5g3RNDFY(D0z3VJS8bYA4xcjBH))x5rj0LjSOWJZ)vsaXNfIWSpiI4J4kokLVeGBtsYU43)23UMLSjDXWLrBFBmBBAab36sozvc(5LVD29lszbjFmC2cZeYvZUNKMSjIp7(7zB)faZmFFQeCA8Yz3JG)MrV7nJU59hN)B04Kio948TSe2AIKojz0Balo54DhVRyhUNFCo(ZlZ(jIb8qoopDhslLaFZBCCaGCDbi(xY1MVIhTnd(c4U(nUxaG87BG1)3eo8Fa)JIi8SJrb0YOOa)ONcXp8zH4Ngsweq9N9pGf5SekNra54oAqGxcHVMMepmGTEtsS3FK6VElnm548PtaI548dhoo)SJZ5eMVh9ryLHeF)4H0VGNMC5QRXabX0JZVES5Lt3bYBH8cPzTtDwcC3GeC(6eyBRzHR9EIts2OYiaKxyL1wKUA1q99QDS7Ie)eWXLwXr)JZnHgoDlHfcC(ThN7KXHaOjSTubx7m648bW)kpSTriR5fTYBDqeFpEQJ74Ls8ggnWh3AYgQhhfw0O0y5LZfLhHp7rwi1ljkiar)vNOGrYf5Qn25y8qhvEQliX4VGKN4Eep6RpPJUa1GG7MseVIXPlcII8NH4emcxrsdsk0MZbdak9bAfLc3keqoWljGCv(bp0srAV4jD5uAXyqTQtyO0zGjTQoHIeol8b4w3KcsNqqCcj0NWZKA74uWL4csD5Mp9rH(VhjLtmj(SzDAW8RWqLVKi0a586qEPkKlJcJPG7z5N0GRkxhbMSX0KY9(ibuLGvXFlif(HJQgwMaCyIZWnKyV8l1JZ7b2N6RbIkWBu4Ep)DXI17l8YvaLRbOqBef0uyU4NYZIcGwLkOWaedkCOw5OYHvWJ6keEX7dx6fheLyY2UDzKRrzKBdYitCFDzKjjPMmYOeyABcrdIiNtseLOzn2yiqWG5bWBKG7e(NS4WDyHmcKbBIc27Tl6jkFi4zITKbblHl(rs6wGMm)X7s57IIPcpSkbeSCiM8EvsQBOKaWJ5ULjIqppfT2t(vFDKvXAarfIoMf28ER40AK9trCFTOy2J)MqcWW9RyHKapHBPHzWjv0ue7SqWlfEW(KTqsGEJLrd8JZ(cbqNj4qzeeUpgnfyrAOpWRAmX6uyzgresIeUKHqINuSoyzYb59G(sYmdQY6ABO50g6aVToI8WpsCNv82CQkcImM9iCuWoGJmORxU)OjaQKLzJzq9xr2t)qBonTk(zCgRKoazVhK1WgWCow6NTiLfdEzZ3vgmovYTopm1WAUWfUTCYDR1ugRRe(Q0Yp9YrfrqA)qCnh6ViOeNs83xeoYgLmqnMvtNiCLG)sSImPHewZGX90KBUFpKBoMth47MCZvQ9THSDlLxw(rJH6ZfjWkXXiHaBZNaeleEA5dc72rLzEiJFHGKg)aym6lHTiiwgHFcvRPyhvLUBoU)U1qw1EU45le(J7kvwEG09ubvTN3Cy7AN1LDkPf7bdRHqhfNvnDtyJ2hRwjrPC00RdCLkOwkH5Avye0d13tI2kqEJ5dwxwOVL3Pv1dpnMaoFHSH4SAfT6msR(mLQ51GlrPgVwYRvOzKv)26uMpepHQLdwFLc(lLXApVHRYLvfDwpHjEUzCPZa55YP(rPlskpVc0KVs(vT2BmLT7QpRGIvxhle(KmWEEuo(uik8EZk0Lk(TB1QXLgye7wV9fuIo7KRA6Tt(OQrCDwR0LDDi9yl9l1hKLsiz4YsnewRUf(dLIHQ3FMYErR0iLSK63Q(MvvYYAw6A1w2DCfs)sIhHVLiFluG5JjlbvaVNOKDrHkQ8YINuxSGk7BCvvlSRY5CBXi715NLRkBlUJY5GgFtPsFJN(ZqkScYlEErAWte(diCLQtRs57vneUOMg0TINYC5(Lb08te9TzilCT81P848cYeptpNTtUQ4LXxbopJEsKOEaOVbNibO3fukC3r9b20hHbo99rPW)lkVpMeYs2FoKxpCLZaWb7GnHm0vdKndbkkfFIJ1e89TtIGnfIFFAmG9F(E5xXPGwymut(ccNd70hwlAfCuegwPoySdhtchiF8JiIi(pcCcHJNG4i3UlaFvFCTauAaFFe8FFaewaKkuh8jytlt5qqRZZWDy0Iim1R4nrPb(I(sKkjFFG6s2WIphVSqmSsW7hN)B)ZF(tF6)CC(tKqHujjcajfRSrQ7JBkxikoJIvIsfldFpAUaRkVwEDmE(4fJCBdZBps8W8Ox)0K3w5o8C2QjN1Iwu6UE5HiSctM2sVoPapDYf9oRF)MJw2vu5mAWHdzSq(LpcM4QhO9bQ2xN1QjtM1FxzybWDIsZBEq10FAoBQBobNhl3GuqSw49vPaLXPYL8KDlbDCTgIXSL8fZ2)V7e8pl8OKjMK(nZPcKiAYVOm5RgYn4z07lrxGmNrhEI2QvwrAAqC4ypjMY8pGanK44uUqfotjQJ6f3Q1tPkPdJNFlnC7L98TLKnsi2dC)sriU2tDhjaBXsBoY0hXGmqmPakAyJeb4Q93Z94N7ZEhNfb8d7pXEmdbBsiIxM94CqK8anZJ7hO4rHH0Wyaygxiec(lw2gA0NaQn(bGVWWS)cehaaAyf3qn78tWS2FmSZWObLTZzOApw16ZdIg7V5u)cYGfUncsJVsE)9SyNHvOo(KRe)cLmo15EFAadIQQjaSuiQtvhID13uJEIExNRh1D0PxqQRt3Ri1TfFnwAxqV2uO0tPvs3RWA5QvSrjLwRXdU6TESQnNoJy3xXxZ9VR93f3U8PjwYUrwLCLvEiPknDfrJwiD7TAv8wcyIN4k44WCnoomaDr4HIx(xMfnB7UiEswMYVUOJYVgt09)MY449zCeglNKMeTLiC6abEH7J4HhV7tIKgh)EW5tuiCAILFD(lgQ3vVxltG(1wA6hSCFNVmOJivTPKwqCfq6eYR3x0Ai3iiDc5gAgQbs3emFtrFRi2qxEnivE209Zf9DaXnQ(vBznQ9QV)i9RuTZgYFrmySt5pVlVVXOVve)Cnw6iD)CrFhq8ZYL6X7m4TpBxXNMZEN2VQepLxt3t5aOjlF5qCbkDB)6XmknaGgT(YHyXLZhf3liMUwFstrXooOxrRy48(8Qxv(slfXQ)PjVfZKat2igsSjHTITuoPn31g8e))iFQCUZeCAZrMzqQovPgbspngZWOMkJziY7G45ypaMKjslBJ45IPHAId(qtMnx6z3LyV(Nz3z8HdnyxpDsdoRWhmYCKJVgw0vLfDnZI15cfwSo)xYIg4IPnW(QCyLPY7UcEev5eJYP63uTbpsEoF3XTdQY4z3kS5(6AhY8xWuH8l4646k84vrJZz90jUGiY8lmD4q9QENE946Fnu5LrIrVJbMHroYiiDAPheg3vLzAg3EFt7pRIUBDaQUp(QFtDgnyGzCQ8iz1fB2FbxZiRAtOSZGhouO1AH4NCXiDNLQhel8XOhOEqn)uooTB4HivveLS5XcxLg)mKWfZaTTnMrDtVrvvSuPhqHfzMW9GCkM6LxRQ1HESx)6Zv4KrhoyUxEdSqjAL7INF5ugDB5KmEANv23BSqBB0H2OtjLd2guXE5IO6d510IHtS3zzA91gRRmQRPr6sNXkgNRSVUyuUSXlwrT69RbIxz60()j5NpZGi1wFscBs6)dcdu5m)RHuxDe(Qyh6mw1rIsN6mhiSs33vmMS1hT(f(zRpVj36MXb267)am)eJZOr2g1Mpdzu1wMNKbg5wd81PCYtUaO0YMqWQonitN4uszrwMbeZuwdUZ73VKglApyTr(qjsxlJ7XKrd6v6lEQ7Gmw1WODynua2z1gVsTCJN7c3Y1J2JMJ8U2ZTprBwlaDgzmIkJNbKlIHVpxv8QENzoqDVoKOGfYUiFqT(6jRgPBj6CHmwDlZyb2r7YlUBHKJEv2FQG)9ar83der7AzFxhicJwk)GigAj2qLcQ6OLE2ijiIovFGiUDs2Wq8SC8P2JXEzh0exJOQsHw9pLYpHl1tITncSENnlkWzHH223TlSBB7(QweZVnhyLEQ(sCqUcx4)qm5aD2ETLwaBuYfv((EcCuzUcmUPY8if6Xnmdb9mOkp5YXho0PlHPywDN1AVI)QTB7GXYPON3fvuJWuRCDz2sMQ0UxlXkkszYCR(NmQlkvD4Y)zE7CcCQzcv7PRfvuvM914w10vR4QsEWwkfPPslg1Hkl6Sg)4MOmDzV6FLhtg3or0eMBOihTJ5YNj55KxjJfry3UpQe(VoO1B4rDySzy30bBX(U(wSAMxhuL0bu1hZFtCaciJEpOcHTXNl(7Wk)5Yf5003(F5wtC6z8rHXcW0(tq72jxI5k2eQC1AbJExYYZYS2Xmata1oshCkmRBBmR7lhZ6O1mMxiMvmu)lN95RUsm9pZ(F)]] )

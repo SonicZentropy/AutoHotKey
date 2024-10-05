@@ -76,7 +76,7 @@ fn locate_on_screen(
                 let base_img_idx = dy * img_width;
 
                 for dx in 0..img_width {
-
+                    
                     let screen_idx =
                         unsafe { screen.get_unchecked((base_screen_idx + dx) as usize) };
                     let img_idx = unsafe { img.get_unchecked((base_img_idx + dx) as usize) };

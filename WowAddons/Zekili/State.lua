@@ -19,11 +19,11 @@ local GetPlayerAuraBySpellID = C_UnitAuras.GetPlayerAuraBySpellID
 local GetItemSpell = C_Item.GetItemSpell
 local GetItemCooldown = C_Item.GetItemCooldown
 local IsUsableItem = C_Item.IsUsableItem
-local GetSpellLossOfControlCooldown = C_Spell.GetSpellLossOfControlCooldown
+local GetSpellInfo, GetSpellCharges, GetSpellLossOfControlCooldown = ns.GetUnpackedSpellInfo, C_Spell.GetSpellCharges, C_Spell.GetSpellLossOfControlCooldown
 local UnitBuff, UnitDebuff = ns.UnitBuff, ns.UnitDebuff
 
 local GetSpellCharges = function(spellID)
-    local spellChargeInfo = C_Spell.GetSpellCharges(spellID);
+    local spellChargeInfo = GetSpellCharges(spellID);
     if spellChargeInfo then
         return spellChargeInfo.currentCharges, spellChargeInfo.maxCharges, spellChargeInfo.cooldownStartTime, spellChargeInfo.cooldownDuration, spellChargeInfo.chargeModRate;
     end
@@ -107,7 +107,14 @@ state.max_empower = 3
 state.empowering = {}
 
 state.health = {
+    current = 1,
     max = 1,
+    percent = 100,
+    timeTo = function( amount )
+        if state.health.current >= amount then return 0 end
+        return 3600
+    end,
+
     initialized = false
 }
 state.legendary = {}
@@ -616,7 +623,7 @@ state.GetPlayerAuraBySpellID = GetPlayerAuraBySpellID
 state.GetShapeshiftForm = GetShapeshiftForm
 state.GetShapeshiftFormInfo = GetShapeshiftFormInfo
 state.GetSpellCount = C_Spell.GetSpellCastCount
-state.GetSpellInfo = GetSpellInfo
+state.GetSpellInfo = ns.GetUnpackedSpellInfo
 state.GetSpellLink = GetSpellLink
 state.GetSpellTexture = C_Spell.GetSpellTexture
 state.GetStablePetInfo = GetStablePetInfo
@@ -1833,6 +1840,8 @@ end
 -- Gives calculated values for some state options in order to emulate SimC syntax.
 local mt_state
 do
+    local logged_state_errors = {}
+
     local autoReset = setmetatable( {
         -- Internal processing stuff.
         display = 1,
@@ -2141,6 +2150,7 @@ do
             -- Stats (that refer to state.stat, generally)
             elseif k == "crit" or k == "spell_crit" or k == "attack_crit" then return ( t.stat.crit / 100 )
             elseif k == "haste" or k == "spell_haste" then return ( 1 / ( 1 + t.stat.spell_haste ) )
+            elseif k == "raw_haste_pct" then return t.stat.haste
             elseif k == "melee_haste" or k == "attack_haste" then return ( 1 / ( 1 + t.stat.melee_haste ) )
             elseif k == "mastery_value" then return t.stat.mastery_value
 
@@ -2373,6 +2383,9 @@ do
                 elseif k == "time_to_refresh" then return 0 end
             end
 
+            -- Fallback to action cast time; found in Augmentation APL.
+            if k == "duration" then return ability and ability.cast or 0 end
+
             -- Check if this is a resource table pre-init.
             for key in pairs( class.resources ) do
                 if key == k then
@@ -2384,8 +2397,10 @@ do
             if t.settings[ k ] ~= nil then return t.settings[ k ] end
             if t.toggle[ k ]   ~= nil then return t.toggle[ k ] end
 
-            if k ~= "scriptID" then
-                Zekili:Error( "Returned unknown string '" .. k .. "' in state metatable [" .. t.scriptID .. "].\n\n" .. debugstack() )
+            if k ~= "scriptID" and not ( logged_state_errors[ t.scriptID ] and logged_state_errors[ t.scriptID ][ k ] ) then
+                Zekili:Error( "Unknown key '" .. k .. "' in emulated environment for [ " .. t.scriptID .. " : " .. t.this_action .. " ].\n\n" .. debugstack() )
+                logged_state_errors[ t.script ] = logged_state_errors[ t.script ] or {}
+                logged_state_errors[ t.script ][ k ] = true
             end
         end,
         __newindex = function( t, k, v )
@@ -4135,9 +4150,14 @@ local null_talent = setmetatable( {
 }, mt_default_talent )
 ns.metatables.null_talent = null_talent
 
+local logged_talent_errors = {}
 
 local mt_talents = {
     __index = function( t, k )
+        if class.talents[ k ] == nil and not logged_talent_errors[ k ] and #class.specs > 1 then
+            Zekili:Error( "Unknown talent in [ " .. state.scriptID .. " ]: " .. k .. "\n\n" .. debugstack() )
+            logged_talent_errors[ k ] = true
+        end
         return ( null_talent )
     end,
 
@@ -4684,12 +4704,12 @@ do
                         end
 
                         -- Cache the value in case it is an intermediate value (i.e., multiple calculation steps).
-                        --[[ if debug then
+                        if debug then
                             conditions = format( "%s: %s", passed and "PASS" or "FAIL", scripts:GetConditionsAndValues( scriptID ) )
                             valueString = format( "%s: %s", state.args.value ~= nil and tostring( state.args.value ) or "nil", scripts:GetModifierValues( "value", scriptID ) )
 
                             Zekili:Debug( var .. " #" .. i .. " [" .. scriptID .. "]; conditions = " .. conditions .. "\n - value = " .. valueString )
-                        end ]]
+                        end
                         state.variable[ var ] = value
                         cache[ var ][ pathKey ] = value
                     end
@@ -5265,7 +5285,7 @@ local mt_default_action = {
             return false
 
         elseif k == "cooldown_react" then
-            return false
+            return state.cooldown[ t.action ].remains == 0
 
         elseif k == "cast_delay" then
             return 0
@@ -5499,7 +5519,7 @@ local all = class.specs[ 0 ]
 -- 04072017: Let's go ahead and cache aura information to reduce overhead.
 local autoAuraKey = setmetatable( {}, {
     __index = function( t, k )
-        local aura_name = C_Spell.GetSpellInfo( k ).name
+        local aura_name = GetSpellInfo( k )
 
         if not aura_name then return end
 
@@ -6210,6 +6230,8 @@ do
             -- Perform the action.
             self:RunHandler( action )
             self.hardcast = nil
+            self.whitelist = nil
+            self.removeBuff( "casting" ) -- TODO: Revisit for Casting while Casting scenarios; check Fire Mage.
 
             if wasCycling then
                 self.SetCycleInfo( expires, minTTD, maxTTD, aura )
@@ -6226,7 +6248,8 @@ do
 
         elseif e.type == "CHANNEL_FINISH" then
             if ability.finish then ability.finish() end
-            -- self.stopChanneling( false, ability.key )
+            self.whitelist = nil
+            self.removeBuff( "casting" )
 
         elseif e.type == "PROJECTILE_IMPACT" then
             local wasCycling = self.IsCycling( nil, true )
@@ -6573,6 +6596,7 @@ do
         if not state.health.initialized then
             state.health.resource = "health"
             state.health.meta = {}
+            state.health.percent = nil
             setmetatable( state.health, mt_resource )
             state.health.initialized = true
         end
@@ -6786,10 +6810,6 @@ end
 
 
 function state.advance( time )
-    if time <= 0 then
-        return
-    end
-
     if not state.resetting and not state.modified then
         state.modified = true
     end
@@ -6833,6 +6853,10 @@ function state.advance( time )
 
         eCount = eCount + 1
         if eCount == 10 then break end
+    end
+
+    if time <= 0 then
+        return
     end
 
     for k in pairs( class.resources ) do
@@ -6885,7 +6909,7 @@ function state.advance( time )
         end
     end ]]
 
-    ns.callHook( "advance_end", time )
+    time = ns.callHook( "advance_end", time ) or time
 
     return time
 end
@@ -7049,13 +7073,12 @@ function state:IsKnown( sID )
 
     if not sID then
         return false, "could not find valid ID" -- no ability
-
     end
 
     local ability = class.abilities[ sID ]
 
     if not ability then
-        Error( "IsKnown() - " .. sID .. " / " .. original .. " not found in abilities table.\n\n" .. debugstack() )
+        Error( "IsKnown() - " .. tostring( sID ) .. " / " .. original .. " not found in abilities table.\n\n" .. debugstack() )
         return false, format( "%s / %s not found in abilities table", tostring( original ), tostring( sID ) )
     end
 
@@ -7508,12 +7531,10 @@ function state:TimeToReady( action, pool )
         wait = z
     end
 
-    local line_cd = state.args.line_cd
-    if ( line_cd and type( line_cd ) == "number" ) then
-        if lastCast > self.combat then
-            if Zekili.ActiveDebug then Zekili:Debug( "Line CD is " .. line_cd .. ", last cast was " .. lastCast .. ", remaining CD: " .. max( 0, lastCast + line_cd - now ) ) end
-            wait = max( wait, lastCast + line_cd - now )
-        end
+    local line_cd = self.args.line_cd
+    if self.time > 0 and lastCast > max( self.combat, self.false_start ) and line_cd and type( line_cd ) == "number" then
+        if Zekili.ActiveDebug then Zekili:Debug( "Line CD is " .. line_cd .. ", last cast was " .. lastCast .. ", remaining CD: " .. max( 0, lastCast + line_cd - now ) ) end
+        wait = max( wait, lastCast + line_cd - now )
     end
 
     local sync = state.args.sync

@@ -204,6 +204,7 @@ local enemyExclusions = {
     [168112] = 329636,    -- Kaal (when shielded)
     [193760] = true,      -- Surging Ruiner (Raszageth) -- gives bad range information.
     [204560] = true,      -- Incorporeal Being
+    [229296] = true       -- Orb of Ascendance (TWW S1 Affix)
 }
 
 local requiredForInclusion = {
@@ -1065,9 +1066,11 @@ end
 Zekili:ProfileCPU( "Audit", ns.Audit )
 
 
+local IsAddOnLoaded, LoadAddOn = C_AddOns.IsAddOnLoaded, C_AddOns.LoadAddOn
+
 function Zekili:DumpDotInfo( aura )
-    if not C_AddOns.IsAddOnLoaded( "Blizzard_DebugTools" ) then
-        C_AddOns.LoadAddOn( "Blizzard_DebugTools" )
+    if not IsAddOnLoaded( "Blizzard_DebugTools" ) then
+        LoadAddOn( "Blizzard_DebugTools" )
     end
 
     aura = aura and class.auras[ aura ] and class.auras[ aura ].id or aura

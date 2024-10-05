@@ -12,6 +12,7 @@ local FindPlayerAuraByID = ns.FindPlayerAuraByID
 
 -- Globals
 local GetWeaponEnchantInfo = GetWeaponEnchantInfo
+local GetSpellCastCount = C_Spell.GetSpellCastCount
 local strformat = string.format
 local insert, wipe = table.insert, table.wipe
 
@@ -20,7 +21,6 @@ local spec = Zekili:NewSpecialization( 263 )
 spec:RegisterResource( Enum.PowerType.Maelstrom )
 spec:RegisterResource( Enum.PowerType.Mana )
 
--- Talents
 -- Talents
 spec:RegisterTalents( {
     -- Shaman
@@ -33,101 +33,101 @@ spec:RegisterTalents( {
     brimming_with_life        = { 103582, 381689, 1 }, -- Maximum health increased by 10%, and while you are at full health, Reincarnation cools down 75% faster.
     call_of_the_elements      = { 103592, 383011, 1 }, -- Reduces the cooldown of Totemic Recall by 60 sec.
     capacitor_totem           = { 103579, 192058, 1 }, -- Summons a totem at the target location that gathers electrical energy from the surrounding air and explodes after 2 sec, stunning all enemies within 8 yards for 3 sec.
-    chain_heal                = { 103588, 1064  , 1 }, -- Heals the friendly target for 50,612, then jumps up to 15 yards to heal the 3 most injured nearby allies. Healing is reduced by 30% with each jump.
-    chain_lightning           = { 103583, 188443, 1 }, -- Hurls a lightning bolt at the enemy, dealing 25,781 Nature damage and then jumping to additional nearby enemies. Affects 5 total targets. If Chain Lightning hits more than 1 target, each target hit by your Chain Lightning increases the damage of your next Crash Lightning by 20%. Each target hit by Chain Lightning reduces the cooldown of Crash Lightning by 1.0 sec.
-    cleanse_spirit            = { 103608, 51886 , 1 }, -- Removes all Curse effects from a friendly target.
+    chain_heal                = { 103588,   1064, 1 }, -- Heals the friendly target for 50,612, then jumps up to 15 yards to heal the 3 most injured nearby allies. Healing is reduced by 30% with each jump.
+    chain_lightning           = { 103583, 188443, 1 }, -- Hurls a lightning bolt at the enemy, dealing 20,688 Nature damage and then jumping to additional nearby enemies. Affects 5 total targets. If Chain Lightning hits more than 1 target, each target hit by your Chain Lightning increases the damage of your next Crash Lightning by 20%. Each target hit by Chain Lightning reduces the cooldown of Crash Lightning by 1.0 sec.
+    cleanse_spirit            = { 103608,  51886, 1 }, -- Removes all Curse effects from a friendly target.
     creation_core             = { 103592, 383012, 1 }, -- Totemic Recall affects an additional totem.
     earth_elemental           = { 103585, 198103, 1 }, -- Calls forth a Greater Earth Elemental to protect you and your allies for 1 min. While this elemental is active, your maximum health is increased by 15%.
-    earth_shield              = { 103596, 974   , 1 }, -- Protects the target with an earthen shield, increasing your healing on them by 20% and healing them for 32,276 when they take damage. This heal can only occur once every few seconds. Maximum 9 charges. Earth Shield can only be placed on the Shaman and one other target at a time. The Shaman can have up to two Elemental Shields active on them.
-    earthgrab_totem           = { 103617, 51485 , 1 }, -- Summons a totem at the target location for 20 sec. The totem pulses every 2 sec, rooting all enemies within 8 yards for 8 sec. Enemies previously rooted by the totem instead suffer 50% movement speed reduction.
+    earth_shield              = { 103596,    974, 1 }, -- Protects the target with an earthen shield, increasing your healing on them by 20% and healing them for 30,954 when they take damage. This heal can only occur once every few seconds. Maximum 9 charges. Earth Shield can only be placed on the Shaman and one other target at a time. The Shaman can have up to two Elemental Shields active on them.
+    earthgrab_totem           = { 103617,  51485, 1 }, -- Summons a totem at the target location for 20 sec. The totem pulses every 2 sec, rooting all enemies within 8 yards for 8 sec. Enemies previously rooted by the totem instead suffer 50% movement speed reduction.
     elemental_orbit           = { 103602, 383010, 1 }, -- Increases the number of Elemental Shields you can have active on yourself by 1. You can have Earth Shield on yourself and one ally at the same time.
     elemental_resistance      = { 103601, 462368, 1 }, -- Healing from Healing Stream Totem reduces Fire, Frost, and Nature damage taken by 6% for 3 sec.
     elemental_warding         = { 103597, 381650, 1 }, -- Reduces all magic damage taken by 6%.
     encasing_cold             = { 103619, 462762, 1 }, -- Frost Shock snares its targets by an additional 10% and its duration is increased by 2 sec.
     enhanced_imbues           = { 103606, 462796, 1 }, -- The effects of your weapon imbues are increased by 15%.
     fire_and_ice              = { 103605, 382886, 1 }, -- Increases all Fire and Frost damage you deal by 3%.
-    frost_shock               = { 103604, 196840, 1 }, -- Chills the target with frost, causing 22,990 Frost damage and reducing the target's movement speed by 50% for 6 sec.
+    frost_shock               = { 103604, 196840, 1 }, -- Chills the target with frost, causing 22,138 Frost damage and reducing the target's movement speed by 50% for 6 sec.
     graceful_spirit           = { 103626, 192088, 1 }, -- Reduces the cooldown of Spiritwalker's Grace by 30 sec and increases your movement speed by 20% while it is active.
     greater_purge             = { 103624, 378773, 1 }, -- Purges the enemy target, removing 2 beneficial Magic effects.
     guardians_cudgel          = { 103618, 381819, 1 }, -- When Capacitor Totem fades or is destroyed, another Capacitor Totem is automatically dropped in the same place.
     gust_of_wind              = { 103591, 192063, 1 }, -- A gust of wind hurls you forward.
-    healing_stream_totem      = { 103590, 5394  , 1 }, -- Summons a totem at your feet for 15 sec that heals an injured party or raid member within 40 yards for 11,863 every 1.5 sec. If you already know Healing Stream Totem, instead gain 1 additional charge of Healing Stream Totem.
-    hex                       = { 103623, 51514 , 1 }, -- Transforms the enemy into a frog for 1 min. While hexed, the victim is incapacitated, and cannot attack or cast spells. Damage may cancel the effect. Limit 1. Only works on Humanoids and Beasts.
+    healing_stream_totem      = { 103590,   5394, 1 }, -- Summons a totem at your feet for 15 sec that heals an injured party or raid member within 40 yards for 11,863 every 1.5 sec. If you already know Healing Stream Totem, instead gain 1 additional charge of Healing Stream Totem.
+    hex                       = { 103623,  51514, 1 }, -- Transforms the enemy into a frog for 1 min. While hexed, the victim is incapacitated, and cannot attack or cast spells. Damage may cancel the effect. Limit 1. Only works on Humanoids and Beasts.
     jet_stream                = { 103607, 462817, 1 }, -- Wind Rush Totem's movement speed bonus is increased by 10% and now removes snares.
-    lava_burst                = { 103598, 51505 , 1 }, -- Hurls molten lava at the target, dealing 30,793 Fire damage. Lava Burst will always critically strike if the target is affected by Flame Shock.
-    lightning_lasso           = { 103589, 305483, 1 }, -- Grips the target in lightning, stunning and dealing 234,943 Nature damage over 5 sec while the target is lassoed. Can move while channeling.
+    lava_burst                = { 103598,  51505, 1 }, -- Hurls molten lava at the target, dealing 36,871 Fire damage. Lava Burst will always critically strike if the target is affected by Flame Shock.
+    lightning_lasso           = { 103589, 305483, 1 }, -- Grips the target in lightning, stunning and dealing 228,203 Nature damage over 5 sec while the target is lassoed. Can move while channeling.
     mana_spring               = { 103587, 381930, 1 }, -- Your Stormstrike casts restore 150 mana to you and 4 allies nearest to you within 40 yards. Allies can only benefit from one Shaman's Mana Spring effect at a time, prioritizing healers.
     natures_fury              = { 103622, 381655, 1 }, -- Increases the critical strike chance of your Nature spells and abilities by 4%.
-    natures_guardian          = { 103613, 30884 , 1 }, -- When your health is brought below 35%, you instantly heal for 27% of your maximum health. Cannot occur more than once every 45 sec.
+    natures_guardian          = { 103613,  30884, 1 }, -- When your health is brought below 35%, you instantly heal for 20% of your maximum health. Cannot occur more than once every 45 sec.
     natures_swiftness         = { 103620, 378081, 1 }, -- Your next healing or damaging Nature spell is instant cast and costs no mana.
     planes_traveler           = { 103611, 381647, 1 }, -- Reduces the cooldown of Astral Shift by 30 sec.
     poison_cleansing_totem    = { 103609, 383013, 1 }, -- Summons a totem at your feet that removes all Poison effects from a nearby party or raid member within 30 yards every 1.5 sec for 6 sec.
     primordial_bond           = { 103612, 381764, 1 }, -- While you have an elemental active, your damage taken is reduced by 5%.
-    purge                     = { 103624, 370   , 1 }, -- Purges the enemy target, removing 1 beneficial Magic effect.
+    purge                     = { 103624,    370, 1 }, -- Purges the enemy target, removing 1 beneficial Magic effect.
     refreshing_waters         = { 103594, 378211, 1 }, -- Your Healing Surge is 25% more effective on yourself.
     seasoned_winds            = { 103628, 355630, 1 }, -- Interrupting a spell with Wind Shear decreases your damage taken from that spell school by 15% for 18 sec. Stacks up to 2 times.
-    spirit_walk               = { 103591, 58875 , 1 }, -- Removes all movement impairing effects and increases your movement speed by 60% for 8 sec.
+    spirit_walk               = { 103591,  58875, 1 }, -- Removes all movement impairing effects and increases your movement speed by 60% for 8 sec.
     spirit_wolf               = { 103581, 260878, 1 }, -- While transformed into a Ghost Wolf, you gain 5% increased movement speed and 5% damage reduction every 1 sec, stacking up to 4 times.
     spiritwalkers_aegis       = { 103626, 378077, 1 }, -- When you cast Spiritwalker's Grace, you become immune to Silence and Interrupt effects for 5 sec.
-    spiritwalkers_grace       = { 103584, 79206 , 1 }, -- Calls upon the guidance of the spirits for 15 sec, permitting movement while casting Shaman spells. Castable while casting.
+    spiritwalkers_grace       = { 103584,  79206, 1 }, -- Calls upon the guidance of the spirits for 15 sec, permitting movement while casting Shaman spells. Castable while casting.
     static_charge             = { 103618, 265046, 1 }, -- Reduces the cooldown of Capacitor Totem by 5 sec for each enemy it stuns, up to a maximum reduction of 20 sec.
-    stone_bulwark_totem       = { 103629, 108270, 1 }, -- Summons a totem with 50,843 health at the feet of the caster for 30 sec, granting the caster a shield absorbing 245,392 damage for 10 sec, and up to an additional 24,539 every 5 sec.
+    stone_bulwark_totem       = { 103629, 108270, 1 }, -- Summons a totem with 305,058 health at the feet of the caster for 30 sec, granting the caster a shield absorbing 631,008 damage for 15 sec, and up to an additional 63,100 every 5 sec.
     thunderous_paws           = { 103581, 378075, 1 }, -- Ghost Wolf removes snares and increases your movement speed by an additional 25% for the first 3 sec. May only occur once every 20 sec.
     thundershock              = { 103621, 378779, 1 }, -- Thunderstorm knocks enemies up instead of away and its cooldown is reduced by 5 sec.
-    thunderstorm              = { 103603, 51490 , 1 }, -- Calls down a bolt of lightning, dealing 2,337 Nature damage to all enemies within 10 yards, reducing their movement speed by 40% for 5 sec, and knocking them away from the Shaman. Usable while stunned.
+    thunderstorm              = { 103603,  51490, 1 }, -- Calls down a bolt of lightning, dealing 2,655 Nature damage to all enemies within 10 yards, reducing their movement speed by 40% for 5 sec, and knocking them away from the Shaman. Usable while stunned.
     totemic_focus             = { 103625, 382201, 1 }, -- Increases the radius of your totem effects by 15%. Increases the duration of your Earthbind and Earthgrab Totems by 10 sec. Increases the duration of your Healing Stream, Tremor, Poison Cleansing, and Wind Rush Totems by 3.0 sec.
     totemic_projection        = { 103586, 108287, 1 }, -- Relocates your active totems to the specified location.
     totemic_recall            = { 103595, 108285, 1 }, -- Resets the cooldown of your most recently used totem with a base cooldown shorter than 3 minutes.
     totemic_surge             = { 103599, 381867, 1 }, -- Reduces the cooldown of your totems by 6 sec.
     traveling_storms          = { 103621, 204403, 1 }, -- Thunderstorm now can be cast on allies within 40 yards, reduces enemies movement speed by 60%, and knocks enemies 25% further.
-    tremor_totem              = { 103593, 8143  , 1 }, -- Summons a totem at your feet that shakes the ground around it for 10 sec, removing Fear, Charm and Sleep effects from party and raid members within 30 yards.
+    tremor_totem              = { 103593,   8143, 1 }, -- Summons a totem at your feet that shakes the ground around it for 10 sec, removing Fear, Charm and Sleep effects from party and raid members within 30 yards.
     voodoo_mastery            = { 103600, 204268, 1 }, -- Your Hex target is slowed by 70% during Hex and for 6 sec after it ends. Reduces the cooldown of Hex by 15 sec.
     wind_rush_totem           = { 103627, 192077, 1 }, -- Summons a totem at the target location for 15 sec, continually granting all allies who pass within 10 yards 50% increased movement speed for 5 sec.
-    wind_shear                = { 103615, 57994 , 1 }, -- Disrupts the target's concentration with a burst of wind, interrupting spellcasting and preventing any spell in that school from being cast for 2 sec.
+    wind_shear                = { 103615,  57994, 1 }, -- Disrupts the target's concentration with a burst of wind, interrupting spellcasting and preventing any spell in that school from being cast for 2 sec.
     winds_of_alakir           = { 103614, 382215, 1 }, -- Increases the movement speed bonus of Ghost Wolf by 10%. When you have 3 or more totems active, your movement speed is increased by 15%.
 
     -- Enhancement
-    alpha_wolf                = { 80970, 198434, 1 }, -- While Feral Spirits are active, Chain Lightning and Crash Lightning causes your wolves to attack all nearby enemies for 3,639 Physical damage every 2 sec for the next 8 sec.
-    ascendance                = { 92219, 114051, 1 }, -- Transform into an Air Ascendant for 15 sec, immediately dealing 72,277 Nature damage to any enemy within 8 yds, reducing the cooldown and cost of Stormstrike by 60%, and transforming your auto attack and Stormstrike into Wind attacks which bypass armor and have a 30 yd range. While Ascendance is active, generate 2 Maelstrom Weapon stacks every 1 sec.
-    ashen_catalyst            = { 80947, 390370, 1 }, -- Each time Flame Shock deals periodic damage, increase the damage of your next Lava Lash by 12% and reduce the cooldown of Lava Lash by 0.5 sec.
-    converging_storms         = { 80973, 384363, 1 }, -- Each target hit by Crash Lightning increases the damage of your next Stormstrike by 25%, up to a maximum of 6 stacks.
-    crash_lightning           = { 80974, 187874, 1 }, -- Electrocutes all enemies in front of you, dealing 14,247 Nature damage. Hitting 2 or more targets enhances your weapons for 12 sec, causing Stormstrike, Ice Strike, and Lava Lash to also deal 12,952 Nature damage to all targets in front of you. Damage reduced beyond 6 targets.
-    crashing_storms           = { 80953, 334308, 1 }, -- Crash Lightning damage increased by 40%. Chain Lightning now jumps to 2 extra targets.
-    deeply_rooted_elements    = { 92219, 378270, 1 }, -- Using Stormstrike has a 7% chance to activate Ascendance for 6.0 sec.  Ascendance Transform into an Air Ascendant for 15 sec, immediately dealing 72,277 Nature damage to any enemy within 8 yds, reducing the cooldown and cost of Stormstrike by 60%, and transforming your auto attack and Stormstrike into Wind attacks which bypass armor and have a 30 yd range. While Ascendance is active, generate 2 Maelstrom Weapon stacks every 1 sec.
-    doom_winds                = { 80959, 384352, 1 }, -- Strike your target for 13,085 Physical damage, increase your chance to activate Windfury Weapon by 200%, and increases damage dealt by Windfury Weapon by 10% for 8 sec.
-    elemental_assault         = { 80962, 210853, 2 }, -- Stormstrike damage is increased by 10%, and Stormstrike, Lava Lash, and Ice Strike have a 50% chance to generate 1 stack of Maelstrom Weapon.
-    elemental_blast           = { 80966, 117014, 1 }, -- Harnesses the raw power of the elements, dealing 55,496 Elemental damage and increasing your Critical Strike or Haste by 3% or Mastery by 6% for 10 sec. If Lava Burst is known, Elemental Blast replaces Lava Burst and gains 1 additional charge.
-    elemental_spirits         = { 80970, 262624, 1 }, -- Your Feral Spirits are now imbued with Fire, Frost, or Lightning, increasing your damage dealt with that element by 20%.
-    elemental_weapons         = { 80961, 384355, 2 }, -- Each active weapon imbue Increases all Fire, Frost, and Nature damage dealt by 2.5%.
-    feral_spirit              = { 80972, 51533 , 1 }, -- Summons two Elemental Spirit Raptors that aid you in battle for 15 sec. They are immune to movement-impairing effects, and each Elemental Feral Spirit summoned grants you 20% increased Fire, Frost, or Nature damage dealt by your abilities. Feral Spirit generates one stack of Maelstrom Weapon immediately, and one stack every 3 sec for 15 sec.
-    fire_nova                 = { 80944, 333974, 1 }, -- Erupt a burst of fiery damage from all targets affected by your Flame Shock, dealing 17,208 Flamestrike damage to up to 6 targets within 8 yds of your Flame Shock targets.
+    alpha_wolf                = {  80970, 198434, 1 }, -- While Feral Spirits are active, Chain Lightning and Crash Lightning causes your wolves to attack all nearby enemies for 3,953 Physical damage every 2 sec for the next 8 sec.
+    ascendance                = {  92219, 114051, 1 }, -- Transform into an Air Ascendant for 15 sec, immediately dealing 69,599 Nature damage to any enemy within 8 yds, reducing the cooldown and cost of Stormstrike by 60%, and transforming your auto attack and Stormstrike into Wind attacks which bypass armor and have a 30 yd range.
+    ashen_catalyst            = {  80947, 390370, 1 }, -- Each time Flame Shock deals periodic damage, increase the damage of your next Lava Lash by 12% and reduce the cooldown of Lava Lash by 0.5 sec.
+    converging_storms         = {  80973, 384363, 1 }, -- Each target hit by Crash Lightning increases the damage of your next Stormstrike by 25%, up to a maximum of 6 stacks.
+    crash_lightning           = {  80974, 187874, 1 }, -- Electrocutes all enemies in front of you, dealing 13,719 Nature damage. Hitting 2 or more targets enhances your weapons for 12 sec, causing Stormstrike, Ice Strike, and Lava Lash to also deal 12,472 Nature damage to all targets in front of you. Damage reduced beyond 6 targets.
+    crashing_storms           = {  80953, 334308, 1 }, -- Crash Lightning damage increased by 40%. Chain Lightning now jumps to 2 extra targets.
+    deeply_rooted_elements    = {  92219, 378270, 1 }, -- Using Stormstrike has a 7% chance to activate Ascendance for 6.0 sec.  Ascendance Transform into an Air Ascendant for 15 sec, immediately dealing 69,599 Nature damage to any enemy within 8 yds, reducing the cooldown and cost of Stormstrike by 60%, and transforming your auto attack and Stormstrike into Wind attacks which bypass armor and have a 30 yd range.
+    doom_winds                = {  80959, 384352, 1 }, -- Strike your target for 12,972 Physical damage, increase your chance to activate Windfury Weapon by 200%, and increases damage dealt by Windfury Weapon by 10% for 8 sec.
+    elemental_assault         = {  80962, 210853, 2 }, -- Stormstrike damage is increased by 10%, and Stormstrike, Lava Lash, and Ice Strike have a 50% chance to generate 1 stack of Maelstrom Weapon.
+    elemental_blast           = {  80966, 117014, 1 }, -- Harnesses the raw power of the elements, dealing 53,385 Elemental damage and increasing your Critical Strike or Haste by 3% or Mastery by 6% for 10 sec. If Lava Burst is known, Elemental Blast replaces Lava Burst and gains 1 additional charge.
+    elemental_spirits         = {  80970, 262624, 1 }, -- Your Feral Spirits are now imbued with Fire, Frost, or Lightning, increasing your damage dealt with that element by 20%.
+    elemental_weapons         = {  80961, 384355, 2 }, -- Each active weapon imbue Increases all Fire, Frost, and Nature damage dealt by 2.5%.
+    feral_spirit              = {  80972,  51533, 1 }, -- Summons two Spirit Raptors that aid you in battle for 15 sec. They are immune to movement-impairing effects, and each Feral Spirit summoned grants you 15% increased Physical damage dealt by your abilities. Feral Spirit generates one stack of Maelstrom Weapon immediately, and one stack every 3 sec for 15 sec.
+    fire_nova                 = {  80944, 333974, 1 }, -- Erupt a burst of fiery damage from all targets affected by your Flame Shock, dealing 16,570 Flamestrike damage to up to 6 targets within 8 yds of your Flame Shock targets.
     flurry                    = { 103642, 382888, 1 }, -- Increases your attack speed by 15% for your next 3 melee swings after dealing a critical strike with a spell or ability.
-    forceful_winds            = { 80969, 262647, 1 }, -- Windfury causes each successive Windfury attack within 15 sec to increase the damage of Windfury by 20%, stacking up to 5 times.
-    hailstorm                 = { 80944, 334195, 1 }, -- Each stack of Maelstrom Weapon consumed increases the damage of your next Frost Shock by 15%, and causes your next Frost Shock to hit 1 additional target per Maelstrom Weapon stack consumed, up to 5.
-    hot_hand                  = { 80945, 201900, 2 }, -- Melee auto-attacks with Flametongue Weapon active have a 5% chance to reduce the cooldown of Lava Lash by 38% and increase the damage of Lava Lash by 50% for 8 sec.
-    ice_strike                = { 80956, 342240, 1 }, -- Strike your target with an icy blade, dealing 49,313 Frost damage and snaring them by 50% for 6 sec. Ice Strike increases the damage of your next Frost Shock by 100%.
-    improved_maelstrom_weapon = { 80957, 383303, 2 }, -- Maelstrom Weapon now increases the damage of spells it affects by 10% per stack and the healing of spells it affects by 10% per stack.
-    lashing_flames            = { 80948, 334046, 1 }, -- Lava Lash increases the damage of Flame Shock on its target by 100% for 20 sec.
-    lava_lash                 = { 80942, 60103 , 1 }, -- Charges your off-hand weapon with lava and burns your target, dealing 25,966 Fire damage. Damage is increased by 100% if your offhand weapon is imbued with Flametongue Weapon. Lava Lash will spread Flame Shock from your target to 2 nearby targets.
-    legacy_of_the_frost_witch = { 80951, 384450, 2 }, -- Consuming 10 stacks of Maelstrom Weapon will reset the cooldown of Stormstrike and increases the damage of your Physical and Frost abilities by 5% for 5 sec.
-    molten_assault            = { 80943, 334033, 2 }, -- Lava Lash cooldown reduced by 3.0 sec, and if Lava Lash is used against a target affected by your Flame Shock, Flame Shock will be spread to up to 2 enemies near the target.
-    overflowing_maelstrom     = { 80938, 384149, 1 }, -- Your damage or healing spells will now consume up to 10 Maelstrom Weapon stacks.
-    primal_maelstrom          = { 80964, 384405, 2 }, -- Primordial Wave generates 5 stacks of Maelstrom Weapon.
-    primordial_wave           = { 80965, 375982, 1 }, -- Blast your target with a Primordial Wave, dealing 75,194 Elemental damage and applying Flame Shock to them. Your next Lightning Bolt will also hit all targets affected by your Flame Shock for 175% of normal damage.
-    raging_maelstrom          = { 80939, 384143, 1 }, -- Maelstrom Weapon can now stack 5 additional times, and Maelstrom Weapon now increases the damage of spells it affects by an additional 5% per stack and the healing of spells it affects by an additional 5% per stack.
-    splintered_elements       = { 80963, 382042, 1 }, -- Primordial Wave grants you 20% Haste plus 4% for each additional Lightning Bolt generated by Primordial Wave for 12 sec.
-    static_accumulation       = { 80950, 384411, 2 }, -- 10% chance to refund Maelstrom Weapon stacks spent on Lightning Bolt or Chain Lightning. While Ascendance is active, generate 1 Maelstrom Weapon stack every 1 sec.
-    stormblast                = { 80960, 319930, 1 }, -- Stormbringer now also causes your next Stormstrike to deal 25% additional damage as Nature damage.
-    stormflurry               = { 80954, 344357, 1 }, -- Stormstrike has a 25% chance to strike the target an additional time for 40% of normal damage. This effect can chain off of itself.
-    storms_wrath              = { 80967, 392352, 1 }, -- Increase the chance for Mastery: Enhanced Elements to trigger Windfury and Stormbringer by 150%.
-    stormstrike               = { 80941, 17364 , 1 }, -- Energizes both your weapons with lightning and delivers a massive blow to your target, dealing a total of 42,395 Physical damage. Stormstrike has a 100% chance to generate 1 stack of Maelstrom Weapon.
-    sundering                 = { 80975, 197214, 1 }, -- Shatters a line of earth in front of you with your main hand weapon, causing 73,056 Flamestrike damage and Incapacitating any enemy hit for 2 sec.
-    swirling_maelstrom        = { 80955, 384359, 1 }, -- Consuming at least 2 stacks of Hailstorm, using Ice Strike, and each explosion from Fire Nova now also grants you 1 stack of Maelstrom Weapon.
-    tempest_strikes           = { 80966, 428071, 1 }, -- Stormstrike, Ice Strike, and Lava Lash have a 100% chance to discharge electricity at your target, dealing 13,491 Nature damage.
-    thorims_invocation        = { 80949, 384444, 1 }, -- Lightning Bolt and Chain Lightning damage increased by 20%. While Ascendance is active, Windstrike automatically consumes up to 5 Maelstrom Weapon stacks to discharge a Lightning Bolt or Chain Lightning at 100% effectiveness at your enemy, whichever you most recently used.
-    unruly_winds              = { 80968, 390288, 1 }, -- Windfury Weapon has a 100% chance to trigger a third attack.
-    windfury_weapon           = { 80958, 33757 , 1 }, -- Imbue your main-hand weapon with the element of Wind for 1 |4hour:hrs;. Each main-hand attack has a 32% chance to trigger three extra attacks, dealing 6,250 Physical damage each. Windfury causes each successive Windfury attack within 15 sec to increase the damage of Windfury by 20%, stacking up to 5 times.
-    witch_doctors_ancestry    = { 80971, 384447, 2 }, -- Increases the chance to gain a stack of Maelstrom Weapon by 2%, and whenever you gain a stack of Maelstrom Weapon, the cooldown of Feral Spirits is reduced by 1.0 sec.
+    forceful_winds            = {  80969, 262647, 1 }, -- Windfury causes each successive Windfury attack within 15 sec to increase the damage of Windfury by 20%, stacking up to 5 times.
+    hailstorm                 = {  80944, 334195, 1 }, -- Each stack of Maelstrom Weapon consumed increases the damage of your next Frost Shock by 15%, and causes your next Frost Shock to hit 1 additional target per Maelstrom Weapon stack consumed, up to 5.
+    hot_hand                  = {  80945, 201900, 2 }, -- Melee auto-attacks with Flametongue Weapon active have a 5% chance to reduce the cooldown of Lava Lash by 38% and increase the damage of Lava Lash by 50% for 8 sec.
+    ice_strike                = {  80956, 342240, 1 }, -- Strike your target with an icy blade, dealing 47,485 Frost damage and snaring them by 50% for 6 sec. Ice Strike increases the damage of your next Frost Shock by 100%.
+    improved_maelstrom_weapon = {  80957, 383303, 1 }, -- Maelstrom Weapon now increases the damage of spells it affects by 20% per stack and the healing of spells it affects by 20% per stack.
+    lashing_flames            = {  80948, 334046, 1 }, -- Lava Lash increases the damage of Flame Shock on its target by 100% for 20 sec.
+    lava_lash                 = {  80942,  60103, 1 }, -- Charges your off-hand weapon with lava and burns your target, dealing 25,004 Fire damage. Damage is increased by 100% if your offhand weapon is imbued with Flametongue Weapon. Lava Lash will spread Flame Shock from your target to 4 nearby targets.
+    legacy_of_the_frost_witch = {  80951, 384450, 2 }, -- Consuming 10 stacks of Maelstrom Weapon will reset the cooldown of Stormstrike and increases the damage of your Physical and Frost abilities by 5% for 5 sec.
+    molten_assault            = {  80943, 334033, 1 }, -- Lava Lash cooldown reduced by 6.0 sec, and if Lava Lash is used against a target affected by your Flame Shock, Flame Shock will be spread to up to 4 enemies near the target.
+    overflowing_maelstrom     = {  80938, 384149, 1 }, -- Your damage or healing spells will now consume up to 10 Maelstrom Weapon stacks.
+    primal_maelstrom          = {  80964, 384405, 2 }, -- Primordial Wave generates 5 stacks of Maelstrom Weapon.
+    primordial_wave           = {  80965, 375982, 1 }, -- Blast your target with a Primordial Wave, dealing 74,166 Elemental damage and applying Flame Shock to them. Your next Lightning Bolt will also hit all targets affected by your Flame Shock for 175% of normal damage.
+    raging_maelstrom          = {  80939, 384143, 1 }, -- Maelstrom Weapon can now stack 5 additional times, and Maelstrom Weapon now increases the damage of spells it affects by an additional 5% per stack and the healing of spells it affects by an additional 5% per stack.
+    splintered_elements       = {  80963, 382042, 1 }, -- Primordial Wave grants you 10% Haste plus 4% for each additional Lightning Bolt generated by Primordial Wave for 12 sec.
+    static_accumulation       = {  80950, 384411, 2 }, -- 10% chance to refund Maelstrom Weapon stacks spent on Lightning Bolt or Chain Lightning. While Ascendance is active, generate 1 Maelstrom Weapon stack every 1 sec.
+    stormblast                = {  80960, 319930, 1 }, -- Stormbringer now also causes your next Stormstrike to deal 25% additional damage as Nature damage.
+    stormflurry               = {  80954, 344357, 1 }, -- Stormstrike has a 25% chance to strike the target an additional time for 40% of normal damage. This effect can chain off of itself.
+    storms_wrath              = {  80967, 392352, 1 }, -- Increase the chance for Mastery: Enhanced Elements to trigger Windfury and Stormbringer by 150%.
+    stormstrike               = {  80941,  17364, 1 }, -- Energizes both your weapons with lightning and delivers a massive blow to your target, dealing a total of 35,025 Physical damage.
+    sundering                 = {  80975, 197214, 1 }, -- Shatters a line of earth in front of you with your main hand weapon, causing 70,349 Flamestrike damage and Incapacitating any enemy hit for 2 sec.
+    swirling_maelstrom        = {  80955, 384359, 1 }, -- Consuming at least 2 stacks of Hailstorm, using Ice Strike, and each explosion from Fire Nova now also grants you 1 stack of Maelstrom Weapon.
+    tempest_strikes           = {  80966, 428071, 1 }, -- Stormstrike, Ice Strike, and Lava Lash have a 100% chance to discharge electricity at your target, dealing 12,991 Nature damage.
+    thorims_invocation        = {  80949, 384444, 1 }, -- Lightning Bolt and Chain Lightning damage increased by 20%. While Ascendance is active, Windstrike automatically consumes up to 5 Maelstrom Weapon stacks to discharge a Lightning Bolt or Chain Lightning at 100% effectiveness at your enemy, whichever you most recently used.
+    unruly_winds              = {  80968, 390288, 1 }, -- Windfury Weapon has a 100% chance to trigger a third attack.
+    windfury_weapon           = {  80958,  33757, 1 }, -- Imbue your main-hand weapon with the element of Wind for 1 |4hour:hrs;. Each main-hand attack has a 32% chance to trigger three extra attacks, dealing 6,196 Physical damage each. Windfury causes each successive Windfury attack within 15 sec to increase the damage of Windfury by 20%, stacking up to 5 times.
+    witch_doctors_ancestry    = {  80971, 384447, 1 }, -- Increases the chance to gain a stack of Maelstrom Weapon by 4%, and whenever you gain a stack of Maelstrom Weapon, the cooldown of Feral Spirits is reduced by 2.0 sec.
 
     -- Totemic
     amplification_core        = { 94874, 445029, 1 }, -- While Surging Totem is active, your damage and healing done is increased by 3%.
@@ -227,6 +227,11 @@ spec:RegisterAuras( {
         id = 390371,
         duration = 15,
         max_stack = 8
+    },
+    awakening_storms = {
+        id = 462131,
+        duration = 3600,
+        max_stack = 3
     },
     -- Haste increased by $w1%.
     -- https://wowhead.com/ptr-2/spell=2825
@@ -417,7 +422,7 @@ spec:RegisterAuras( {
     converging_storms = {
         id = 198300,
         duration = 12,
-        max_stack = 1,
+        max_stack = 6,
     },
     -- Increases movement speed by $?s382215[${$382216s1+$w2}][$w2]%.$?$w3!=0[  Less hindered by effects that reduce movement speed.][]
     -- https://wowhead.com/ptr-2/spell=2645
@@ -687,6 +692,14 @@ spec:RegisterAuras( {
         id = 454376,
         duration = 15.0,
         max_stack = 1,
+    },
+    -- Talent: Tempest
+    -- https://www.wowhead.com/spell=454015/tempest
+    tempest = {
+        id = 454015,
+        duration = 30.0,
+        max_stack = 10,
+        copy = { 454009, 452201 }
     },
     -- Talent: Movement speed increased by $378075s1%.
     -- https://wowhead.com/ptr-2/spell=378076
@@ -975,8 +988,22 @@ spec:RegisterStateExpr( "ti_chain_lightning", function ()
     return tiSpell == "chain_lightning"
 end)
 
+spec:RegisterStateExpr( "tempest_mael_count", function ()
+    return GetSpellCastCount( class.abilities.tempest.id )
+end )
+
+spec:RegisterStateExpr( "time_since_tr", function ()
+    return max( action.stormstrike.time_since, action.windstrike.time_since )
+end )
+
+spec:RegisterStateExpr( "time_since_as", function ()
+    return max( action.stormstrike.time_since, action.windstrike.time_since, action.lightning_bolt.time_since, action.tempest.time_since, action.chain_lightning.time_since )
+end )
+
 
 spec:RegisterHook( "reset_precast", function ()
+    tempest_mael_count = nil
+
     local mh, _, _, mh_enchant, oh, _, _, oh_enchant = GetWeaponEnchantInfo()
 
     if mh and mh_enchant == 5401 then applyBuff( "windfury_weapon" ) end
@@ -985,7 +1012,7 @@ spec:RegisterHook( "reset_precast", function ()
     if buff.windfury_weapon.down and ( now - action.windfury_weapon.lastCast < 1 ) then applyBuff( "windfury_weapon" ) end
     if buff.flametongue_weapon.down and ( now - action.flametongue_weapon.lastCast < 1 ) then applyBuff( "flametongue_weapon" ) end
 
-    if settings.pad_windstrike and cooldown.windstrike.remains > 0 then
+    if settings.pad_windstrike and cooldown.windstrike.remains > 0 and buff.ascendance.up then
         reduceCooldown( "windstrike", latency * 2 )
     end
 
@@ -1506,10 +1533,10 @@ spec:RegisterAbilities( {
             if buff.natures_swiftness.up then return 0 end
             return maelstrom_mod( 2 ) * haste
         end,
-        flash = { 51505, 394150 },
-        -- charges = function() if talent.lava_burst.enabled then return 2 end end,
+        flash = { 51505, 117014, 394150 },
+        charges = function() if talent.lava_burst.enabled then return 2 end end,
         cooldown = 12,
-        -- recharge = function() if talent.lava_burst.enabled then return 12 end end,
+        recharge = function() if talent.lava_burst.enabled then return 12 end end,
         gcd = "spell",
         school = "elemental",
 
@@ -1537,7 +1564,7 @@ spec:RegisterAbilities( {
             if buff.vesper_totem.up and vesper_totem_dmg_charges > 0 then trigger_vesper_damage() end
         end,
 
-        -- bind = "lava_burst"
+        bind = "lava_burst"
     },
 
     -- Changes your viewpoint to the targeted location for $d.
@@ -1599,6 +1626,13 @@ spec:RegisterAbilities( {
                 expires = query_time + 15,
                 alpha_expires = 0
             } )
+
+            if set_bonus.tww1_4pc > 0 then
+                insert( virtual_spirits, {
+                    expires = query_time + 15,
+                    alpha_expires = 0
+                } )
+            end
 
             if set_bonus.tier31_4pc > 0 then
                 reduceCooldown( "primordial_wave", 14 )
@@ -1855,7 +1889,7 @@ spec:RegisterAbilities( {
         spendType = "mana",
 
         talent = "lava_burst",
-        -- notalent = "elemental_blast",
+        notalent = "elemental_blast",
         startsCombat = false,
         velocity = 30,
 
@@ -1878,6 +1912,7 @@ spec:RegisterAbilities( {
             end
 
             if buff.primordial_wave.up and state.spec.elemental and ( talent.splintered_elements.enabled or legendary.splintered_elements.enabled ) then
+                if buff.splintered_elements.down then stat.haste = stat.haste + 0.1 * active_dot.flame_shock end
                 applyBuff( "splintered_elements", nil, active_dot.flame_shock )
             end
             removeBuff( "primordial_wave" )
@@ -1934,9 +1969,7 @@ spec:RegisterAbilities( {
 
     -- Hurls a bolt of lightning at the target, dealing $s1 Nature damage.$?a343725[    |cFFFFFFFFGenerates $343725s1 Maelstrom.|r][]
     lightning_bolt = {
-        id = function() return IsActiveSpell( 454009 ) and 454009 or 188196 end,
-        known = 188196,
-        flash = { 454009, 188196 },
+        id = 188196,
         cast = function ()
             if buff.natures_swiftness.up then return 0 end
             return maelstrom_mod( 2 ) * haste
@@ -1949,6 +1982,7 @@ spec:RegisterAbilities( {
         spendType = "mana",
 
         startsCombat = true,
+        nobuff = "tempest",
 
         handler = function ()
             consume_maelstrom()
@@ -1956,6 +1990,7 @@ spec:RegisterAbilities( {
             removeBuff( "natures_swiftness" )
 
             if buff.primordial_wave.up and state.spec.enhancement and ( talent.splintered_elements.enabled or legendary.splintered_elements.enabled ) then
+                if buff.splintered_elements.down then stat.haste = stat.haste + 0.1 * active_dot.flame_shock end
                 applyBuff( "splintered_elements", nil, active_dot.flame_shock )
             end
             removeBuff( "primordial_wave" )
@@ -1968,7 +2003,48 @@ spec:RegisterAbilities( {
             tiSpell = "lightning_bolt"
         end,
 
-        copy = { 188196, 454009, "tempest" }
+        bind = "tempest"
+    },
+
+    -- Hurls a bolt of lightning at the target, dealing $s1 Nature damage.$?a343725[    |cFFFFFFFFGenerates $343725s1 Maelstrom.|r][]
+    tempest = {
+        id = 452201,
+        cast = function ()
+            if buff.natures_swiftness.up then return 0 end
+            return maelstrom_mod( 2 ) * haste
+        end,
+        cooldown = 0,
+        gcd = "spell",
+        school = "nature",
+
+        spend = function () return buff.natures_swiftness.up and 0 or 0.01 end,
+        spendType = "mana",
+
+        startsCombat = true,
+        buff = "tempest",
+
+        handler = function ()
+            consume_maelstrom()
+
+            removeBuff( "natures_swiftness" )
+            removeStack( "tempest" )
+
+            if buff.primordial_wave.up and state.spec.enhancement and ( talent.splintered_elements.enabled or legendary.splintered_elements.enabled ) then
+                if buff.splintered_elements.down then stat.haste = stat.haste + 0.1 * active_dot.flame_shock end
+                applyBuff( "splintered_elements", nil, active_dot.flame_shock )
+            end
+            removeBuff( "primordial_wave" )
+
+            if talent.lightning_rod.enabled then applyDebuff( "target", "lightning_rod" ) end
+
+            if azerite.natural_harmony.enabled then applyBuff( "natural_harmony_nature" ) end
+            if buff.vesper_totem.up and vesper_totem_dmg_charges > 0 then trigger_vesper_damage() end
+
+            tiSpell = "tempest"
+        end,
+
+        bind = "lightning_bolt",
+        copy = { 454009, 454015 }
     },
 
     -- Talent: Grips the target in lightning, stunning and dealing $305485o1 Nature damage over $305485d while the target is lassoed. Can move while channeling.
@@ -2075,9 +2151,7 @@ spec:RegisterAbilities( {
     primordial_wave = {
         id = function() return talent.primordial_wave.enabled and 375982 or 326059 end,
         cast = 0,
-        charges = 1,
-        cooldown = 45,
-        recharge = 45,
+        cooldown = 30,
         gcd = "spell",
         school = "shadow",
 
@@ -2197,6 +2271,9 @@ spec:RegisterAbilities( {
         cooldown = function() return 90.0 - 6 * talent.totemic_surge.rank end,
         gcd = "spell",
 
+        spend = 0.01,
+        spendType = "mana",
+
         startsCombat = false,
         pvptalent = "static_field_totem",
 
@@ -2208,7 +2285,7 @@ spec:RegisterAbilities( {
     stone_bulwark_totem = {
         id = 108270,
         cast = 0,
-        cooldown = function () return 120 - 6 * talent.totemic_surge.rank end,
+        cooldown = function () return 180 - 6 * talent.totemic_surge.rank end,
         gcd = "totem",
         school = "nature",
 
@@ -2314,37 +2391,6 @@ spec:RegisterAbilities( {
             summonTotem( "surging_totem" )
         end,
     },
-
-    -- TODO: Check TWW APL to see if used differently than Lightning Bolt.
-    --[[ Deal $s1 Nature damage to your target, and ${$m1*$m2/100} Nature damage to other enemy targets within $A1 yds of your target.
-    tempest = {
-        id = 452201,
-        cast = 2.0,
-        cooldown = 0.0,
-        gcd = "spell",
-
-        spend = 0.002,
-        spendType = 'mana',
-
-        startsCombat = true,
-
-        -- Effects:
-        -- #0: { 'type': SCHOOL_DAMAGE, 'subtype': NONE, 'sp_bonus': 2.7, 'radius': 8.0, 'target': TARGET_DEST_TARGET_ENEMY, 'target2': TARGET_UNIT_DEST_AREA_ENEMY, }
-        -- #1: { 'type': DUMMY, 'subtype': NONE, 'target': TARGET_UNIT_TARGET_ENEMY, }
-
-        -- Affected by:
-        -- mastery_enhanced_elements[77223] #0: { 'type': APPLY_AURA, 'subtype': ADD_PCT_MODIFIER, 'sp_bonus': 2.0, 'target': TARGET_UNIT_CASTER, 'modifies': DAMAGE_HEALING, }
-        -- mastery_enhanced_elements[77223] #4: { 'type': APPLY_AURA, 'subtype': ADD_PCT_MODIFIER, 'sp_bonus': 2.0, 'target': TARGET_UNIT_CASTER, 'modifies': PERIODIC_DAMAGE_HEALING, }
-        -- astral_bulwark[377933] #1: { 'type': APPLY_AURA, 'subtype': ADD_FLAT_MODIFIER, 'points': -20.0, 'target': TARGET_UNIT_CASTER, 'modifies': EFFECT_5_VALUE, }
-        -- natures_swiftness[378081] #0: { 'type': APPLY_AURA, 'subtype': ADD_PCT_MODIFIER, 'points': -100.0, 'target': TARGET_UNIT_CASTER, 'modifies': POWER_COST, }
-        -- natures_swiftness[378081] #1: { 'type': APPLY_AURA, 'subtype': ADD_PCT_MODIFIER, 'points': -100.0, 'target': TARGET_UNIT_CASTER, 'modifies': CAST_TIME, }
-        -- planes_traveler[381647] #1: { 'type': APPLY_AURA, 'subtype': ADD_FLAT_MODIFIER, 'points': -15000.0, 'target': TARGET_UNIT_CASTER, 'modifies': COOLDOWN, }
-        -- stormcaller[454021] #0: { 'type': APPLY_AURA, 'subtype': ADD_PCT_MODIFIER, 'points': 10.0, 'target': TARGET_UNIT_CASTER, 'modifies': CRIT_CHANCE, }
-        -- stormcaller[454021] #1: { 'type': APPLY_AURA, 'subtype': ADD_PCT_MODIFIER, 'points': 5.0, 'target': TARGET_UNIT_CASTER, 'modifies': SHOULD_NEVER_SEE_15, }
-        -- thorims_invocation[384444] #1: { 'type': APPLY_AURA, 'subtype': ADD_PCT_MODIFIER, 'points': 20.0, 'target': TARGET_UNIT_CASTER, 'modifies': DAMAGE_HEALING, }
-        -- crackling_surge[224127] #0: { 'type': APPLY_AURA, 'subtype': ADD_PCT_MODIFIER, 'pvp_multiplier': 0.5, 'points': 20.0, 'target': TARGET_UNIT_TARGET_ALLY, 'modifies': DAMAGE_HEALING, }
-        -- crackling_surge[224127] #1: { 'type': APPLY_AURA, 'subtype': ADD_PCT_MODIFIER, 'pvp_multiplier': 0.5, 'points': 20.0, 'target': TARGET_UNIT_TARGET_ALLY, 'modifies': PERIODIC_DAMAGE_HEALING, }
-    }, ]]
 
     -- Talent: Calls down a bolt of lightning, dealing $s1 Nature damage to all enemies within $A1 yards, reducing their movement speed by $s3% for $d, and knocking them $?s378779[upward][away from the Shaman]. Usable while stunned.
     -- TODO: Track Thunderstorm for CDR.
@@ -2581,16 +2627,17 @@ spec:RegisterOptions( {
 } )
 
 
-
 spec:RegisterSetting( "funnel_priority", false, {
-    name = "AOE Funnel Priority",
-    desc = "If checked and multiple targets are detected, recommendations will prioritize damage to the current target vs. maximizing AOE damage on all targets.",
-    type = "toggle",
+    name = "Enhancement Shaman is able to do funnel damage. Head over to |cFFFFD100Toggles|r to learn how to turn the feature on and off. " ..
+    "If funnel is enabled, the default priority will recommend spending resources on single target spenders in AoE to deal high priority damage to an important mob.\n\n",
+    desc = "",
+    type = "description",
+    fontSize = "medium",
     width = "full"
-} )
+})
 
 spec:RegisterStateExpr( "funnel", function()
-    return settings.funnel_priority
+    return toggle.funnel
 end )
 
 spec:RegisterStateTable( "rotation", setmetatable( {}, {
@@ -2694,4 +2741,4 @@ spec:RegisterSetting( "filler_shock", true, {
 
 
 
-spec:RegisterPack( "Enhancement", 20240805, [[Zekili:T3X2Ujos2Vf0QqdD3dbmjz6UfKrAhTpmTwTVKvAFdJXyaRySzTnjtgfX3(wvz766PQYgWKPZosJ6P7uLp15(T6sMnA2)E2dl9YdM9VCg6CZWVm82bdVZz0nJM9q(l7cM9Wop)h9wJ(lXEBr)5)iEJxSFW2G4C8yVeL4TedJSK9P(OX3KNVl7BxF96W8n7xmWpz71zHB3h5LhMe7N6Tkh)V9VEruYIRxM6TojEvu46n5xheVomo4A)iVSm3Tjl3hfKDDMVB2gVTEXd83TB2dl2hgL)BXZwaI0J)kcp2f4J(X3ngHkHlxgum3Gm)zpGN7pn8N)jNXF7W8)9MGdZ)pEPO)aHPHXZEikmlpJqkHXRJcq)T)fH7ee7Tiky5S)(Sh8tdZdsd9M9qNdZxMKpyveIPGWWe)hhKh6)i6lpmV7H55Erig0aePGa9AxY0YgucjYm6DyEQx4s3GNWt0B5YSbHXhMFpzepFm3AWU0WTjPld9ICF27PaeZmjAzYZOPDnzAJom)thMNfK7UijEFgcdcshpY9MD(hM3N8FV(k8Ym5W87qty2dfResskUuZYr8qteFTjw2sWXRWGFSwWVy)Qvd26feLLNMS195aVDiMrwosreXGMEy(T8lBqerzeH4z7crWqKnVkiLoYamM8uqbmUHHymiSard5yK7gTiNe3EORdMB3vJ0CkvwMTpEjccXRPsrgcqhdV03EQ8fY0qwA(pgHfhiZqm0huO4unUxMFq8sSL8G97kyNHU(B8cJDjwJXvc3EQFqAWw08YQuwROheMKg(i3WiDZ1(lry8VxOoYiy6sGyLreg(DMP6LjycomgXxXOlwTUu8Vmiyx0lUPjj5bi(FHOKthap1E0zNLNKULiLf0siRrXyyXaIBHxfoeMmwb9HX2F2m2Ujj3f5LCjckC0S3tEUyBema(YPkKrIQ01biMm6NGyWUL)BJk1F94x0VWytYoLkvF04md8tOAif6xDQea7qkSimIxowjTxKKvm)vyvhxkeMGqUrowuUgn8Sq5Q2uvMow8eXWnjlmcYPpitnrUEgCZ5uW(6yhjf4HaApJmhpOa65BsqY6m3W4Ns8jH8vTZmQClzVSyFA5QRpCrpMtkl8Q(QUdq4OVRNV)(QuuAi(wfOvN1HOJEavt9rAkXrVODB8CFojAL9aBOFoB6UBrQAudfeYoKtpmf5isspuFGN34evmMLYi9royPPOnjKr69KRyVGsl1BFKyGJk9ONdtjogO6kQM(H(O1LgbzK(ia1mDkH4jJ07BVY7kB9fcljIwow8uICFfrIfkaJvPjz5mMQdXJMkEYbx8SC4NfhAinTX8tJKca40UHFA8HRLMxd1YpIe4CUJhvw4T2nzLlcx8FmtgzSQ9PxXQWyNy37kvjIDxxt0noovcYC4eUHPbUXjp5rWyRQTmnKM6i9yDH68vE(nVUOi3E8q(5j7buAU6dkdZZ1WVglOKh4LMVXL6rrEnf00fGT480hYOjS52jBMXNNYxAOoqoIFTpooiAMXI27P3IzkDOG4GTH4mRXHKmm97mg3VKxAKMNA1k8CMHmuewHjXQvZO1MjUBPQZw0CdIbdyAQPjgeptufp9n6bCsLasmHpKnpcXqzM6f9cunGsJljOKgLtm1xtCz5Sw1Lidq8Avnk0SEXpkWnhxQxEgwtp3uRk6vZ8(fzrM7NspTLEwQfIrDHCtjvslNM8XBsySgf9oF6DEkrHKkBFos1pj(PG01ylKIKoKPe1jaqkCP1KBTxiNNLSzD044LxMd4ymwI(CnO17v4OreN(u5GpLe57fJkVdHybXRZ3qufVxbBY2JuFR(4ZSoQyrShzdyA0c24MFa0ATomEeFos0X58NE(kofWBTQISILQwJHj2ngeCBdvrSLoZaW5G6oSMYem0pfZzDuYJ0njsZTngBeixN(AYF1qBxmMVFJk60EpqmuurTQiTO3gQIbXeRn0kb7j2CmnBamxFOywuzIyq7YrLZuGoN(TsAvWPHyOHgM0uhRtXZIVsixtDR5McOniOHUFu5rkTSRmA9hf5Qb1Kz0sBcfG)hX(OOV1hc1yAO1hc1xQVHlcDsrB3BUT(ft7O3UYKQHJgvddDn5hWmEL66nqsTg65YBAEqg7xVZrMRJmqvsNzSEB0A4c2qFDykokrB0fxjhFYcwHdfO03HfSVzrusYYO9i(cICIdC9rW7UHdTwmnHpjTpT6v4OJaKvspLMcCfYZ7WHf19pwi1RoC1ktxA5aDLrL4Xb4PWHm8rL4p4bjK)pqTY4dTrA4UIP9B42EKUFx(H5jRqwKiBJSbIohrILaVuAjX0faRwl5rsUorjRVW9BD3HeXOK58IFkmQ6SVOD49zbUjRw5UgjBlchk7YRAf8IqXmrUpC3T)p(duq0fj)UYNxUAGtv2xhKscx(xkQjCJjPOa0Req5FpUD8h6qbmHSPJFK13CwaPbicKFdFa1lh9fE9sOAtR4LiygJecJKSIFYd93qZDq14UHziVmHPLBztXpDq(iKHEMlM3Jzhv0wlB1XT6uU4Y9PK(quq2CZadzx2OmUgLeXvrviUq554VKTu3p12AD5n5ZIsY5KAav4ljzDSizD0izDEtLSowLSoNnjl4A9glzDGA1bnyyGhQIC38e38niXtWljXl15aeEUxcpGaELUT0R0TLoLuARsffULKR160WGvipF(B0rDQZ7nIYCKPm5CKon)TD06YfYJGsxronxcD06vasP18HmPL9FugUKKTO7Q9PVWDkkMmfA8J3)HP16Y79qirzc6yPRqxoHrqAwqkUIcncd24NUWaATEdfgu0H1aT3wHbUjaeveyzbB4twuaTsVDsck2yPhLxmbbg0Oe6raZ3lkcwAinNtwKODnF7KlIOeydEv6F4PV5JD5BOlTzItRglp0vSNj8Ci5V6EUVs5SF3hS1JM70RYj8R6WX37p932HrINIiofe5UzQVbuwoCd9afpDninTCK040Zfywo8cDnNRFyDbjnCk8zTJgKWTGNC2sm8eJEqibB5zFgRn3Glpe)d3j80q)Csg3vqeBO6w8pCXx3NIl9JBrc5Lx7hANYR1sXBuMMKxysJmyrST0YgnZ(XHB3ffuuWudXnVKawV5BgIrx(YtivJx7YVJ0UZDPb(jBx4XA4jVpcCQBLoTKnAemUWMi5jXR3hapBHnQi7XxiPekofXnPGAsLTjmiAPLU9LSJ4PI99vrIW)TO9b0IcWfSeMnaOrCfswXPjxqh0C00brOPcx9lcvlflkvBb12XgqQo1JuDQbP6uFs1PbKQJaPkhR1oPw4cM2WeHKaO5CWhRz0GBjDYSm49ZH5(BCxM4JO5m3YW)Vmi1l(XQiq4pAiUX6F0E6gOPp5xerjohL83IkaqQj9ezac1GwyacLZuFEHGMS0k8lG9pz8OxwUkM2)0YiKftCFC6(OxKPqO4wyN9SDWaC4Bpy5KEyCFykbzDogfCyWFDKrzBzNnTcdhRcMgH2t5aXFsPHM65KOGHFjp2PCSc(JcQCO7QjDgpkOglsNzQFH2yCt3jT(v)3zvH3MtgiheKDA6GL7(MLtK5XJ8CELup)JwotM)j6G7z05QL766PDk60Fmdm7hwSI4w(q0PBRc4oCnk(e1D9Vap7vgVYd2DYEj9okuAAvQhx2dLVHtEzjgDoouJwJ6DYhQrXR8MUd1O(Gc2vmW(uTDOg1DshExCOg17c2KNdThQrlUc1CYbzSS68yhuajd3raXwHjDeinCUlTfDTs59SEeihk3Jb4ZSOqRimCeipM7CQ2JaPG9NLJaPERqtksApcKg3fGFmZ0JDdaB5K5mC(rTJGgtyZWj1SgEsnCKjzSJgC2erLLJ8bKHhR4zs6Nr43dp7LIr3SzpqEbKc3Uljnhjctspm)dfTa9dOQ(c(V7rkCi2CwYw0082NNS1lh)dq0DmsYp4W3)NHXOHg9TdZ)vI7gYWj7ck2QhK4a3g4p0rt2fDnMOt3EQ9u((EfKQ2Dk4QEJ(e0(d0V)RVQcUj31hrP5jxwC86gJJmo9Twy1hb60uwwfh7iwQMs5yc)W3b0slpZTntn1XcVRN6EN(6Rq7BA5pvOSLxFTNqluU6QXdhoz64HisRxNCDDyRB1qqniKoOAR(6tvCpVyDBJ0uHXD2egDuPRUDGORYFQaDHXF9OFpdnhDIZhlvILo1QyDuzr8OVuWTOYIFaqAkotff)SOO4dvDMx8OAvrJAojxOH7n637xdGQCCfbGm0CAvWxdaxiW0du5XRj(whW62CWECSHwg86aSAgd6prHD1Oa2986i8kteYKP6eqy7nBNQL7NAc2TMR3QeDEZzTV74Su16VOXEXXSNuLHfmc1du7gHWZPvbFnaSzxEQJxt8ToGvRN0ZnBOLbVoaB3tQdG5UtBAUFLjcHZE35KS3bGDRzVRZt6fN1(UJZsvR)ARxEGCQ83Isl(2ZyM8szDxcEwL8dV4uOt7sHoYu4O2OUIroTrm2rJTjnoR2TxvwTgWTVyYu1XAMHREy3AMTTsRiENXJy6A382ORPE5sy8r1lXsZ4JQWU14JTQU27eEu97x85LnwXhvV9mu2O6D0PrCrvi3AmX2ur7DbdIPLzTzUNvEyftedjGleeLtkn(rXo1SgTgpTnv6EpYVy6G2keg6IjDuBFxt3VmQq9SHbnDB04yto2k7q32G2RNYfxQlgnz79(0rDbOfQIbtQtzKoKD8q5Yjjb37hXSlUGy31na7guUjLRsIIsEMCU58qwpiE6ZbPOFoQSJLf83C80kw0dZX3Wg8rIiVAEXjKD4CFSWSxUep5LE5El8Yc(2HVFy(pH(3LMNA2Hu6105dnApsVvBnBWxneGQ30orHkUmUqYxUe4vbyw1Fj0C3uGxj9tU(li0nCbE10mtHL6oTvbxt5KHjw)fYQCs3SQ)sux5KLjx)fSwYjtZ00oOPMzeBBDfc(vf6g5PF0GB)yziqdx)O(9)e(k98rtHs7p5xylhx40YfteaaHB5)C1nHw8ZvJYZsUXmnF97kAEa2)8VrCnJvaUv07p2Xl((FKSkeFl1kgkBa159NMEngD4UvLh(o0KuVpLWZR8MucpO8DOeEwvPc(z8DcRQlXS9q8ZKBA3uBXnE9vJo8LgwJDT0SGShBan4OJg05QKT8GU5Kg2knO1NsDObn5Lxsj))KxgS9wj)cXLOV8IFU8HxC6DdhYpHIhFWphUA65TMR2(KuD47)TdZbFse5Po8hv8OikqZ43dr(FaUT4H5bBl0L0OP(zUhXQPJ0)5awkIFkHzFY7(GEE656KsrpQuG0k(TJI6(dts15Gv0QNRIRyRIHDdu6ehvVQ7na52tb3ct3bKPdShST6wWEfBvmW0DofM(fCdy1BvdfyQnmRH3ww94LCu3lbo5OhNAKxHoWUfScyRA(DGv9vcms26Rwi2xPl23jBDNaBJUloTiB79XUqXZ2O7kr7X1EpSLk8SmXoP3E8nnDS)h5DfaLB8FRQoBmRe)uR9yGBWVJYwogbkm3Pi6XUKNdsDdJxThFjPAbMmjwHZW6XTg50ILliwuqrIVycU8J0)S01LqNWxjU7h1LSzfc9zxPv8yIsCw3tMLuN1fqsP9(aJPNT9pPX7GJGRmowVG9kvAHX1l4gv0GTrHhFzAjy81WsYPovTKV(QmS5HS8tjwHPwXfl8Zyfp)8ImZKjC7aXlXeeWAJkVaBirQ4RVwF7ltX7DM5vs6rvJRTddkivyL4l49m84vZzuahMsW(AHTaWr6s4IHLj3ktVTAf0ETK7k4dSq8C)0BawB67IaGteYdlIjdo1FN)cScIg01G4idR(Bdpm47cuTcGXTsCQQOiSUFu2CJQgNrAYbe7H1iekMlfvRkWIX3EawpziqKiNfJHu8ZXmtYV5)Gqg6nTNIkBsYD3GmLrFWzrVQ8ARpL)kSFYs0VuqGQVstqQwGtTuk1TSAv43SluohjzzDfYXyckTbioPKctDjbOFfnA1w8miy(s3EGg0oV(AhBlVwfjYVlIk8BDsz5m92API0RNzsSpVjcA19rrE83VDFutWK(9H1104As6rPGlJp13)jixQDHF3NMoSEH7UaHTQFulGzYEaq44mmfnPxeNkdbd)oz3IlTMg3ue)k8ni84dbr9SxbcMxuUNtit4OruayqwTeMJSylS8Pgbw43X(q8KQ3ofoHGEPyvQZs5QzYYCc8yS3IQ64aPeXuEHpS4sOroe40oS7UWgNeMpbfoq8379MTzpdrZ0MI1XfnRHPdyuIWapQAgJEO18W3GlISycqprQYL9nDeUPck)qU(xxIhaXZGfVs1crbU80UttKkKiWa3tdNLAiDCziPg6GoioVyfEbGpB4hjTUvYcnVwz0KNvERZ63vBtcGzOte57914LIpIyb1ihxw4DoRO82oAKuYGciTUEwZpJL2J(Q56bKx(RVcNsy)QCGoAniZgyYMltMowrdPzoKSHs1WNabcs1L1PYjN0tTg32JFAj5Pq2cbTHqjO6RLbsncHm9owpdLgcvKVgnFjhtgSQbSaQzMza(h6z2brBzLlCiiGE(mR6KG6tN5uOrOkJk8nWKKvtsXy2PLsEXutnNVdCoRs6HkRGyQ)MfnQfgOceavLE6CPtD2Rjyq)twOFeMs3pDSc3dOLpQErOH2S13NIVNCkxvEVjNENQRZgNWtXca9OsQKTZnYRgufkkCb9A8AT8TqvhLGY5hXWT40DV8ruf6jdOPVwJBrFqD05eIpt9IE8)xjjRWo()K4Guc(SKknfAxyZBcIjTn2NyU0aeL42lxHRhzNxh13s4fndAcbbJ(D(aFZ8JzJbRVpg6mhPn9USB0fwJ8R5Nid8usKp5WZHw4G415BqW8EPvldFsHl(OZTAsJAPYra))0ucfdsQ6rIj4aRdoXMoiKFQtSonkCQrAlN5s1Ol95OQdgDC6fEOYBHwNtR8dq48N1kqAIsIqriM9eRMJFTkdPEUaALcnac9zMynQTBknl7e5XkEC(Hm9eHQaE7ddQbDAsKoyqyT0gDo60wDZSh82JZjB2dpeU9xjVv8Z(Fp]] )
+spec:RegisterPack( "Enhancement", 20240921, [[Zekili:L3tAVnoow(Bjyr52ovvo2YjPs3ionW2yxGUWI5lza2Vfffz5yHswYRKCLkdc8V9LxIIhVhP8vsvzagmD3MuKV7tsM7gF3)8UBNfvNC3)iyuW5J(9XJgo(3d(Y4RU726NxLC3TRII)w0JK)L8OLK)))R8fr5XjltYRPJ9Cwr0m6AuvSUmMm(I66vv)XzN9yA9I1pmmUy5zvPlxNfvNwKhxgnVM(FhF2dzfpC2SYOhlYNNL(4I6ZsYFmnp5S4SOQQWLfZwNLuDwvCy1IOLr5dJxT6UBFyDAw9FNF3dqa9LbFHahRsIj)8LtiGs6Szj85MufF3T05(5r)o5)9hBU)20L)1M7xVIUmB(6MVkh8kYG)3P)yZ9ZtZYskjBFr83ANXvFoi4tBUN(ppx8pVqUCRktlktRF2EH)YNdMqM2)CrYM7)FJkj)Fe6tA(D3MLwvxXiGP5pMLq(3(hmEssE0dzjZU7)8UBJjlzszAeHJeLrO7dRxq2LLvHP5FViMryhkM(M77T5(hwpF(WLrjzv1LfldFkjAfzgv1eg5M7VzZ9JzZQonKr3Zj7B4dfz1SF9eYa8njjJXKJYcRwLsGGQM94UBJIP75D3(uA(mYEK(TK7Qj0Cky3m08Ks5xQImK5nbf9yaEDYYvjv1nW71c8P5Nxg9JqXqEr1PBU)coU6bLytsfKhsXJVNWxJa7HltwgLMxrap(4NU5(hJNrbUwsq7U9arKUMI6N7g1XqKPyiQcX4Lx2CFFdALXNdtcjFKyGq66hgxSoVMjNmzeFzzFC0trFlHjRuvxuUSszXj4)GoZng0sGeBlLWCXUryOR54rhaw8vSHJxev(ysv48soigLj2IHx5KTEjk0xgLolm57uilA2SQHP58vKVydNvqrjQweXqzr2SINY3ETW2fHclF5TX4bMrHRCZyJQItYNrDOmC9k2kVkHi3UU8r6cxxqerK8jfMCuz9c6KsSPgvRZNr2G8hP7(VJU7ek8SI6HZZio14M4hwNg)nY3PUreg8ckGWMMUOerTbK5k5TeFbllkNLsyDpf99efgmvNc6BjM6UutbXyjOy04rUqPoJckgQBPaS1h35JxnX(m9OpZnP4vD8JatIPr1oLbyMlghS7q5HWJW5gAPnwwTOUaglg7X)Nly)k3G1xAKmzluA8ZHjZEKRzjTJVKOSMK3S20H42UBephc7NJU8tCJx7OZToGxJHXlXc8rqmt1dHehXTVFGOb4(XGLu6Gj3PTyUl))FUlY0NQQBwTEvsjNKaPvswxI5KWO441nHVJPzA4kGsiWDj6fBVOLOy7EG44HaYP5TUF0Knu(Gw2gByjVL7BQD4pkdDRdOfU31o4YwdsvC93OFk((zjjRYEoSSG49J4JGVAklIispjBIenMHDZgYhFmQZWKYgvDf8JhiN0v9yp(QxuuhsY9BgzLuOrrFpkK6JHTc4(B7ixxOHYcRKkCl(VDQ0fG7s07UEvlXY0FTqGdXjp4NiLP485tAydRYsZjqKk3uAtUOIp)5uHTqT8kgh4rCmypCwFvdu6kThke2jb7bU5q4URv8HUpXLsfGmekFyDPy3XD4EmIGZz4Bb4oj9tK)P26raURV(o8GPlroWg(C4eQtsfCWgxnNYqDQJH7jtaJrzRwef(ur2C)bps(92PhUK4htQXta2rTasCjXMARtogK425JsO)DiWuJW(dWT93YmyPJr4gLjpuqYYsdBRtPlxkXXByDPiuPHxaWrTQJaYQevPUkO1Cc3JZpzWTH6YeCNwInmJiWquKzaVLraHfkP33HTqa82R5NEcUFJDSGf(mEHvTIj4EgSwYOQQO1z6gQAmt8uAzgL3infyVXPeMJc9h3PW2SXqHZlgsKoc0hJu5bmULNeRiHdNXKUAczrKLud6kdD2hTYbIPy4OSOQU1WXeCZ(TgLqn7mXRXvFLVqNs50cPnzbv4WxKWkuCCkdUPjbUfxK)9eELU0TP40nW5mlh24VYwrN1y1zPGEgttRO9k2wnM2e1PPAkZyE4IQEmSilBN0UIY(PwsVZ3JsfReIOsXKo3Rqyl)wvtX)2T7rDC(xuj4Qswge8RuNNP0IXCXfi5HNeAyxsbasltcZl(EeDDUqtaKvl2qPXsJ98cCpnvj11eGSAOAF2qTuCXExXVDHputGJ155jz310wUMP2wObdmgho7Fys1PPEwYk6zBgXOVp2tqw3iS4Q2XAuoTdfQsTrv(5AhQUtbxhzCZvIySSvkyRPyOKCsCL0QvqHdht)sNzGO61EFiShUIoaLER2KAlyMlJy7JL6ofvjEEwSI0RyKAB6zxTJYJE44tFpISzKfDyYpwLetZvp7HqUXgM4T94XzYXDs2XdcYtTFpeiNQHPOY4WzPvITPlI5goPnQ0lf56sEQBFK3QPvbPdFTTkpxH2XhCjusKvliagXKFu2ZqLCXyCd6UXOQuDKaIn943mjZktbeOSTvkYSEooJKNmLDwxrDiw7SHK97yXd1PrElagsnIve80mj0u5QnD5qk4xe3PrLXAXi44mWmwlUBLCInMMh)Whgx)M9bWPxro5bQvBn9H77fzXr5PX0mosYFSEbJf0uZCsmQXFJL)jVb(T2noK8g9ka7OTC75oE8TMVRDsZpS70oRJoDXwwGcqFslhwnle54kMbpCvmfWilAA1TIyO6nx7xVrJFbKFUV2OHx6(oFSwC0Nn3rHkiuytQ9On4AgCVaTocrst0rB5CMw9wvPghDaZFU7DQmobAwQBzdgz95TCIockPdfkZQVrqZt3qDzY8YKQf0VGZ4bt4UXYBR6JKjQ7GwmQzybY5mOdXqzk54nek4qoC0QjxYTtWeu9yHfYEwBYjU73gQtwhnZPXmwPO0NOgXizdddAMXQAKneuVL0QJeADa5TBbcL0N3eTseHw9XjAHlHvkZjAAGURXLJY67s0iar0WrP3)fm4wJSRaIF1r18Ftd9Zz)9D0eb)l6XpaohnLWp45mgnhTPOdUuC0FIwbBlVNy(jRPxYI5uxB3zEdgEO9BEiROyw2AcFJqOYtcJjR3LJgXmT4vYZ4WGHRqihbiuR(wf96d0sjoIxxRjAXtEIsE7YT20XTWPPkmapffGr1PP6X9TG9pRTl)k9(RuMUIpT)MwwVY1RQ3CFXCIfdIUB1qDJ3e2cjys6kDUQTZvu1odlMMA8gwhsxVmCfHfNuhgL)90SMRbe6WRRsclMpp8rcVL7U2u9SzhIYi(0jM3cxT(F9Vio5FO4hwFUy3aNQPTyiHeL4jTetugZqqbOUnG8)(khRqOtE41n3neokpuXH5qcc2y3gvUC8vQYLuAPPTKgAjznZjmHXgAXsRwnJhMwrmZKwk61l)xhwpMOOxfsP9uYrdUDK16u2DjvC26sw)q4OTYmORCy7OTunjkstnKZUOgNNfQDSDDVxV(Q8vzf1kCTA7cBAWzd8Wzdq4SbVPC2aVC2GdgNfCVEJ5SbuolwryFijkUGGzfH1liSNKNlYNHzaeEUVgwabSkDHWQ0fcJswLaUbdxYIf8XY0K5elFXlWWo759gHzbMyMz5f2p7TNGAYfYIG1LCz)mjCcQvbiHwhvE(4B)q4UKfTiji7YNvoSzu2J947U9dx71RV1dTaLzGdJz4VI8hFMrszvsjnJceMr747pZaAVEdzgsWHXm8NJ8rNzqlsbtebMx0o8EZkG2P3ooHeAymc88(F1ye0LMeqpzXIJYYG5ggZzVzjO75BhFrhKymh8QEursw8HI81vdRttkNmomyvCtGPixiJ(D4ozCgBAJzfJYAloNUfTzBTZ3(w8kU4VaFcEtdJbUhy0nxR0T8J7LIkGAtLRB6fuZOA3CAJm9D0qgphlckud(ArycTtBURMEoTNksLAmWavHyKR6hcfsxES905v7SjrqiaTW2LPX1SauBwrQCDi))iK(KDWF4oc5XVkE6oQDEtNGH7Es91IhjRXqLskUTqrubhe8wcCBqqBZ3(Dw8DSQaUQmjUy5drT1bSzjOwqOr0iQZPP0P6uzYI1f5pUobE26Nh5V9mlsj9POv5Rwz3QfPjzZ8uemT4Qz(f4hZv(h3KHHLkFr5dPahzE1VfQGyfRygfB)Gg3b0)TS1jYiZPznKwneOAyCLg9PzMvf0CqkJh0uHtbLaQcHaRuEGQx1wGQbDdvd6aQg0Dunylq1anu101GFuTVEfeHV05C3ANZkJOqG7P064fHZkIj4AvOW37Z6(MzUbhpIwy7t97UNm9B(tDOrXPV6vLgyjrcpWCbHkqk8ccfZYav6psusqfBPtCbEqdZsyA6eFofvHpuYVPZmqdye2hZWZtvI7OVCUlwtRsFv4YOYV1Sm8UypCrsuw9IHRIR5(eVAuZ6a9TnBKM8hBHi)h1RltOpvwGvHXpQl8gR7yF4SOLrpMOJyciRDMLfsQtBDhmbl91GTcqh(5tXpeaNI8zAKFqGdIUz3BpWI80zcNr4jhbkNLhBUs1e2shOAua94cmy3jtYwCYDTtdWa45jRHk1CU67AdoNk4T)uEzbap3jiiU6XLWkHG9)UE0dkuyyi07PqY1HkPVA6jRZlxN9SPzDOWVNYFcUeXTdoS(vrf6oTHqzn6Mo2XVW6wy2KbbGWW1tLpzyofgUEQmVcfQdMDQP2yUc14xH7eY(Fvqq1B8(O444SX1krIEYZyXVjIUX(SRXjYVMN7FfXx1ZIpwBWpGNfFSUdBB7q3c9oFrnGacSgzAECJWuM7Cfu2VZsLRN9Kbk69hovqFMGHmFYA(pQIfwNf9XV3D0bgogRDC)CDTh0kia(1EWZL98NOdFUt3A(U(ghIJcoERHC78rquWMK)JcoGlpSJcUvltSnqA7ua7M)dka6928T93jmeZ4okSTyRoahRD)1zEFpw7MLng5yT79m8VNhRDSCj(3YJ1U3AhVDhRDF3Dm4ZoElfRlVKu8vApUfAAgnmpJ8EFSSEDpJ8xOQYGFg5VutZc9mYhO9epGEg51pz(yNrE9dMVNZipUsTl5m0ZipMo87Xa(0Q1WrjMoRxejjtDhdQZrO6oUTeDW4TJlhrlLzloa5ejeIvIk6yIN1)r)orplQKIUKqezVD(PlxvussJFEr5M7)nXro)3OUf()wtKkjK8QILK5fTUUyzun9hieUCIuWWnF9)jnNmuWFS5()IzrInCXQeEd5jSgABk)T(8CIup6aV8c73mo2aIFvlkUxEPVwM0F4dtgn66PtgnGmYj1yf4UxZqq1NxoODL2hmGG71fhCO(yd0sMXL(ygNyJx9obcVe)QgErHFCWVVJEtCDWPC5uZdT9Gb2S4XxXPwsEXVaaTeMLSIVOZk(TMEIPFsfBWrKdYiz4(J)XGoSOwNwxGvgAoh1LVdlmNHHVOMJ3r4TllB42VS7gz4iV8ylSL2)j4hO2EicG9oSgc)Gle56PymiQ(MVd11ntDT2hntVcg0BpP9DhLvkwFfI(sGBlPwdRPeIVO(vcHNZrD57Wc72KN94DeE7YYIAj9qtgoYlp2c73sAaG6EWXuD)dUqef99G9sFhyTpA67ywsF1jTV7OSsX6F)ONEGzO8xqcl(IdyK8grDlwEjcoE0RoggCCXWatmC8XiVIXbhdFSJN4JBCq1B)GiBnGlF01tThB7uCXx7JMA7rPueVZOrTYAN)2iRzF3QAPJ23HRTJoAV2hn64rvw7DcnQvw7I3ezn7lpMKmAFf12kQO9kF0iIhtbT3feOwPmVfZ9GsdBiI0vc4(WjPKgJVtKtK94OrtpMcDVhPxTYG(kPi0TpSxF77R2n9fOc2no8d9h)rO7ziTw72l31xkzQhmi4STgcA7bMV0oqoum96336Ma2tVbNth3daxKcgTCDjHmG1XdRJ4SX6EZ4w9IxrO7STa6iKxwtkNxKLvqerFK2hYs6FrGEkPK87K0oMXPV10PX30n3tVjD0(ox3mV8cwhoxNRn7zZOtEwuD0drvj)XMVY(J(yJ6j9p14aDivED8(TTQhPxyMDfx3Z4QUjZUcC0g1tZKSUenFq4l8fqMHOtS7BK5vgdExaMv33cKBCg8oHp5UVHq3Bn4DdzMDQRpyxmpGCT7gFY5g5LpHnRUVfDLp5zYDFd7eFY1mDvtz7OUABzSMJ1MWc6F(Pcfy3xSWbd(i9Y6DQlV0dU5pB3nfp1I9sFba8KR(5293w)ZTdGOnUj3O8zVNq5Hul))nZOpL9FHUFfQj97ULyPFrr5D3EB6Y)IEJdkMNMjVgBvdLoj(40ZOaNYT0EZxHMK99ZgEEIBMn8GM3jB4zPE5P)u68P8IqACDS7b7bcEfBcI9t0B7wt9TB7(5NyxjUP(8k9YloDNymmIvdJzbPTVf4qagoGziUD7bnIAmSxCa1IvxWbKmkeyY)gzdRlelR7lAdzA8hbVfZNIDdMhCk5t6dFNLp16(kFZ0Rgn4u0BPCNaD77GRa2fHGdEzKpTfXmViTNIFjAPFf7BSV)uNkIE3irItbNUGsHF)z3oexERA1rC4lt8UI5gzN8N9N8XGgveKtR6apOOejjOM8H89tI3X3PxoAK6e4VLTud2h2AyCSpzIB(6)XM7bFHDvXo6hXFJD1Wz691r9hOTzkTozPqaa2(5NuEteNog)ZbSFR)PmI9E3npCA6H6Khkp6HG4k9Piu6uM5WVdhuPJ65u6dT7IJURBCc(6w1YCSYhpbCpe9aqIoWzA4OEKg(q7U4GOhSpe9xXd0aUwnu4shd1A4J5aoCzgl4RbmfGdtBLvHtGnl4DH9k5FcSOVLJrwRKpc((eMyFN0kCnYMSROhrY27JU6Qs2KD574r1Ep0IsvsMENPoE0nKoG9RCx2iXg)F0uDjkPK(K28nsog)GeTCozPOuhU3JvfpLugMMpFn96CDeiYmFfbJ6g1ACWrmDbLW)1tBKI1hSw9T1nBuZkHcwrHkb(GEDkvYcW6TsWUTxQ7K2ZpQMwNKMtbGxX23TfnxufEnFUl5I1835ZprZUjUMhfKj45FrIkCTc3mUhrqv954SdWLOCcoxv93x02K5hYrkrsT8e3uesWF(Q6X0tHV1P09ZItEIp5oaysv0fyyJRymfUzqvZdcfdyUw7NK38CNW)0lSlPSb02tZybNEFZ0GEq1NKyR6u6FWxSXabyjHCy4bzmjUqeXTX7Pi4DF7NfRBMmsy3f(5WAAWapKRbBb3bBrgpAhj6x1tCtVdNxYHIOmYYn8kaGQ1kofECymrXCFJXKDse(iRwbSJYxZdjfxpjTvj0)aGRyPwqiLuFRhFgGnbWB3jy21fRl8l6cO)qpUd950tXasl4WaXobs7SE6nt7F1N77ti5JwtGPFaevXURlTR2VoxkJB(O6T)W0vWB5xeLokn(5WKzpQeAO(FRbxVAqpNDb6MPtoEq5ytOKn9pcaNnwZgGzvAxWcDLEvlj6Sj3MP77XpYN9j0CAJWD16vjLIhmodXAYkr0YirPeVE56mnJBGI22OMhjBatAab4zLXrd9TTo2IYu30zow5QHSN2wsBUneFAw9HsHr8vUFvDAd9MTPA2f44n)3Pw3tkPQeGu0MxjgjXCrrD4cXlA8(RICrJK9u1xzL9MZEfhdT7whum)GtvWj7jQnj87DjX4srvvpTmkVMKK4HWS7v96dhw4lV4vSbLtY(lDQQK3og9W0l6MF8dL)y)Qs(ijV9AswsW9rSH2iamqDJrne6lA6bWQcuAnauA8EpPqzbsGhq(Sh8JC40rBravDpSb9aIBiwSarjuRYKhOh8vj4wNs3UuIb8W6sIVXHxO2LsZSva(QOk(x5xA8Teu0mzlwYmcRHiGZahfvcHUO8lg2UdOl)EL1JpTuG9R95mdun345cSzhQEkTK93hAPIHJTaII5DhmJws8ZWVIH9WE1Gb0kAFlRA95Q8om2te7OYB)OFKgbO7UszhPADojiDU6j240oqz2kZz2pKGDq(WjI40(KBtgqJQM5TdTm58Kkzalwxt5eYRoA6cwVhB(kd224hsHx7NTc99nVRGuaM7AY6Tieign2zbvQ67x9a(fdTleXDNw1U8rfQmxTNLpEPBDSjDToG4G4Uv8VbMGVIpCamy)ctDmq2CM7VdteWhUnAVf4ta6VSbMDdy6yAhJS(XlSOdgIia0I(ibgrJCWIvCnTgOoyfKXjHg2VpSUHrr)LiG50Uej6Yg3u7MSNVKUSY3YoPb5GgzIlO1aUUqCC3WRrEwFLPqy9OapaZNFpeA(1608b9qM2LMyJzExaIoNGWLSug01vqTPy(m)35Kf5BJzUWUe27qVfDK0hq1fiYpG5vpyGZot0bHw32nmTcC90jwcMDL(VBGO5Ub3sm(yTrV3bdMqPwZf5SFYKD2s4TjJslINDZkGZ23vtjeeg)rpm9scIapeT03DYSQd7s4Uc9fI9wBHZBQj8vempm7yaDgkVG6QhhV7WjHdW3GHBTd6rP5g)TtXXErGmqP88X)YlGbcoq69WY7GuyeXVYauVeApr8D3jrheP1AxGGcRxwdevAjA6RoA8V3kZlfJxoEF3TnwU1rUX3cOhYDRW2ohpovhejCLgufupy1oXhdEp4WLLJXBUpvGOx8wIeqZCNGzNtnJo(zQ5JQNYjGbrk75oMJ0G9uVeaa7w9g8fUYRqkOsigO68Wkx)CNzeC7O8KEea5yBBw1oFgb6eRqS2ankE)OLYZ7P9nj8g7XKx2oicMPrgf9Ydmy3OUUZPG1sOvJrS)ofK4ENlR29eBbzJjwUIYE2SbBgJPqOmgbkAbjcFqsu2LoYX0hkdWmoHZ7zkRaifCkHYHHYkuoiyWIhoNk6nWw4AW(4YWphnFVilMDVJiWts(J1liulEJ(jrse)nwxs4PaYLwoWKXTQEV(w)JTHQ9a0G2GFwkpq7kH2RNEUKrV2Nmke59qudIwLr)X6VtLH4MP6jrcS1hIS9BXJ9pHFBcm0(SFP9dUo)kN5)2iiPL8VBt62jpx3L0)7MTc357TJzWdK5KBK1PgHRqP8JK7k7j4xYqqCe55BHRCeWzB8wZY78nZHmmc4TIeyMIrlkb7pIA39)p]] )

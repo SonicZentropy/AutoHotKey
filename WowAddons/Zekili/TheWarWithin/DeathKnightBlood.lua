@@ -338,6 +338,11 @@ spec:RegisterPvpTalents( {
 
 -- Auras
 spec:RegisterAuras( {
+    a_feast_of_souls = {
+        id = 440861,
+        duration = 3600,
+        max_stack = 1
+    },
     -- Pulling enemies to your location and dealing $323798s1 Shadow damage to nearby enemies every $t1 sec.
     -- https://wowhead.com/beta/spell=315443
     abomination_limb_covenant = {
@@ -414,7 +419,7 @@ spec:RegisterAuras( {
     blood_plague = {
         id = 55078,
         duration = function() return 24 * ( spec.blood and talent.wither_away.enabled and 0.5 or 1 ) end,
-        tick_time = function() return 3 * ( talent.rapid_decomposition.enabled and 0.82 or 1 ) * ( buff.consumption.up and 0.5 or 1 ) * ( spec.blood and talent.wither_away.enabled and 0.5 or 1 ) end,
+        tick_time = function() return 3 * ( talent.rapid_decomposition.enabled and 0.85 or 1 ) * ( buff.consumption.up and 0.7 or 1 ) * ( spec.blood and talent.wither_away.enabled and 0.5 or 1 ) end,
         type = "Disease",
         max_stack = 1
     },
@@ -470,6 +475,11 @@ spec:RegisterAuras( {
         tick_time = 1,
         max_stack = 1
     },
+    brittle = {
+        id = 374557,
+        duration = 5,
+        max_stack = 1
+    },
     -- Talent: Movement slowed $w1% $?$w5!=0[and Haste reduced $w5% ][]by frozen chains.
     -- https://wowhead.com/beta/spell=45524
     chains_of_ice = {
@@ -479,6 +489,11 @@ spec:RegisterAuras( {
         type = "Magic",
         max_stack = 1
     },
+    coagulating_blood = PTR and {
+        id = 463730,
+        duration = 3600,
+        max_stack = 100
+    } or {},
     -- Talent: Blood Plague damage is increased by $s1%.
     -- https://wowhead.com/beta/spell=391481
     coagulopathy = {
@@ -496,7 +511,7 @@ spec:RegisterAuras( {
     -- Your Blood Plague deals damage $w5% more often.
     consumption = {
         id = 274156,
-        duration = 8.0,
+        duration = 6,
         max_stack = 1,
     },
     -- Talent: Controlled.
@@ -519,7 +534,7 @@ spec:RegisterAuras( {
     -- https://wowhead.com/beta/spell=81256
     dancing_rune_weapon = {
         id = 81256,
-        duration = function () return ( pvptalent.last_dance.enabled and 6 or 8 ) + ( talent.everlasting_bond.enabled and 8 or 0 ) end,
+        duration = function () return ( pvptalent.last_dance.enabled and 6 or 8 ) + ( talent.everlasting_bond.enabled and 6 or 0 ) end,
         type = "Magic",
         max_stack = 1
     },
@@ -581,6 +596,12 @@ spec:RegisterAuras( {
         id = 440739,
         duration = 6.0,
         max_stack = 1,
+    },
+    exterminate = {
+        id = 441416,
+        duration = 3600,
+        max_stack = function () return talent.painful_death.enabled and 2 or 1 end,
+        copy = { 447954, "exterminate_painful_death" }
     },
     -- Reduces damage dealt to $@auracaster by $m1%.
     -- https://wowhead.com/beta/spell=327092
@@ -690,7 +711,8 @@ spec:RegisterAuras( {
     icy_talons = {
         id = 194879,
         duration = 10.0,
-        max_stack = 1,
+        max_stack = function() return talent.dark_talons.enabled and 3 or 1 end,
+        copy = { 443586, 436687, 443586, "dark_talons_icy_talons", "dark_talons_shadowfrost" }
     },
     -- Taking $w1% increased Shadow damage from $@auracaster.
     incite_terror = {
@@ -867,6 +889,12 @@ spec:RegisterAuras( {
         id = 343294,
         duration = 5,
         tick_time = 5,
+        max_stack = 1,
+    },
+    grim_reaper_soul_reaper = {
+        id = 448229,
+        duration = 5,
+        tick_time = 5,
         max_stack = 1
     },
     -- Silenced.
@@ -994,6 +1022,11 @@ spec:RegisterAuras( {
         type = "Magic",
         max_stack = 3
     },
+    wave_of_souls = {
+        id = 443404,
+        duration = 15,
+        max_stack = 2,
+    },
     -- Talent: Movement speed increased by $w1%.  Cannot be slowed below $s2% of normal movement speed.  Cannot attack.
     -- https://wowhead.com/beta/spell=212552
     wraith_walk = {
@@ -1003,6 +1036,38 @@ spec:RegisterAuras( {
     },
 } )
 
+
+-- TWW
+spec:RegisterGear( "tww1", 212005, 212003, 212002, 212001, 212000 )
+spec:RegisterAuras( {
+    unbreakable = {
+        id = 457468,
+        duration = 3600,
+        max_stack = 1
+    },
+    unbroken = {
+        id = 457473,
+        duration = 6,
+        max_stack = 1
+    },
+    piledriver = {
+        id = 457506,
+        duration = 3600,
+        max_stack = 10
+    },
+
+    icy_vigor = {
+        id = 457189,
+        duration = 8,
+        max_stack = 1
+    },
+
+    unholy_commander = {
+        id = 456698,
+        duration = 8,
+        max_stack = 1
+    }
+})
 
 -- Tier 29
 spec:RegisterGear( "tier29", 200405, 200407, 200408, 200409, 200410 )
@@ -1343,8 +1408,14 @@ spec:RegisterAbilities( {
         buff = "bone_shield",
 
         handler = function ()
-            applyBuff( "bonestorm", buff.bone_shield.stack )
-            removeBuff( "bone_shield" )
+            local consume = min( 5, buff.bone_shield.stack )
+            gain( consume * 0.02 * health.max, "health" )
+            applyBuff( "bonestorm", 2 * consume )
+            removeStack( "bone_shield", nil, consume )
+            if set_bonus.tww1_4pc > 0 then
+                if buff.bone_shield.up then applyBuff( "piledriver", nil, buff.bone_shield.stack )
+                else removeBuff( "piledriver" ) end
+            end
         end,
 
         -- TODO Bone Shield regeneration (1 per sec.)
@@ -1425,6 +1496,11 @@ spec:RegisterAbilities( {
             if azerite.eternal_rune_weapon.enabled then applyBuff( "dancing_rune_weapon" ) end
             if legendary.crimson_rune_weapon.enabled then addStack( "bone_shield", nil, buff.dancing_rune_weapon.up and 10 or 5 ) end
             if talent.insatiable_blade.enabled then addStack( "bone_shield", nil, buff.dancing_rune_weapon.up and 10 or 5 ) end
+
+            if set_bonus.tww1_4pc > 0 then
+                if buff.bone_shield.up then applyBuff( "piledriver", nil, buff.bone_shield.stack )
+                else removeBuff( "piledriver" ) end
+            end
         end,
     },
 
@@ -1616,7 +1692,10 @@ spec:RegisterAbilities( {
             removeBuff( "blood_draw" )
             removeBuff( "heartrend" )
             applyBuff( "blood_shield" ) -- gain absorb shield
-            gain( 0.075 * health.max * ( 1.2 * buff.haemostasis.stack ) * ( 1.08 * buff.hemostasis.stack ), "health" )
+            if buff.coagulating_blood.up then
+                gain( 0.01 * buff.coagulating_blood.stack * health.max * ( 1.2 * buff.haemostasis.stack ) * ( 1.08 * buff.hemostasis.stack ), "health" )
+                removeBuff( "coagulating_blood" )
+            end
             removeBuff( "haemostasis" )
             removeBuff( "hemostasis" )
 
@@ -1668,6 +1747,11 @@ spec:RegisterAbilities( {
         handler = function ()
             applyDebuff( "target", "blood_plague" )
             addStack( "bone_shield", nil, buff.dancing_rune_weapon.up and 4 or 2 )
+
+            if set_bonus.tww1_4pc > 0 then
+                if buff.bone_shield.up then applyBuff( "piledriver", nil, buff.bone_shield.stack )
+                else removeBuff( "piledriver" ) end
+            end
         end,
     },
 
@@ -1734,7 +1818,7 @@ spec:RegisterAbilities( {
             if buff.vampiric_strength.up then buff.vampiric_strength.expires = buff.vampiric_strength.expires + 0.5 end
 
             if talent.heartbreaker.enabled then
-                gain( min( action.heart_strike.max_targets, true_active_enemies ), "runic_power" )
+                gain( 2 * min( action.heart_strike.max_targets, true_active_enemies - 1 ) + ( 3 * buff.dancing_rune_weapon.stack ), "runic_power" )
             end
 
             if buff.ashen_decay_proc.up then
@@ -1839,6 +1923,12 @@ spec:RegisterAbilities( {
 
         handler = function ()
             addStack( "bone_shield", 30, buff.bone_shield.stack + ( buff.dancing_rune_weapon.up and 6 or 3 ) )
+
+            if set_bonus.tww1_4pc > 0 then
+                if buff.bone_shield.up then applyBuff( "piledriver", nil, buff.bone_shield.stack )
+                else removeBuff( "piledriver" ) end
+            end
+
             if azerite.bones_of_the_damned.enabled then applyBuff( "bones_of_the_damned" ) end
         end,
     },
@@ -1955,6 +2045,9 @@ spec:RegisterAbilities( {
 
         handler = function ()
             applyDebuff( "target", "reapers_mark" )
+            if talent.grim_reaper.enabled and target.health_pct < 35 then
+                applyDebuff( "target", "soul_reaper" )
+            end
         end,
 
         -- Effects:
@@ -2107,6 +2200,11 @@ spec:RegisterAbilities( {
                 cooldown.dancing_rune_weapon.expires = max( 0, cooldown.dancing_rune_weapon.expires - ( 3 * bs ) )
             end
 
+            if set_bonus.tww1_4pc > 0 then
+                if buff.bone_shield.up then applyBuff( "piledriver", nil, buff.bone_shield.stack )
+                else removeBuff( "piledriver" ) end
+            end
+
             applyBuff( "tombstone" )
         end,
     },
@@ -2133,6 +2231,7 @@ spec:RegisterAbilities( {
 
     vampiric_strike = {
         id = 433895,
+        flash = 206930,
         cast = 0.0,
         cooldown = 0.0,
         gcd = "spell",
@@ -2250,4 +2349,4 @@ spec:RegisterSetting( "vb_damage", 50, {
     width = "full",
 } )
 
-spec:RegisterPack( "Blood", 20240805, [[Zekili:LZvBpUTns4FllkGx7MnowAT3DBGT)qBXbKGdff3M763SmTfTTUilPtsE3ShwOF73WxKefFtYVK0uCFPnXKA4WzgoZZWHtw4S4tlE0hLJx8BUJChp6Hrtgo6(XJh)WIhZFjbV4Xe06pJ2c)Hi0E4)(ZHXX(KF9LWyKp5RZIpKUgg5XG9hcr5bXr)skAt(IhxDiim)drlwPFfUh(0e8A4NNmAXJ7c89XS5IZwV4rYCF7O7FR743xS8t7Wfl)duk8FcY3feT4XWGS8mkVN(S3He4p9B0TcocTke7V4Nx8460GCCAaAXJxvS0poF4kcR7LeI2Eapmpy9NdI2U4r0AcldClD0vXbHlYbEYiXwDyZMHRIJWEz7cWH(dZYbjuXY5flNuSSxXY0dra3oFwXs3Y)EWAVK4NXPd9XBcwhKZg(2r0XbUlhfIJYhMTdLtwLOTEKfyiF9lw(6Rfl73(0aI5Jr578qr(E(41Oxk3MflhuVtZJ3Vklh(sYg9w7B01XG0kmobO6ldtX7rbrzflNcC)21(d3J(cJ5OZny9lEalghLPDM1maJjZYtd(mLhgBKh6ZjTO8UbThlS(Auktlw(ecOeqzXH9sXBsXz78EcfEauwdSOOa14OAwFpknn(5uCKpHXNyKXjZ)jShocVpad8kWQo0fjhLUfNd6L9yV8yVK15E3oHYOt0nUFaMYd9zMWWzTqG5rjalwjhEd9BfuWcZIWL3jXL6MMaR3ghkV1QT0phEN9TEbBaZd9tMSvU36zCt2(9AC6bfT9qaykSnn(qKFZdz85CiAxC4lkZyGSjC1Ar4ThmYBGBUWqp2omByTJgM1fL)wVJmAM3Mu2kGczcwNHoMCr9tsRxCcSs486PxA5t(tGzo90K7eQmVjhTdJsZ5Nhlw(JvIb6VVc0cFg0cvsHFKYZdO03JfuqKaEPjEGtzch6mYOir7znYb6QJRAOjthj8Pmzu1Ni6xXZ)W(ep0EqdMB2ZJdnOr5ORbxxWxX(l1SnzEMJhyrZr1Suxt7W7JbxszbzcEMMysZ6y2Pmj4s1bmxkzA4i2yWgBY1A(qCqGtYjsSnOdH56cW2UbhmAoCcmRPMjjooSsZuBezu7PjCmFPjEl0T4LK0Ol)M(7Og7ckFT(eOQiFiQRWHb(g1dhMbKCs1(ES9iRC)K(ywiwugribU5GTIqKMaW5cWY4)BlXiPeXhfTMaiGyF49m43e2faSOkQLet))AIzvz8JapcS)IhbDfdJfxqMt335zvHtk)QuuqgOTWauWMNyUVXSOoYZ8GONFwAEYEnl)KG14veVVEBItZdYp4Jzidtd4Np)NzGVQpWNvXY)w50kwgSPy5lXhUoftuESqazGqcomaksiobApaOfcKr(oyIKWtrxddSd9e8Z)ktuwS8FqbY9huHzXYyWBZ)cTpjinyDXskm4ILhsg2uXgvfXjiAD8EIkHTCEt4HkdwTXRKdyO)kb5OxhkaW5j(Y7rTfPJnqxKGkXoHq5OeDso2M7tOKVoYRBuew3WeHA1yNGyeCtD5KIcqyLT6QLYkrZ0gurJO(xjJxS8rE8vU4oTYi6rQdkyayRTnMUXZJlwI)cWM4gcMk)PzGKNX)C3B1HAe)vkZRDaTa0RciAcHLcmBrxmuXqM3Ae4MnRLGMDgTMbKyc(LTINRjohPLKc)6wbTpWF7Za3FzRb1Z2svVnmFwIuFPtF6ub)ybxGn8wLYyve9aKdNrwGuzos1vwpIkHgIhQLsYtkMfGhlafYSeLtbQR8uP1ycie2UdYjrq1qHbBrivP3eZmdbRmr6Jc9siH7jmN5KA6xEBctfVnHAaGJPMWvlK18iEGMMl3wOMe3ksczaPKyheo0CQn8dH5bB3LJJicWTPOSKAasLeCBmaadIN4NXMbLUYbUAIZLkfVZAQ5cqOX7PdlQaPihhjcebTIembXny2VscmIB7E)AZ2vZ4uk3YfkzISKZvRjIQgr1nAZZVnmYck7zQtNzGKtI8rP(mS)jPyi47k0jI(NdACyUZWDOmVdaqrYET(6SSn(36bhOmoKR2(G004uV4nSZthsXWzI49XK7aktmrd(N55qPwMLuw6I8YTf5LUX)wpOS8Y9KKxU1Ylz71JqEr1vPhw9I3Z7WHja4eiQVo95Z7caeb0BofWvIsbpbyVG1CQROlXFzDijXdnPFDeCNBh4o3JM7Cf5o54JDm9yoK6ssMKgedELErYTxfcbjLg7k)e2bHpXd2ik0P)izVQqMYZknYH2Ps(5Y8bv5rY6n8Ram9VixkplMDCCOF8ZrAdcuH3GY7cX7ACl(hVZM(euCFdUlq73eY)Vcs(8R4HU5DCf94n0ssmOTQF4msidBUXaWmagkYcajHI8BAT3nZ5P22NdKodQ9U5AmdD3oNkEzdGDvYC1CDD6Q65m1nTvqQ)eujc3mzJAG146anFd6MtYH8TFVuQmt3g5FblvM5CRmgSCwZAsaZacWKUx7LF1LcG8qz6Z0vutnqMrhf2vVvomKyrYgO7UCuRI2a5SxRkNIzCdYztpvJ3bPAICI1cYiZzo4yv2)Zlpr0x1FMCbGSGe6EM3EJ7SCH75xdARgxS5NkNi)zHS5Luuijgx(oiWkynUN4FO5PfIXkPca08d4Zx9DyyKsAG5uHfIXnGqolmox8VtsyjEZgpqgrtI2oYwhbKT9fHnOhOCPVkjO8vEBRo6sMWvkjtvopQoPH093zlqW)fxF77qqQqkOrsXioqUx5sLf8tprq6u)3ZbWOGDra565nMGLKWZvs45EScp3tq45QKLw7cphfHNgav1XQcI82bqVl3Dc)G1Th()Ciijb7p0K9OY(uXiQ1D2aJ0Wvln0zAnqhELZ5CrBhkOoySvKLAqz6MvJ0N6gUeoIhBslEUWDqE12rrTPQwPoguH45cDqQTtrFhkTDmiTpLZU2UyaM0oV(I8TEdaTS5q(VuUHUsqs0iTb(SAkv1NyHcwJnhsFPkcv1q40mCkl8wdWWMJ5BaXip7uEILwto4oH0orPRrGui5a5UvSM2j1oJxSnaqaoAleBw8ETdj3WFM3)(G)29y2JYyI4EfK6aArWvPh5cML2VnYrytqkEf7vKQMHqLOdTLatamjw)5mPjAUAeMtysrMaaBtz7dQngeanJmm7nQEV7ycITNrPKsAaRp9bOgSpjofi4gsDSVMDv7xdkcsOIuIvrw8EszYpKhVhLt(bapyeGhCyXh)7beLN77lw(lXrWIrh(A93Deqts9FnmAPrimR(oFzqfTV3aTBwEuzARV4PDK2nkoReL1w42A6w8rDIu2Bn64KPogeQNbZzNWNPev7oVQslh5ExMd5(zBwCJkoSPxyHHBUVTsuQJIspegOS8CUWK)my89Om4O0l2476PCzj(zW1eNtO8Gqa1SnoV50U8lYzSd2ren249YjCjj8zWVKqk2yx(4xqYE8mBB1BtZc1HpPXIR4bKtkx7(xug(iiQDha6NZfM8NbJBYfG2PCzj(zW12o6BCAx(f5m2b6DdOzcxscFg8RwhbQJFbj7XZSDWzH8c1HpPXIFRnNBYLmxV)mnZQ7lHXkURFTSn9gl6yBc1w3xMMv3xIUVVAD6nw0jMx0WN0Ury)CNiIJEI4irek65nXHHXptVou0HueKOmKYhMEVO(K3mmqeY0y58vSK8cNi3LsE58IIPqVPVd56z77tMSpkhTcLHFpGvNuycYHkdW25mjXU(iqTB(iN8fOOrIQzkD888Pq8oqwIZLYVZGVhHH74zZw5vTt5RiX7azTkiugUthMpnE9RkXBLSNMHwh55tJ4MD9y8MtRiBR3TAxDVDAS(xvI3bYEgNUV7BGWwznolB7VQeVdK9K8GOnWu5RM74cmPKR5f86jvorR)zRirC5H78HUle1l(4hOYvcrVRjEcIyBXJG0CxCk9F8d(fYdMoEta5r2XMy2WQ717nZExzDoUHuX8zC9AzXoUH(WFM10wOeZ(RV2V5anYI91x1mipxrTJ9uDMyAhNMZJ2riqHgiosBa(l(y3LeUALeUMKeAYNVMZuZAw7yALeYz)PDejjr7P(CmsIQkSPyvOjXaj1HrS8hdd4AGb0MzIKu4SyadVvGBItMrFpZC(X9M63m8mNBaI7hqi9SRmvp1Ec8iKoXCrzk83F9vJvH8Jv8Tk3A41KY5Yw7(zZu24tdKt6X1sK6nV5hljOImxntrz5erwsOdKVjyZmlDTCXh)HFOyjTzhNIkwUdy5zxVlppj79V7Dp)8ZdFogmyq(aVT)D03X1mNrJUB07OLQ7TbrBoqQ(21Z)D2B29d8Fy67qZHu22b(u7oLh)tJCF4DCqeVLaI4TCygZ12QQSfH08Lhs4nPkXhFzKwwdB(1FXPPKYutq0gQaTwvee9umy7G)c4klcfsnnzwkSMEQucs0tu1J(NmWRVELzmwIQEw7I3c1e)a5UkQH)KmXzw3X4n(vCDhIdBEUX03bT3TitQ2DWSZf0UvUNANkpFwDZE37Q(wvmS4rYTM8GAzX3BnSDdThzZKJsAtCu102NM0G)7ABsBbj151V1I7lrh3K9M5(VUhLZK69An)ipBGPZkF0MYRw5ZqNSCxX((g9BTk7v1xj0pXqVM0RVUsFxfxqQQ1V(Q1gNE(TCnXALgMEGnXh7B00ThuXrL2vUdp4Jk84oMpR1o6OX8lFmitNzQtoisc5xK9uNrI7gXyN1ANt11i)rnjor5MdUTfPxFL2sEQR2nci)gOSvkpW2Nq1PZC718Xqph(OEQpO55ZCg(WaQ0v4DitMS4ci3TVmhdutntTkS4NRPxEjuGYO31tJIDEdGlYD5BdBsvrzBYzjpDQ6s2tb6gwV6c4rp3WMLzVlG9CiBnMv)4XzN2n8pRDYFhSuv9lwf7P8kXNpHAdmNzlOiJND7OExPpRFsEzwVoGEg8lnqdNEjDBOH81TVc16xruu95J5KwronT9w4zGwjO7in8Jq)BqyiY41VaWzo902KjtNi)7W5859n0piVzIo5S4cx1tjZGtoV3azeYcqHBAY2etOZM)oLWBkbY0f2t3I18GLPEnzURbxIoAizZu608V7w8K567o5nMBcZFKVd01aM)OBxo)Cubcj81XgRvdpiKeARcBdsug6j5UgA6en0tCpugOO(FL0MkdFO2JMnPGO3xE06z1p2xkJxEhVgFZX96Fv1KuFRX1PJPlV8bklprYv9KI1nQ479v1xcCOKf3EQJwVt3nshnLE4VvoKvFSWA5OgplyDZO65aRD7k(mGTSJ5VMxdw7u)U1FDz41zFNgsSxl2vuxMahnrDl1MxNspooJUeECew1lzm7J19ZfgQVY2smLm7WfuhTR4fEJZa9qgCadS(gQxrNmuMAIJhuz5Q5gd7zZZuplG)fLE)PI06RMyt7wvB8oHX)wdYZWs)DempboSQtJT4hEMEVDDbjXd96RhkXS(tERjKEdKVderqG63gwrHmEQPtjDzl40PfKMj)CNE9BE(CAThxv569dgqIn(dfl)K8L1wwkKSzKYVfKJ3ZIPyQJijSGTE8LUkx8wBvLDbjtfdl05DqI5K(YR8sPPPPRwViEzF61VT(xDMJyHVKl3pbAxQyvdlNWGtLFD1ZVUDMFDfRuOf(15m5xc9ODylLHBTpAf4CjDGn(DGMpZv(Zuvlh)Ur0AXSXILR7XAnxE91UelcIMPF)YRs7jziQPKNCb4jlKC1kKC)tvi5OkKocRFZ1fM1BQl(Fp]] )
+spec:RegisterPack( "Blood", 20240908, [[Zekili:LZ16VTnos8)wcwah72exlL400cB)HDxCan4WHdx6D73SmTfTTUklPtsoPzrG(B)gsQh8TKF0hhUVSBRj1W5fN53mKSZDM)55p6JYXZ)BUJCVD0hgD)qNXU36EZ8hZFjbp)Xe0QVG2a)Hi0o4)(RHXX(KF9LWyKp5RZI3NUcg5XGD7dr5bXr)wkAD(8hxUpim)trZxQFfCHpnbVc(5XJM)42aFFmBU4SvZFKm3Rh9HRhD)hlw8Vq7scsdwvSGU8fpu8q94JHXHLUyX(eYQ0m29x7EVPXE)1U3cJ95T4If)bkf(pb5BdIM)yyqwEgvNK(S3(e4p93OQiCeAzi2F(Vo)XvPb540a08hVOyHFC(WLeEYljeTzpEyEWQVeeTz(JOvevbOfOJUmoiCEoiRgj2Y9RxpCzCe2lBBao0FywoO5lwmRyX4If9kwKUpc42ztlw4w93dw5Le)moDOpEDWQGC2W3mIooWD5OqCu(WSTOCYQeTXJSadlx)IfV(AXI(TpnGy(yu(wpuKVNpEf6LkXSyXGgjnpE3YSC4ljc6n2f0vXG2kmobO6ldtX7qbrzflMaC)Mv(d3H(kJ5OZny1lEalghLPDMnmaJjZYtd(cLhU1ip0VK086BbAFl36RXOmPyXtiGsaL5h2lfVofNT17ju4EWynWIHcmJJAy9DO004NtXr(egFSrgNm)NWE4i8UamWRaR6qxKCu6gCoyx2H9YJ9swL7DZykJow34(bykp0N5cd7HdbMhLaSyTE4T0VLZaZnlcxENexQBACSEBCOSO14PFk8(QxwfcFfLczKnZaJ)ER7On5P3tyVckAZ(aWWVjnEFKV4wQY5SpABC4lkZyGSdB9Ar4T7nYBqWYWWkjzytyfMVeL)wTLmAM36u2kGczQrNHoMci9bP1lobwjCEZ0R8Zj)jWPMU3XDmvdlYrBXO08YDFflEtTAG(7lbd0xaduTw4nuEEaL(ESul8eWlnXdcbt4qNrgvjA3zr2(wV5udnz2iUpLPJQ)e(OiE(73L4H2bwWCZXzCOPiQgDfeOc(k2FPHTjZZC0FlwoQLLgiAlExmeakliJlo0ytwwhZHGjPsQ3o5sjJqyxJPwSPxB4d(bbojNOXwJ2hMRlDA7oCWO5WoWmrltsCCyTLPXjYO1ttY3YLoyT(fVIKgdWlgDJ6SZz81gtGAI8HCSCBgkfupCygqYX1Y9T2ZJwgv0hZsOIYikjiciikC5vcGGlalJ)ZwYisjIpkAfj9pX)W7ziKkifaiOAQLet))AYqv78JGicS)IhblfdrvPImNk3qy4QKhvFvkkidSwyaqP4oM3lmlAm(mpix5xKMNCuZQpjyfEjj6R36408G89(yg(Y0GY9N)Zmiw1NkNvXI)s10kweSUyXlX7VmftmESuazGsc2magsipbAhalgsBr(oyIKKrrxcdSf9e8Z)otvwS4FqHT9huLzXI4uv0Sa60HIg2O6mobrRI3rmjSLZBCzIXGLR9Q4agwVkin6THCWzEQC59O(I0XgOltWHXqpT8y5hvBujpXTPKNJ1MtO2hHSk5OeDMzML4ZOKVng3RuSSxXS3ADVocBoet9ivXAm5TR(RtSPrnlKbuJQ(3jJd1EvcgOuDNw7X)inAkmaiABIPcEECXc8xb2elOyQd(NbAEg)xglUjVi)VszETdOT2b7zLVqtfa8XdPQHmVviiNqwl5C7m0sdWg5sIyf8PiOmPLKIv8goRpWF7YGy1zRaZZgLDEAaO60soKZyLDhlsnlGySboSshRwSbGpYzKf8FMRx7cRBrLGUvIlGsstfxznblaEmafY8eTwKJ1WgmVXeqjSzluBfNPHIz3IsQ2UXx0icwzI2hf6LqWMqyoZv50VQrht4B0rdA1BPUW1lK1IEUNwbEPVqdjUHNeYONj5oiCOTSH0nH5bB2MJJikWnPOSKg0CveCtmGweYN4NXMbfcQ1IzyAX7S21ao8(4D0H5nG01qOCe0ssYeuPdZULsiNCBp6xB(UAgNs5wAbKjYs2xTIyceYQB0NVSrDKfuoYuN2Zavsf5Js9zfQKKIHKVlrhzPkLiChM7mClkZBpGQLiRnDAZ24FVhCGY4qHL7cstJt9IxZ2pTpfd7jI3ftApvgFvrLFMNdLAzwQVQl6l3w0x6g)79GY6l3JsF52OVK3G0X6rlHfwrWK0GyyN1lsBDRZYjTWSoQXjdHpvgWK3rG(JePvHmv2BHIwDQTOUS9r17QS2aDfWv)pspVz5DIJd9JFosBGS6CMuENlMTqtYp8nm9jir(o08n7TE4)xb6D6hOGU5DyNPWBPD8FqBhUGZiUQelDgaMbWbqwaOqkKVO3E3CNNytohiThuBZWeMHU2HPI5ZaGnLQVmddVRMNt0202598dWKW1kqHJysO)BMBzT5QiiF7plNeLP2)9t)jrzUkdJPgNk2YFygq6K0DA7kwxoFH7Rk4JUIAoIHP0rbz4A5Ko8Nb1aDDFq9qQgixVv9PvygLGC9Ft0elq6ihoYJAXiZzovyD9QZQ8)7Rg9s(8vSG759Sy7gLSCU2ORbBLqR4(C1elV7gRFjffsYOLVfsJcoQ7irde3Bq8JjnyNIOTC(QxQbJusdOMAKpmUbuYzHX58)D74wD4WT2NhuGEyWvrIKGQxhlTEJjzcxOa3VAEuBGG28VZwGG)e30FyifuifsiP3(7jD(SY4a)0teCmn)9CaQj4heqAGSXsaKuwUTPCCpcLJRsDFTRCCuvocwrxDWJAY8ee5Tfasljn4)Z(GKeS)qtUtkILIprRcYaJ0Wvln05PulSncIg0gQ(5ncBBo10ac2AJFdKjDZsO4MUHAOepsT65K2QOTqXA9RSVItn(Jo643Mx)prAVJzVKTYS1VtlVPvVwRVUfHb5)sLaCbNKlakVCwIAr9W2vYTVEF6l1zeQhcNMHtzPteGAAohRb8yL1(vw2MvO33XvuhkDfc0cj7jDUWArDu)QYJJbsaJJ2a5c578ziPhWzE)79(B2Hz3XGX8YkO1b0zqSnpsliLKxbe4RdsXSt3ud(7AvhAdjTm4iS6lzst0Ch1nxoIIobasMYKdQpgKalJmC1f3eWD(mkL0YBy1P3DYGDjXPa5wtoNZlzTI9sWmqISNs8jYI3rog195X7q5KFaqFfbOVgw8WFnGy6C)yXIFlocwk6WxQVVmanjNpOHrRCbHz135RdQP97nqBXJptM26pCTosBHdVtIYApyVg6w8Govk7IZCy6uNBo7mNDcFIAuTsEDN4pqzxMdlJ6k287AoumMm3WIYTvIsdtufFWaLLNZzM8NaJVdLbBLEXgF3mLZlXpbUMeAcLhecyATX5It78ViNGeSLOASX7vt4Cs4tGFjjuSXULJFgj7HZSTDEmAwOo8jclUs(Qss5Ap(IYWharThaq)CoZK)eyCtHa0oLZlXpbU22wFJt78ViNGeOpmGMjCoj8jWVAdeOo(zKShoZ2HGfYluh(eHfxbHvZIh(uOUfG9ZDIio6jIJerOOXwhhgg)mT5wO9PiOSlOacmTlx(K7OiqeY0yvquSGCJkivINxnVOykuo69ESz2((Kj7JYrlrz4pcy)iTvMyKmadSKjj6PdafOztOC55A0OAMsh9pogI3bYsCwR(od(YCd3rpHw5vTt5BiX7azTQiugwGxV9SYRFtjERK94C06ipFCeVMSJLjRX(Uvt2w7mNmRRSgNeR)nL4DGSNWU77(oOSvwJtY3(BkX7azpQiiAtmvDdNoSetk1UCgB3LYoA9xXajIlpCN30DMOEXdFIQxje9or8ee128hbT524u67l)3ixqZ41bKlefBIzdR7t0BN(UQUOFf58oNwAxRAL(v0lPXurFHkmGV(AFXbeQk61x1myzThAhJdzV2XPyO1ocbk0a(rAdazXdDxt4Qvt4AstOP(WgotTkmTJPvtixnH2rK0eTdLUlAcdNl6vXjtP38YsvJ7vn3UXPoxTkoYpGq6Pxy6SO6XXNay6zC(zK)(RVA8eEEOMVv5wd37TsUS1hgPzkB8smvs6BB0incV5R1fyMmFYq86YX8Se3Jt8QG1tT8GglE4x(LIf0Nw0euXITalp9YT55jzF8DV75NFE4ZXpVfJ8bEB37O3bLPoJgD3O3rp2JRdIwVNCsgxo7VZUDHFQ8hM8o0mOGLTqeLUt5B)Wi37Fxzk0RjPqVUmj7mTpmm2IqEQt7tkFsyKiCv5zyppQV9loTGmMzcI1svOnMIGONIbFh8xHnYrOqQRjZtH9edQ0Ge7e18O)4wF91lmJWG30ZEjPTqn(pq(o8leylJFMnpMuHFf384rbHV0z6NGx(jptQ(w8y7lOVnWEQVlWztBEhO9UOVvddlAS8dbCGyic(rBBPRFXNDAL1(mdh0yj(z7Xzk47qeOCusBAK6hOzN0ik2IoQPoT3wjVCXN2GiBMFRL9OCM07SuZpwIeFY0QR7M8QvDDDjl3fSVx4TvQYE13)E6Ny4o53RVUJXSoRK0jq(6RwFKKZUP0sSs5XroWM6J9nAUv8u1rT1v(MWxok3X0d7TA7MVlm)QJ1FYut34DIMq(MRoXzeV0WN5UX6CSbMlVEk8tu(Ha22I0RVYtqCIRwbb0FdueLQnS9juDYu3EIxJ0zWh1t9QGoBQZW7hq1UC3GtYK5xa5x2hlWa1vZ0ZcK)Z18U9iuGYO31tJHDMaSj5x0NGpPQQSn9SuKovBj7ADCf7D5bOHp1K2vvoZH8DiBnM2CTBz72n8VUwYFhSu1VRMA2t5(1oBm1hygZxqrhp9Mr9UqFf3KAISwkEpdXLgOHtpNHn0q(MR5p17xrvu)53wsAf90K2FQdd0QbDhPHF4Uu8egImEZD5AQtpTxg)jJL)DyF(S(gUK9VDSo9m)clC37zUWMwxrgK4SCYCYXKitjLLUeC6wmXTqMUp(ZCne8ZrdjflDuZ)0)uw0yF3XV18Zs7nLsGUNK2BC7YoLdkLhHVo0SQA4bUIDBvzBqJYWjj)YkMmwd94LHQucn)d10ezGcnXUSPf4JZwMxEAZf0KY4vDs149eTx)lQNK69dTPSpD1)pqz5jAU6RbQUr5VJMQrnGnLSm0tC0gh6Ur6OP0L1So0R6f8ulhjCvo1nJ6RWPwXL)QBArIlVbMg82PryB(6QePt)jn5xVw8ROHmboASQi1wuNQiooJohrC4w1Zz25dn8ZzguVIyXx8LDGbQJ2vKbV1zGEWboGdwFdNkqNCuMyIJhu75QPZK9SfzQNfy(8AVFOyQ(MP20kQAZ3Xn(3B4Cgw6Fia644L63DPLiUt1hxRlygUVxF9GgM2F81MW0nqUVg8W90lgwXBC7et7h6Ii40PfKwD(mNE9f3joPj2QQE99dgqYc(lfl(SC7FRoCLSPKJZkihVJL9W0dmJWc2EXJ0v5S)W)uzxqZuZWKx7tvJTPo2QN5u5rh1RFBV3VPo8hGM8bMtGTjCUBvtyq35qx9COBN5qx(d70ch6CWCiHc0xRhLfB9XgYXRs6zBC4anFMR8NPQ67c)Z7dy2fWsRySEAmV(AxYEa5Faj8iCH0CGNLQLdq0D1k6U)ie9dW308z9oG(UQM)Fd]] )

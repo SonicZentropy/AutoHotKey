@@ -110,7 +110,7 @@ local function StringToRGB(str)
         return 0.1, 0.4, 0.4 -- Sea Green
     elseif str == "NONE" then
         return 0.0, 0.0, 0.0 -- Black - for do nothing
-    -- AI Generated Below
+        -- AI Generated Below
     elseif str == "SZ" then
         --print("SZ - Bright Green")
         return 0, 1, 0.5 -- Bright Green
@@ -167,7 +167,7 @@ end
 local function IsPlayerCastingOrChanneling()
     local isCasting = UnitCastingInfo("player") ~= nil
     local isChanneling = UnitChannelInfo("player") ~= nil
-    
+
     return isCasting or isChanneling
 end
 
@@ -180,13 +180,13 @@ end
 
 
 local frame = CreateFrame("Frame", "TutSquareFrame", UIParent)
-frame:SetSize(20, 20) 
+frame:SetSize(20, 20)
 frame:SetPoint("BOTTOMLEFT")
 frame:SetFrameStrata("FULLSCREEN_DIALOG")
 
 local texture = frame:CreateTexture(nil, "ARTWORK")
 texture:SetBlendMode("DISABLE")
-texture:SetAllPoints(frame) 
+texture:SetAllPoints(frame)
 texture:SetColorTexture(0, 0, 0)
 texture:SetAlpha(1.0)
 
@@ -205,12 +205,12 @@ local function OnUpdate(self, elapsed)
     
     local keybindUpNext = Zekili.KeybindUpNext
     --local keybindUpNext = addon.KeybindUpNext
-    
+
     local r, g, b = StringToRGB(keybindUpNext or "NONE")
 
     if debugPrint and lastPrintTime > 1 then
         print("Key: >" ..
-        tostring(keybindUpNext) .. "< RGB: " .. tostring(r) .. ", " .. tostring(g) .. ", " .. tostring(b))
+            tostring(keybindUpNext) .. "< RGB: " .. tostring(r) .. ", " .. tostring(g) .. ", " .. tostring(b))
         lastPrintTime = 0
     end
     texture:SetColorTexture(r, g, b, 1)

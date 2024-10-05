@@ -1,0 +1,11 @@
+## Interface: 100270
+## Title: Zen-DungeonTips
+## Version: 1.0
+## SavedVariables: ZenConfig
+
+ZenDatabase.lua
+Zen-DungeonTips DF.lua
+ZenFrame.lua
+ZenConf.lua
+
+

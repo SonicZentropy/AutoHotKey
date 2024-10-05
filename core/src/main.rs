@@ -139,7 +139,24 @@ fn main() -> eframe::Result {
         profile!("Full Search Process", execute_search_process());
         //fastrace::flush();
     });
-
+    
+    // Make numpad2 key held down also trigger the bot, so i can use left hand as well
+    // capslock is rebound to numpad2 via autohotkey so i can hold it down
+    CapsLockKey.bind(|| {
+        println!("CAPS BIND GOT");
+        dbg!(CapsLockKey);
+        dbg!(CapsLockKey.is_pressed());
+        dbg!(CapsLockKey.is_toggled());
+        dbg!(CapsLockKey.is_bound());
+        
+        //while CapsLockKey.is_pressed() {
+        //    println!("CAPS KEY PRESSED");
+            profile!("Full Search Process", execute_search_process());
+            
+            sleep(Duration::from_millis(125));
+        //}
+    });
+    
     // Exit program
     Numpad1Key.bind(|| {
         inputbot::stop_handling_input_events();

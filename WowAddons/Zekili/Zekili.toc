@@ -1,5 +1,5 @@
-## Interface: 110000
-## Version: v11.0.0-1.0.4
+## Interface: 110002
+## Version: v11.0.2-1.0.17
 ## Title: Zekili
 ## Author: Zekili
 ## IconTexture: Interface\AddOns\Zekili\Textures\LOGO-ORANGE.blp

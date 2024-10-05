@@ -3,7 +3,7 @@
 
 local addon, ns = ...
 local Zekili = _G[addon]
-local ZenBridge = _G["ZenBridge"]
+
 local class = Zekili.Class
 local state = Zekili.State
 
@@ -512,8 +512,7 @@ do
             text = "Potions",
             func = function() Zekili:FireToggle( "potions" ); ns.UI.Minimap:RefreshDataText() end,
             checked = function () return Zekili.DB.profile.toggles.potions.value end,
-        },
-
+        }
     }
 
     local specsParsed = false
@@ -563,6 +562,34 @@ do
                             end,
                             hidden = function () return Zekili.State.spec.id ~= i end,
                         } )
+
+                        local potionMenu = {
+                            text = "|T967533:0|t Preferred Potion",
+                            tooltipTitle = "|T967533:0|t Preferred Potion",
+                            tooltipText = "Select the potion you would like to use when the |cFFFFD100Potions|r toggle is enabled.",
+                            tooltipOnButton = true,
+                            hasArrow = true,
+                            menuList = {},
+                            notCheckable = true,
+                            hidden = function () return Zekili.State.spec.id ~= i end,
+                        }
+
+                        for k, v in orderedPairs( class.potionList ) do
+                            insert( potionMenu.menuList, {
+                                text = v,
+                                func = function ()
+                                    Zekili.DB.profile.specs[ Zekili.State.spec.id ].potion = k
+                                    for _, display in pairs( Zekili.DisplayPool ) do
+                                        display:OnEvent( "ZEKILI_MENU" )
+                                    end
+                                end,
+                                checked = function ()
+                                    return Zekili.DB.profile.specs[ Zekili.State.spec.id ].potion == k
+                                end,
+                            } )
+                        end
+
+                        insert( menuData, potionMenu )
 
                         -- Check for Toggles.
                         for n, setting in pairs( spec.settings ) do
@@ -976,7 +1003,7 @@ do
         d.numIcons = conf.numIcons
         d.firstForce = 0
         d.threadLocked = false
-        
+
         local scale = self:GetScale()
         local border = 2
 
@@ -1008,22 +1035,17 @@ do
                         b.Keybind, b.KeybindFrom = Zekili:GetBindingForAction( a, conf, i )
 
                         if i == 1 or conf.keybindings.queued then
-                            b.Keybinding:SetText(b.Keybind)
-                            if i == 1 then --- NOTE THIS CHECK IS NECESSARY
-                              Zekili.KeybindUpNext = b.Keybind                            
-                            end
+                            b.Keybinding:SetText( b.Keybind )
                         else
-                            b.Keybinding:SetText(nil)
-                            --Zekili.KeybindUpNext = ""
+                            b.Keybinding:SetText( nil )
                         end
                     else
-                        b.Keybinding:SetText(nil)
-                        --Zekili.KeybindUpNext = ""
+                        b.Keybinding:SetText( nil )
                     end
                 end
             end
         end
-        
+
         function d:IsThreadLocked()
             return self.threadLocked
         end
@@ -1162,9 +1184,8 @@ do
 
                             if conf.keybindings.enabled and ( i == 1 or conf.keybindings.queued ) then
                                 b.Keybinding:SetText(keybind)
-                                if i == 1 then --- NOTE THIS CHECK IS NECESSARY
+                                if i == 1 then  --- NOTE THIS CHECK IS NECESSARY
                                     Zekili.KeybindUpNext = b.Keybind
-                                    --ZenBridge.KeybindUpNext = b.Keybind
                                 end
                             else
                                 b.Keybinding:SetText(nil)

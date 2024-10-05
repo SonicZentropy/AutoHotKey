@@ -681,7 +681,6 @@ function Zekili:GetPredictionFromAPL( dispName, packName, listName, slot, action
 
     local debug = self.ActiveDebug
 
-    if debug then self:Debug( "Current recommendation was %s at +%.2fs.", action or "NO ACTION", wait or state.delayMax ) end
     -- if debug then self:Debug( "ListCheck: Success(%s-%s)", packName, listName ) end
 
     local precombatFilter = listName == "precombat" and state.time > 0
@@ -693,6 +692,8 @@ function Zekili:GetPredictionFromAPL( dispName, packName, listName, slot, action
     local strict = false -- disabled for now.
     local force_channel = false
     local stop = false
+
+    if debug then self:Debug( "Current recommendation was %s at +%.2fs.", action or "NO ACTION", wait or state.delayMax ) end
 
     if self:IsListActive( packName, listName ) then
         local actID = 1
@@ -790,8 +791,24 @@ function Zekili:GetPredictionFromAPL( dispName, packName, listName, slot, action
                         end
                     elseif action == "main_hand" and class.abilities[ action ].key ~= action and not Zekili:IsItemScripted( action, true ) then
                         action = class.abilities[ action ].key
+                        ability = class.abilities[ action ]
                         state.this_action = action
                         entryReplaced = true
+                    elseif action == "potion" then
+                        local usePotion = entry.potion or spec.potion
+                        if not usePotion or not class.abilities[ usePotion ] then usePotion = class.specs[ specID ].options.potion end
+                        if not usePotion or not class.abilities[ usePotion ] then usePotion = "elemental_potion_of_power" end
+
+                        if not class.abilities[ usePotion ] then
+                            action = nil
+                            ability = nil
+                            state.this_action = "wait"
+                        else
+                            action = class.abilities[ usePotion ] and class.abilities[ usePotion ].key or "elemental_potion_of_power"
+                            ability = class.abilities[ action ]
+                            state.this_action = action
+                            entryReplaced = true
+                        end
                     end
 
                     rDepth = rDepth + 1
@@ -1096,7 +1113,7 @@ function Zekili:GetPredictionFromAPL( dispName, packName, listName, slot, action
                                                 Timer:Track("Post Recheck")
 
                                                 if aScriptPass then
-                                                    if action == "potion" then
+                                                    --[[ if action == "potion" then
                                                         local item = class.abilities.potion.item
 
                                                         slot.scriptType = "simc"
@@ -1129,9 +1146,9 @@ function Zekili:GetPredictionFromAPL( dispName, packName, listName, slot, action
                                                         -- slot.indicator = ( entry.Indicator and entry.Indicator ~= "none" ) and entry.Indicator
 
                                                         state.selection_time = state.delay
-                                                        state.selected_action = rAction
+                                                        state.selected_action = rAction ]]
 
-                                                    elseif action == "wait" then
+                                                    if action == "wait" then
                                                         local sec = state.args.sec or 0.5
 
                                                         if sec <= 0 then
@@ -1454,11 +1471,13 @@ local displayRules = {
     Defensives = { function( p ) return p.toggles.defensives.value and p.toggles.defensives.separate end, false, "Cooldowns"  },
     Cooldowns  = { function( p ) return p.toggles.cooldowns.value  and p.toggles.cooldowns.separate  end, false, "Primary"    },
     Primary    = { function(   ) return true                                                         end, true , "AOE"        },
-    AOE        = { aoeDisplayRule                                                                       , false, "Interrupts" }
+    AOE        = { aoeDisplayRule                                                                       , true , "Interrupts" }
 }
 local lastDisplay = "AOE"
 
 local hasSnapped
+
+local lastSnapshot = {}
 
 function Zekili.Update( initial )
     if not Zekili:ScriptsLoaded() then
@@ -1499,8 +1518,15 @@ function Zekili.Update( initial )
 
         fullReset = fullReset or state.offset > 0
 
+        if debug and lastSnapshot[ dispName ] and GetTime() - lastSnapshot[ dispName ] < 0.5 then
+            -- Disable snapshotting to prevent loops with errors.
+            Zekili.ActiveDebug = false
+            debug = false
+        end
+
         if debug then
             Zekili:SetupDebug( dispName )
+            lastSnapshot[ dispName ] = GetTime()
             Zekili:Debug( "*** START OF NEW DISPLAY: %s ***", dispName )
         end
 
@@ -1667,7 +1693,7 @@ function Zekili.Update( initial )
 
                         if ( casting or channeling ) and not shouldBreak and not shouldCheck then
                             if debug then Zekili:Debug( 1, "Finishing queued event #%d ( %s of %s ) due at %.2f as player is casting and castable spells are not ready.\nCasting: %s, Channeling: %s, Break: %s, Check: %s", n, event.type, event.action, t, casting and "Yes" or "No", channeling and "Yes" or "No", shouldBreak and "Yes" or "No", shouldCheck and "Yes" or "No" ) end
-                            if t > 0 then
+                            if t >= 0 then
                                 state.advance( t )
 
                                 local resources
@@ -2027,6 +2053,7 @@ function Zekili.Update( initial )
 
             if debug then
                 Zekili:Debug( "Time spent generating recommendations:  %.2fms",  debugprofilestop() - actualStartTime )
+                Zekili:Yield( "Yield before saving the snapshot for " .. dispName .. "." )
 
                 if Zekili:SaveDebugSnapshot( dispName ) then
                     if snaps then

@@ -239,7 +239,7 @@ spec:RegisterAuras( {
     },
     flourish = {
         id = 197721,
-        duration = 6,
+        duration = 8,
         max_stack = 1
     },
     grove_guardians = {
@@ -269,6 +269,11 @@ spec:RegisterAuras( {
         duration = 9,
         max_stack = 1,
         copy = 279793 -- Azerite.
+    },
+    harmony_of_the_grove = {
+        id = 428737,
+        duration = 15,
+        max_stack = 1
     },
     incarnation_tree_of_life = {
         id = 33891,
@@ -525,6 +530,7 @@ spec:RegisterAbilities( {
             class.abilities.swiftmend.handler()
             if talent.wild_synthesis.enabled then class.abilities.wild_growth.handler() end
             applyBuff( "grove_guardians" ) -- Just for tracking.
+            if talent.harmony_of_the_grove.enabled then applyBuff( "harmony_of_the_grove" ) end
         end,
     },
 
@@ -608,7 +614,7 @@ spec:RegisterAbilities( {
 
     -- Heals the target for 7,866 over 15 sec. When Lifebloom expires or is dispelled, the target is instantly healed for 4,004. May be active on one target at a time. Lifebloom counts for 2 stacks of Mastery: Harmony.
     lifebloom = {
-        id = 33763,
+        id = 188550,
         cast = 0,
         cooldown = 0,
         gcd = "spell",
@@ -739,7 +745,7 @@ spec:RegisterAbilities( {
         cooldown = 0,
         gcd = "spell",
 
-        spend = function() return ( buff.incarnation.up and 0.7 or 1 ) * 0.05 end,
+        spend = function() return ( buff.incarnation.up and 0.7 or 1 ) * 0.021 end,
         spendType = "mana",
 
         talent = "rejuvenation",
@@ -898,4 +904,4 @@ spec:RegisterSetting( "experimental_msg", nil, {
 } )
 
 
-spec:RegisterPack( "Restoration Druid", 20240805, [[Zekili:1I12UnUnq0VfJfqWoxuLVNTW2pu0h6gGUOOEb6B6ILOTjSSKkLusdGH(27qkrjkkslN0uGfBsShoCUCMZmCShB)d7TbEzi7VpXAYmRNSMBATCY45F1EB2Bji7TjE(N8oa)sK3z4))tuAwmXldhhv4(RKCCavK3cJ9cOQknoN4dIzVDxoom7Br27uR)Naztq(2FFS1C7ThXbbOszrP(2B)nKxiIu4MqWXeCggLw46rqWn(hBFCFSFEkkOWnok8nZINlEMQ6hTw(4uRFUW9hhb5(lp40)fo7ioYEBionlL5OO9E5HzWV(DMJ75t9dWsoLhg6SZl9O9wuK3UquG9VyNb2SOu7qKue5eo6GKutPs18jB9btgrWE2Bhu4UlF)EZes8RHM5jfUgfU8pm9Oxq8RNrHbW30CnrEz5euQZl4d4qQ6N9PQ(JipsMt8ENSJiNxXHb0Ry(N6vazhh48NtPQEXNQQtIz)e07sT6ndWorzMeVtitUaBtZiy)mAEVwxK8iNYF3HIqkXjoLWCFVm6L8077s4AgoTZ(yYzQk(QwvmSYv7KryXIlxkC9JJdHOqKcriOZE4iOSytH7cRc3hlCNc)4Uc3klZhUtcop15auJ6f5xBMLQEqTGD1DTGJeCP4OxIpHycLMGbNGLDhBj5E1Lu5r7XeKO)sq7bC9rQOSuDMh5akZmdFguBStagX8M5vFjZ4WNb0XlOaNk91eR9FZpeohthP08k1AgRXAohh3V5izhJNO5sMOnJsVUxqoOi0zgL1Qc3NecjGEsZbvX0ImPX)9a3s2xQWgwQXr0tSauZaHyL4MudNAtLHLs8JwKBB)L5k07AUit6RqdejQ2SYAooZSsRQlXGGT0WIu)rP50UkoEN3LNESLPrlBR531vCwx9Pa73u)bX3zwY1uQortvvP07XhoM50spl6HMwhMHGtKSD4FTqn0leGeKdVXsIF1IHvAU81qI1IzAgSd7hFExStsmokd(611vLsqUAfCFH7KzLxZW2FCBnb8tZy(Alnz0(iZ0EWnshCuD0Kg7X(0MZm11(WWXMW0PeU(vCcYbGDm1pHX3PQqrUobO2DIq)t7UjjaAbYMvdaPONkxWSJeyqd61(HRXB7gnkS0tv7eY9HVcFJm45QC1J4TTtiOxCo4hyo2K3)JJMK5KwxtJ0dnV2uIC3)wf2VhsElfbubCXkQiQnb9ZgWNHHhg4Z2iuao3IhBcIRMIq2uVAsEApISIdvQcWLFN6o7xzyLR1)ufkPtluo4OU2SIHqaSuLYLiKGato)zgqXPL5tQsu8JwcOgDdOXRLPxOPpP8monXaHBHhI61p6w6PAYf9dv0u8OOYIoXrR5OBHbhPBye99bVjSSAWuNrCUnEZoJLWLCpIe7JJHrA3bwxNM1se(t1YBTI9LJQJHA61v7HRRlxz1Q4KwdF3028AqRzAGw)V0KybNB5QuiTzGdbyuiocLM2l37y9pPtgowNhAhJxPDkFAqR77PQJLSRxh3)hFY5sJr1KZ18xFONJi3I4gla0)KrHQUfwAcScbKJeuq5S1arfvs1tyt35caRlp02iVK0JXagH4HdkR(PGbGWGEd7qGtGkVxkqAh6aRsWlkGr6(i8c9mgtpoLwWeHm7zOw9Cp38BS1VaMRQc2tgyXhic9cIKs)0Y9uTCkKHE1JebUsQ92VDojMKrddtlXju6C2ALmlEMPO94qa59Lc3p)4xXZL3yQzDw8(1)uNyPAX4HPhW7xRiyO(qSaJ2tuFgqYMnNj(PnBkt8tBTylQ2h06HBgdu8(UN)Yx4bCQkKwzZd0L1SgIeaZ1HBtJgb0DwwYaa0Jrbo8Jtz)C8dwpXs0O7eMVTRruf1Rd79F0Y1D9(pNY4eafEOCnyRh3hC4DGCOI295U0tnu7scUCP)vBTzH1JtTURV1zD5YG(wK1Owi2sM7hAryxgqe6wy0TtXM5g99AfHRHpoyV3JWfaJllAO8j0OhPDVPvp954rlnK07szdGPyqrQxi0MXxUOFfMcQITWhbMd64KuykGNOAVlyUsVC8E1FkVqhz9PSyD4TShNvZSAasxz7nJUCP1EBwnBrhNcNOkvmCOqY4YLYo5B(QLbxtRhBnYyOy)81ZBbpQe8(jZUCzi)peL)UzReKNR47Njj0gbHgnI62LpoZquSntUxZ8S3nzKSl3AeMh4t5SESSCntG(HaR6gNDZe5l6kLed7RkFKXafpE0yy7sL1a0Vh6GoHjgCVphxKpWYqtoy1ylzLlsxpq(jBgvWT5wgdvTWb9H2PA)QvlnuUCHoU91OchQNl0GJlb0E31fux2WFE9DWtRLdxLIUE8in5uDr3o10C8eyXkEYVsBPJk0tNtXsdLz4n6Ke7eyVXu(hTAT97TvM9AXymvr50QPabJmPwLLTgqJsVOEdLduxwz2NkDYcJHAb9n12DFwCNSqTb2nXcHerxFLIjieFW77GfRpsSon2ngCRdV8orjShzsnPQS6cljFM22xykEZQ5TzLe0HrDsr)DocMORzAEc6a04hsiA(j8eU8SJXe7T)U3jVJ4ty2B4S)3p]] )
+spec:RegisterPack( "Restoration Druid", 20240908, [[Zekili:1IvAVnUnt4FlglGGDoCLptsHT)q7lkAdqx8I6fy)MoSeTfHLLuPKsAam0V9oK6IIhwoztbA3KypCoFMhoCSMy9nRT(UziRVo1C6CZNmFCm8llNn3AB2BjiRTjUEhDpa)sK7j4F)luAwmXndhhv48)i5yFQiVfg76tvvACoXdeZA7UCCy2FezTtL(NT4rq2eKN1xNyUWABa23hvklk1ZA7VJCdrKcNecoMGZWO0chxccS4)F797J9Ytr(foXrHVnU45INPQ(EZNU3CYDfo0F(4px489ae4Iy4))v3ScNFlMCc(w)4chp6FNfGJoK2E6hUFMjCQVfaw57UGT)oMkI12qCAwklnH27MhMb)6xzPnxpAwaIJJ5HH27CtdS2IIC3fI8T(fRmiI5LAhIKIihbJki1mQuTFYwpiGreSR12bfo7Y3VFCcj(1WX5jfogfo1FyAGRF8RNqH(W30AMi3SCck1(f8bCiv9Z)uvFaYLKzhV3olaz)ko0NAIfFQMaQT2W5pLsv9YpvvNeZ(jO3h0Q3ma5fLnM4EenUsGcNZNRumaDS3dijMAtZiyVmkAOXcK8i7YF3MIBkrp2LToWzPM(X3JPB1CTLPQ4jTQyyLFkvNyziAy4fhhc5MifIqqNCXrqR2McNLMfo3x4md(XnqZsPN5b2KGZtTpa99UrEczObnckR7gbhXfsXrVeFeXeknbdbbRMpXui8AA0YJ2Jji(4LG2dO9aQOmaqMl5akBCg(eO2yBFmIfnlQ(sMZHpbyMxq(2v6Rnx79MxiCoMosP1vQ3mrJ3CkoUF3rWpMmvJrMQTIsn3liBue6eJgCvHZJCPeqpP5GQyArKk5hpX9a7lv4dpOjq0t3a09anzL4JPoo1NktlCDyQqUDJxwOqT1cE(1xHlLeiGZk75Q5Rv6vY0fC(sl3sZhLMtVPY290U80GoUgTTTH1xxZzt3NcSFB)hKFNBk2tP6eTDvLsVhFiiZUJEw2d5TomdbNi47W)1b1qniajihEJveFYKHvAn(AOWAYCnd2H9IpTl2ojghLbF96MUsbixJcUTWz68sZmS7h3vta)0CwS2rtgDpYCThCJWbh1KnP5ESh9kBM66Ey4ytz6uax)kobzZMW4gMeJu3Oi2Nau72rO)P7TjjaAbQMvdvP4M2AbZciW4huZ(H7X7ggTkSmsvheI3oFb(grWZf5QhvFzEcb9I9bp)XtAU5TgnjYjTUHgPhAETLeXzc60y)Ei5nvKq5WfROIO2f0pBWa5bqywHRbCHzDUXpUAkcrx9If5z9iYQAOsvcU87uFZ(fgw5s3FQcLiDfAn4OP3SIHGdSuvYfiKGetE9txGMtZXpQQqvF0sa1ORanEPk9sn3tkoJtBoGZk1POEJd5wpvtUOFOI2MhfDw0jo6mDDhm4iDdJO)EWRclRgmjnIZ1XBknwsTK7rKypCmms7oW74Dsj2(zAjTwX(YYHRvEfxtGTUmYuIi(pHBFznLWf787sCgcv)qCeknTxkZj6FFMikQjd2nhTs7W502i5Nb10DXmVok7p(aVLoJQbEBOD(qVIqKz)kXT6FPhxZYstnjwUesab5xosmWVqLu9GX01Vat(vEOTrUjPbXagH4I9lBAPGbOpNAHDiiiqL2LcK2HoW4NCJ8zCL3dp3oJrqJtP3jfHgZX(7sokokAN9LipSANz7VWAtU6NrR)TkxufSxfWYLq28fejL(P1R3cQMV6sIO7wYA7FCkjMKrtzZkXuugB2(Kgx8mtr7XHak9lfoF(56INlTy64Mk(TR)jX8UAPKs(QfRozEhE)Av7nr5HyPpTNO5mGKTlwJ)tBxKg)N2zVxuTpOZl4mgO4HEp)LVuxwOQqy3n3r3AZAitaCHhUonA4txiAjNcq4g5BxFCkFQTN)6PM8oTuA(6mdVkA2w27)OLBd79FoL5jakCx5(WwprtX98zPB95061ILOIk)sy6PgQD)bNp3)wV2S08(zM303MUoFEqF74AuhmC5Td315sHYue3nsgY3gTzHrFpKHZm1tk2RD4mamjnVJwp8g9iDV)B1JFor0dgc69brhGPyqrQ3v0MjvqiLB3KtvSDbXXLqXCuGlGNOAxgExP36oGQ)uCxpI6tz77WRzfpRMB2cKUWIDgD(CNv6SA(sPGcNOQumCixX485YPf28KPrTMwpXCKXq(zgwVOd8OsWBNo)85H1)bV83mFfN81k(25ccTHtOrJOHD572m4fBZ0B18kQBMosmK7mM0D1tsTEIOCTt5(HaR6gzEZurdDHwIH91LpYyGI3vAmSBRYAa63dDGuAIb37lW55dmn0udwnXuu5801de51nQGBlmngQAxe6tTZ0(vREWq5EhKc7lrfoupxOrnUeq7YBsOPTP(L33aV6wmDvk66jJ0ut1LDL6PRXtGhRyBak9fjvONoNILgkYWBiveLsSxzj)J2T29P4QQEDimMPOBA1m6n9Dy0QCR1Y(1pe7WsJHAXWTTQYVKwkP2GcKRtqiYhmRumqa)BKFhKs9XjjDpTXGRDwK3zrN9UuQlvvNwAkeZ0BX5gtFC1a1meoDAt7u0FNJGb0AhxNGoa3Jdfen)eEjxEwqmXA7F6E0naFeZEkN1)(d]] )
