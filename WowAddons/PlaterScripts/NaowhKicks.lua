@@ -1,4 +1,4 @@
--------- CTOR
+-- CTOR
 function (self, unitId, unitFrame, envTable, scriptTable)
     
     envTable.CastBarHeightAdd = scriptTable.config.castBarHeight
@@ -19,7 +19,10 @@ function (self, unitId, unitFrame, envTable, scriptTable)
         key = "pandemicGlow",
     }
     
-    local castBar = unitFrame.castBar
+     local castBar = unitFrame.castBar
+    local castBarPortion = castBar:GetWidth()/scriptTable.config.segmentsAmount
+    local castBarHeight = castBar:GetHeight()
+    
     unitFrame.felAnimation = unitFrame.felAnimation or {}
     
     if (not unitFrame.felAnimation.textureStretched) then
@@ -29,7 +32,7 @@ function (self, unitId, unitFrame, envTable, scriptTable)
     if (not unitFrame.stopCastingX) then
         unitFrame.stopCastingX = castBar.FrameOverlay:CreateTexture(nil, "overlay", nil, 7)
         unitFrame.stopCastingX:SetPoint("center", unitFrame.castBar.Spark, "center", 0, 0)
-        unitFrame.stopCastingX:SetTexture([[Interface\AddOns\Plater\Media\stop_64]])
+        unitFrame.stopCastingX:SetTexture([[Interface\AddOns\Plater\Media\crown_64]])
         unitFrame.stopCastingX:SetSize(16, 16)
         unitFrame.stopCastingX:Hide()
     end
@@ -60,6 +63,7 @@ function (self, unitId, unitFrame, envTable, scriptTable)
             texture.alpha2:SetTarget(texture)
         end
     end
+    
 end
 --Made for NaowhUI
 
@@ -67,7 +71,8 @@ end
 
 
 
---------- Show
+
+-- SHOW
 function (self, unitId, unitFrame, envTable, scriptTable)
     
     if (Plater.ZoneInstanceType == "arena" or Plater.ZoneInstanceType == "pvp" or Plater.ZoneInstanceType == "none") then
@@ -83,7 +88,7 @@ function (self, unitId, unitFrame, envTable, scriptTable)
     end
     envTable.UpdateColor(self)
     
-    local castBar = unitFrame.castBar
+     local castBar = unitFrame.castBar
     envTable.castBarWidth = castBar:GetWidth()
     castBar.Spark:SetVertexColor(DetailsFramework:ParseColors(scriptTable.config.sparkColor))
     
@@ -153,12 +158,7 @@ end
 
 
 
-
-
-
-
---------- Update
-
+-- UPDATE
 function (self, unitId, unitFrame, envTable, scriptTable)
     if (Plater.ZoneInstanceType == "arena" or Plater.ZoneInstanceType == "pvp" or Plater.ZoneInstanceType == "none") then
         return
@@ -203,13 +203,7 @@ end
 
 
 
-
-
-
-
-
-
----------- Hide 
+-- HIDE
 function (self, unitId, unitFrame, envTable, scriptTable)
     if (Plater.ZoneInstanceType == "arena" or Plater.ZoneInstanceType == "pvp" or Plater.ZoneInstanceType == "none") then
         return
@@ -221,7 +215,7 @@ function (self, unitId, unitFrame, envTable, scriptTable)
         self.glowStarted = false
     end
     
-     for i = 1, scriptTable.config.segmentsAmount  do
+      for i = 1, scriptTable.config.segmentsAmount  do
         local texture = unitFrame.felAnimation.Textures[i]
         texture:Hide()
     end
@@ -234,8 +228,6 @@ function (self, unitId, unitFrame, envTable, scriptTable)
     self.Spark:SetDrawLayer("overlay", 3)
     self.Spark:Show()
 end
-
-
 
 
 

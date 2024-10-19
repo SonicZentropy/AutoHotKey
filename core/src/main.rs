@@ -18,7 +18,8 @@ use image::{DynamicImage, GenericImageView, Pixel, Rgba};
 use inputbot::{
     KeySequence,
     KeybdKey::{self, *},
-    MouseButton::*,
+    MouseButton::{self, *},
+    MouseCursor,
 };
 use rayon::prelude::*;
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
@@ -57,8 +58,14 @@ static mut HEIGHT: u16 = 5;
 const TRIGGER_DELAY_MILLIS: u64 = 125;
 
 static mut CURRENT_KEYBIND: Option<KeybindTypes> = None;
-static KBD_KEY_CURRENTLY_PRESSED: AtomicBool = AtomicBool::new(false);
+static INTERRUPT_PRESSED_FLAG: AtomicBool = AtomicBool::new(false);
 static START_TIME: AtomicU64 = AtomicU64::new(0);
+
+pub struct ProcessedImageData {
+    pub img_pixels: Vec<Rgba<u8>>,
+    pub img_width: u32,
+    pub img_height: u32,
+}
 
 lazy_static! {
     static ref COLORS: Vec<(PixelColor, PixelColors)> = vec![
@@ -117,7 +124,6 @@ lazy_static! {
 
 pub(crate) fn update_screen_position() {
     let wow_window = find_window_by_title("World of Warcraft").unwrap();
-   
 
     let rect = get_window_rect(wow_window).unwrap();
     let width = rect.right - rect.left;
@@ -151,10 +157,63 @@ fn main() -> eframe::Result {
         let original_proc = SetWindowLongPtrW(wow_window, GWLP_WNDPROC, window_proc as isize);
         ORIGINAL_WNDPROC.store(original_proc as *mut std::ffi::c_void, Ordering::Relaxed);
     }
-    
+
     update_screen_position();
 
     unsafe { update_screenshot(Some((X_POS, Y_POS, WIDTH, HEIGHT))) };
+
+    // INTERRUPT STUFF FROM Spectrust
+    std::thread::spawn(|| {
+        let img = image::open("images/interruptIconEdited.png").unwrap();
+        let region = None;
+        let mut min_confidence = Some(0.93);
+        let tolerance = Some(5);
+
+        let mut found = false;
+
+        let img_pixels: Vec<_> = img.pixels().map(|p| p.2.to_rgba()).collect(); // use to_rgba
+        let img_width = img.width();        
+        let img_height = img.height();
+        
+        let processed_image_data = ProcessedImageData {
+            img_pixels,
+            img_width,
+            img_height,
+        };
+        
+        
+        while !found {
+            if INTERRUPT_PRESSED_FLAG.load(Ordering::SeqCst) {
+                let start = std::time::Instant::now();
+                match locate_center_of_image(&img, &processed_image_data, region, min_confidence, tolerance) {
+                    Some((x, y, _confidence)) => {
+                        //found = true;
+                        //println!(
+                        //    "Image center found at {}, {} with confidence {}",
+                        //    x, y, confidence
+                        //);
+                        MouseCursor::move_abs(x as i32 + 20, y as i32 - 15);
+                        sleep(Duration::from_millis(25));
+                        MouseButton::LeftButton.press();
+                        sleep(Duration::from_millis(25));
+                        MouseButton::LeftButton.release();
+                        //min_confidence = Some(confidence + 0.01)
+                    }
+                    None => {
+                        //println!("Interrupt icon not found");
+                    }
+                };
+                INTERRUPT_PRESSED_FLAG.store(false, Ordering::SeqCst);
+                let duration = start.elapsed();
+                println!("Interrupt took {:?}ms", duration.as_millis());
+            }
+            sleep(Duration::from_millis(25));
+        }
+    });
+
+    Numpad2Key.bind(|| {
+        INTERRUPT_PRESSED_FLAG.store(true, Ordering::SeqCst);
+    });
 
     Numpad0Key.bind(|| {
         //info!("In Numpad0Key down bind");
@@ -318,6 +377,17 @@ fn closest_color(pixel: PixelColor) -> (&'static (PixelColor, PixelColors), f32)
 
 use windows::Win32::Graphics::Gdi::GetDC;
 use windows::Win32::Graphics::Gdi::GetPixel;
+
+// Returns tuple position of interrupt icon on screen
+//pub(crate) fn get_interrupt_icon_from_screen() -> Option<(u64, u64)> {
+//    let screenshot = unsafe { screenshot(X_POS, Y_POS, 2542, 1412) }; // window size
+//    let width = screenshot.width();
+//    let height = screenshot.height();
+//    let screen_pixels: Vec<_> = screenshot.pixels().map(|p| p.2.to_rgba()).collect();
+//    let screen_idx =
+//        unsafe { screen_pixels.get_unchecked((width / 2) as usize + (height / 2) as usize) };
+//    let screen_pixel = *screen_idx;
+//}
 
 pub(crate) fn get_next_keybind_from_screen() -> Option<KeybindTypes> {
     let screenshot = unsafe { screenshot(X_POS, Y_POS, WIDTH, HEIGHT) };

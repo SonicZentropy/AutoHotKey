@@ -1,1 +1,5 @@
 /target
+vtune/
+.code/
+.vscode/
+.idea/

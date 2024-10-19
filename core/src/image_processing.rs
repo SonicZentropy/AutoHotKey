@@ -5,7 +5,7 @@ use image::{DynamicImage, GenericImageView, Pixel, Rgba};
 use screenshots::{DisplayInfo, Screen};
 use tracing::{info, warn};
 
-use crate::{HEIGHT, WIDTH, X_POS, Y_POS};
+use crate::{ProcessedImageData, HEIGHT, WIDTH, X_POS, Y_POS};
 
 lazy_static! {
     pub static ref SCREEN: Mutex<Option<DynamicImage>> = Mutex::new(None);
@@ -65,7 +65,10 @@ fn locate_on_screen(
     tolerance: u8,
 ) -> Option<(u32, u32, u32, u32, f32)> {
     let step_size = 1;
-    warn!("Screen height: {:?} img_height: {:?}", screen_height, img_height);
+    warn!(
+        "Screen height: {:?} img_height: {:?}",
+        screen_height, img_height
+    );
     for y in (0..screen_height - img_height).step_by(step_size) {
         for x in (0..screen_width - img_width).step_by(step_size) {
             let mut matching_pixels = 0;
@@ -76,19 +79,18 @@ fn locate_on_screen(
                 let base_img_idx = dy * img_width;
 
                 for dx in 0..img_width {
-                    
                     let screen_idx =
                         unsafe { screen.get_unchecked((base_screen_idx + dx) as usize) };
                     let img_idx = unsafe { img.get_unchecked((base_img_idx + dx) as usize) };
-                    
+
                     let screen_pixel = *screen_idx;
                     let img_pixel = *img_idx;
-                    
+
                     // Skip transparent pixels
                     if img_pixel[3] < 128 {
                         continue;
                     }
-                    
+
                     total_pixels += 1;
 
                     if within_tolerance(screen_pixel[0], img_pixel[0], tolerance)
@@ -162,6 +164,116 @@ pub fn locate_image(
         min_confidence,
         tolerance,
     )
+}
+
+// Function to locate center of an image within the screen with given parameters and tolerance.
+// Returns coordinates and confidence if image is found, otherwise None.
+fn locate_center_on_screen(
+    screen: &[Rgba<u8>],
+    img: &[Rgba<u8>],
+    screen_width: u32,
+    screen_height: u32,
+    img_width: u32,
+    img_height: u32,
+    min_confidence: f32,
+    tolerance: u8,
+) -> Option<(u32, u32, f32)> {
+    let step_size = 1;
+
+    for y in (0..screen_height - img_height).step_by(step_size) {
+        for x in (0..screen_width - img_width).step_by(step_size) {
+            let mut matching_pixels = 0;
+            let mut total_pixels = 0;
+
+            'outer: for dy in 0..img_height {
+                for dx in 0..img_width {
+                    let screen_idx: usize = ((y + dy) * screen_width + (x + dx)) as usize;
+                    let img_idx: usize = (dy * img_width + dx) as usize;
+
+                    let screen_pixel = screen[screen_idx];
+                    let img_pixel = img[img_idx];
+
+                    // Skip transparent pixels
+                    if img_pixel[3] < 128 {
+                        continue;
+                    }
+
+                    total_pixels += 1;
+
+                    if within_tolerance(screen_pixel[0], img_pixel[0], tolerance)
+                        && within_tolerance(screen_pixel[1], img_pixel[1], tolerance)
+                        && within_tolerance(screen_pixel[2], img_pixel[2], tolerance)
+                    {
+                        matching_pixels += 1;
+                    } else {
+                        break 'outer;
+                    }
+                }
+            }
+
+            let confidence = if total_pixels == 0 {
+                0.0
+            } else {
+                matching_pixels as f32 / total_pixels as f32
+            };
+
+            if confidence >= min_confidence {
+                return Some((x + img_width / 2, y + img_height / 2, confidence));
+            }
+        }
+    }
+
+    None
+}
+
+// Function to locate the center of an image on the screen with optional region, minimum confidence, and tolerance.
+// Returns coordinates and confidence if image is found, otherwise None.
+pub fn locate_center_of_image(
+    img: &DynamicImage,
+    processed_image_data: &ProcessedImageData,
+    region: Option<(u16, u16, u16, u16)>,
+    min_confidence: Option<f32>,
+    tolerance: Option<u8>,
+) -> Option<(u32, u32, f32)> {
+    // Default values
+    let (x, y, width, height) = region.unwrap_or((0, 0, size().0, size().1));
+    let min_confidence = min_confidence.unwrap_or(0.75);
+    let tolerance = tolerance.unwrap_or(25);
+
+    let screenshot = screenshot(x, y, width, height);
+    //let screen_pixels: Vec<_> = screenshot.pixels().map(|p| p.2.to_rgba()).collect(); // use to_rgba
+    let screen_pixels: Vec<Rgba<u8>> = {
+        let (width, height) = screenshot.dimensions();
+        let mut vec = Vec::with_capacity(width as usize * height as usize);
+        unsafe {
+            vec.set_len(width as usize * height as usize);
+        }
+        screenshot
+            .pixels()
+            .zip(vec.iter_mut())
+            .for_each(|(p, out)| {
+                *out = p.2.to_rgba();
+            });
+        vec
+    };
+    let screen_width = screenshot.width();
+    let screen_height = screenshot.height();
+
+    match locate_center_on_screen(
+        &screen_pixels,
+        &processed_image_data.img_pixels,
+        screen_width,
+        screen_height,
+        processed_image_data.img_width,
+        processed_image_data.img_height,
+        min_confidence,
+        tolerance,
+    ) {
+        Some((found_x, found_y, confidence)) => {
+            Some((found_x + x as u32, found_y + y as u32, confidence))
+        } // Add region start position to the result
+        None => None,
+    }
 }
 
 pub fn update_screenshot(region: Option<(u16, u16, u16, u16)>) {
