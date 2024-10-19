@@ -15,8 +15,7 @@
 3 - Make the additions below to UI.lua
 
 ```lua
-  local ZenBridge = _G["ZenBridge"]
-  
+  -- UI.lua
   
   if conf.keybindings.enabled and ( i == 1 or conf.keybindings.queued ) then
                                 b.Keybinding:SetText(keybind)
@@ -27,6 +26,38 @@
                                 b.Keybinding:SetText(nil)
                                 Zekili.KeybindUpNext = ""
                             end```
+
+
+4 - Make changes to Core.lua
+Find This:
+```  if self:IsActionActive( packName, listName, actID ) then
+                -- Check for commands before checking actual actions.
+                local scriptID = packName .. ":" .. listName .. ":" .. actID
+                local action = entry.action
+
+                state.this_action = action
+                state.delay = nil
+                
+                local ability = class.abilities[ action ]
+                
+                local playerIsMoving = GetUnitSpeed("player") > 1
+               
+                
+                --print(packName, listName, actID, " --- ", ability.id)
+                
+                if not ability then
+                    if not invalidActionWarnings[scriptID] then
+                        Zekili:Error(
+                        "Priority '%s' uses action '%s' ( %s - %d ) that is not found in the abilities table.", packName,
+                            action or "unknown", listName, actID)
+                        invalidActionWarnings[scriptID] = true
+                    end```
+                    
+Add This:
+
+
+
+
 
 
 ## InputBot Changes

@@ -4,6 +4,42 @@ local _, addon = ...;
 
 
 -- Each array uses the format: {{"Type", "Tip1"}, {"Type", "Tip2"}}
+-- Color code information for the different types of tips:
+-- Important:	Green
+-- Interrupt:	Orange
+-- Healer Note: Light Blue
+-- Blank:		Default Blizzard color
+--local tipsColors = {
+--    ["Legion"] = { 0.8, 0.8, 0.8 },
+--    ["Important"] = { 1, 0.59, 0.14 },
+--    ["Defensives"] = { 1, 0.57, 0.12 },
+--    ["Interrupts"] = { 0.37, 0.92, 1 },
+--    ["Dodge"] = { 0.54, 0.81, 0.94 },
+--    ["PriorityTargets"] = { 1, 1, 0 },
+--    ["Fluff"] = { 1, 1, 1 },
+--    ["Advanced"] = { 0.75, 0.55, 0.35 },
+--    ["Avoid"] = { 0.75, 0.55, 0.35 },
+    
+--    ["HEALER"] = { 0.2, 0.98, 0.25 },
+--    ["TANK"] = { 0.8, 0.6, 0 },
+--    ["DAMAGE"] = { 1, 0.72, 0.68 },
+
+    
+--    --["DEMONHUNTER"] = {0.64, 0.19, 0.79},
+--    ["DEMONHUNTER"] = { 0.68, 0.22, 0.84 },
+--    ["DRUID"] = { 1, 0.49, 0.04 },
+--    ["DEATHKNIGHT"] = { 0.77, 0.12, 0.23 },
+--    ["HUNTER"] = { 0.67, 0.83, 0.45 },
+--    ["MAGE"] = { 0.41, 0.8, 0.94 },
+--    ["MONK"] = { 0, 1, 0.59 },
+--    ["PALADIN"] = { 0.96, 0.55, 0.73 },
+--    ["PRIEST"] = { 1, 1, 1 },
+--    ["ROGUE"] = { 1, 0.96, 0.41 },
+--    ["SHAMAN"] = { 0, 0.44, 0.87 },
+--    ["WARRIOR"] = { 0.78, 0.61, 0.43 },
+--    ["WARLOCK"] = { 0.58, 0.51, 0.79 }
+
+--}
 tipsMap = {
     -- Example
     [126389] = { { "Blank", "A+ Tip right here. \n It's a shame it's so damn long eh? It just goes on and on and on and ooon" },
@@ -23,6 +59,11 @@ tipsMap = {
         { "Important", "Phase 2: Avoid boss swoops, kill adds. After phase ends, feed boss the add guts" },
         { "TANK",      "Defensive before Brutal Crush" },
         { "TANK",      "Swap after Brutal Crush" },
+        { "TANK",      "AMS allows Web Clearing" },
+        { "TANK",      "P1: Tank between mid and edge facing out" },
+        { "TANK",      "P1: Carnivorous Contest: Tanks help soak big circle, then run from suck" },      
+        { "TANK",      "P2: Boss will come up opposite egg spawns at end phase. Let adds walk toward you" },        
+        { "TANK",      "P2: 1 tank stay in melee, boss can swing during cast" },
         { "HEALER",    "CDs on Venomous Lash and Brutal Lashing soak" }
     }, -- Ulgrax
 
@@ -34,6 +75,7 @@ tipsMap = {
         { "HEALER",    "CDs on Crimson Rain heal absorb" },
         { "TANK",      "Aim Gruesome Disgorge at purple orbs (adds)" },
         { "TANK",      "Be ready to swap after active tank goes to shadow realm after Gruesome" },
+        { "TANK",      "Tank Watcher + interrupt him, pull to stationary adds" },
         { "Important", "DPS: Horrors > Harbinger > Watcher" }
     }, -- Bloodbound Horror
 
@@ -41,7 +83,9 @@ tipsMap = {
         { "Important", "Phase Blades: 4 targeted players form a box around marker on edge of arena, rotate marker as fight goes on" },
         { "Important", "Decimate: 3 players targeted need to get between boss and one of the ghosts left by Phase Blades" },
         { "Important", "Shattering Sweep: Run out of circle" },
+        { "TANK",      "Rotate sikran tanking around inner circle of room"},
         { "TANK",      "Boss does 3 hit combo, 2x expose then one phase lunge, MUST tank swap after 2nd expose and before phase lunge lands" },
+        { "TANK",      "Run out of purple shattering sweep" },
         { "HEALER",    "CDs when clones explode" }
     }, -- Sikran
 
@@ -304,7 +348,7 @@ tipsMap = {
     [165824] = { -- Placeholder ID
         { "Interrupts",   "Necrotic Bolt: Tank targeted shadow hit and healing absorb" },
         { "Avoid",        "Death Burst: 6yd AoE swirlies that deal shadow damage and silence for 4s" },
-        { "Soothe/Purge", "Dark Shroud: Physical damage immunity and pulsing party damage for 12s, Magic effect" }
+        { "Important",  "Dark Shroud: Physical damage immunity and pulsing party damage for 12s, Magic effect" }
     },
 
     -- Skeletal Monstrosity
@@ -406,16 +450,17 @@ tipsMap = {
     ----------------------------------
     -- Chopper Redhook
     [128650] = {
-        { "Important", "On The Hook = Kite onto bombs ASAP" },
+        { "Important",     "On The Hook = Kite onto bombs ASAP" },
         { 'TANK',      'Aggro Adds and drag under boss for cleave' },
-        { "NOTE:",    "Defensive to soak bombs if boss doesn't get kited into them all" },
-        { "Reminder:",    "SNIPER CORRIDOR AFTER! Watch chat emotes" },
+        { "Defensives", "Defensive to soak bombs if boss doesn't get kited into them all" },
+        { "Dodge", "SNIPER CORRIDOR AFTER! Watch chat emotes" },
+
     },
     
     [129208] = {
         { 'TANK', 'Aggro adds after Withdraw' },
         { 'Important', 'Slow/Snare Evasive buff' },
-        { "Reminder:", "SNIPER CORRIDOR AFTER! Watch chat emotes" },
+        { "Dodge", "SNIPER CORRIDOR AFTER! Watch chat emotes" },
     },
     
     -- Hadal Darkfathom
@@ -437,7 +482,7 @@ tipsMap = {
     [210108] = {
         { 'Important', 'Clear a few spikes at a time w/ arrow attack BUT NOT ALL' },
         { 'Important', 'Do NOT Stack' },
-        { 'TANK',      'Seismic Smash - Physical Tankbuster' },
+        { 'TANK',      'Seismic Smash - Physical Tankbuster DEFENSIVE FIRST ONE' },
         { 'TANK', 'Save Magic Dot to Dispel before Smash lands' },
     },
     
@@ -543,7 +588,9 @@ tipsMap = {
     
     ---Orator KrixVizk
     [216619] = {
-        { 'TANK', '100 Energy Move boss immediately after Vociferous Indoctrination' },
+        { 'TANK',       '100 Energy Move boss immediately after Vociferous Indoctrination' },
+        { 'TANK',       'Move boss as little as possible' },
+        { 'Defensives', 'Indoctrination Use defensive (Mixed dmg)' },
     },
     
     --Fangs of the Queen

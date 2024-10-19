@@ -21,15 +21,25 @@ use inputbot::{
     MouseButton::*,
 };
 use rayon::prelude::*;
-use std::ffi::OsString;
-use std::os::windows::ffi::OsStrExt;
-use std::os::windows::ffi::OsStringExt;
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
+use std::{os::windows::ffi::OsStrExt, thread::sleep};
+use std::{os::windows::ffi::OsStringExt, sync::atomic::AtomicPtr};
+
 use std::sync::{Arc, Mutex, MutexGuard, Once};
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
+use std::{ffi::OsString, time::Instant};
 use std::{fs::File, io::BufWriter};
-use std::{thread::sleep, time::Duration};
+
 use tap::prelude::*;
 use tracing_subscriber::{fmt, prelude::*, registry::Registry};
-use windows::Win32::UI::WindowsAndMessaging::{FindWindowW, GetWindowRect};
+use windows::Win32::{
+    Foundation::{LRESULT, WPARAM},
+    UI::WindowsAndMessaging::{
+        CallWindowProcW, DefWindowProcW, FindWindowW, GetWindowRect, SetWindowLongPtrW,
+        GWLP_WNDPROC, WM_MOVE, WNDPROC,
+    },
+};
+
 use windows::{
     core::HSTRING,
     Win32::Foundation::{BOOL, HWND, LPARAM, RECT},
@@ -44,8 +54,11 @@ static mut X_POS_OFFSET: u16 = 10;
 static mut Y_POS_OFFSET: u16 = 15;
 static mut WIDTH: u16 = 5;
 static mut HEIGHT: u16 = 5;
+const TRIGGER_DELAY_MILLIS: u64 = 125;
 
 static mut CURRENT_KEYBIND: Option<KeybindTypes> = None;
+static KBD_KEY_CURRENTLY_PRESSED: AtomicBool = AtomicBool::new(false);
+static START_TIME: AtomicU64 = AtomicU64::new(0);
 
 lazy_static! {
     static ref COLORS: Vec<(PixelColor, PixelColors)> = vec![
@@ -103,8 +116,10 @@ lazy_static! {
 }
 
 pub(crate) fn update_screen_position() {
-    let win = find_window_by_title("World of Warcraft").unwrap();
-    let rect = get_window_rect(win).unwrap();
+    let wow_window = find_window_by_title("World of Warcraft").unwrap();
+   
+
+    let rect = get_window_rect(wow_window).unwrap();
     let width = rect.right - rect.left;
     let height = rect.bottom - rect.top;
     warn!("Window Size: {:?}", (width, height));
@@ -130,40 +145,43 @@ fn main() -> eframe::Result {
         // sets this to be the default, global collector for this application.
         .init();
 
+    let wow_window = find_window_by_title("World of Warcraft").unwrap();
+
+    unsafe {
+        let original_proc = SetWindowLongPtrW(wow_window, GWLP_WNDPROC, window_proc as isize);
+        ORIGINAL_WNDPROC.store(original_proc as *mut std::ffi::c_void, Ordering::Relaxed);
+    }
+    
     update_screen_position();
 
     unsafe { update_screenshot(Some((X_POS, Y_POS, WIDTH, HEIGHT))) };
 
     Numpad0Key.bind(|| {
-        info!("In Numpad0Key down bind");
+        //info!("In Numpad0Key down bind");
         profile!("Full Search Process", execute_search_process());
         //fastrace::flush();
     });
-    
-    // Make numpad2 key held down also trigger the bot, so i can use left hand as well
-    // capslock is rebound to numpad2 via autohotkey so i can hold it down
-    CapsLockKey.bind(|| {
-        println!("CAPS BIND GOT");
-        dbg!(CapsLockKey);
-        dbg!(CapsLockKey.is_pressed());
-        dbg!(CapsLockKey.is_toggled());
-        dbg!(CapsLockKey.is_bound());
-        
-        //while CapsLockKey.is_pressed() {
-        //    println!("CAPS KEY PRESSED");
-            profile!("Full Search Process", execute_search_process());
-            
-            sleep(Duration::from_millis(125));
-        //}
-    });
-    
-    // Exit program
-    Numpad1Key.bind(|| {
-        inputbot::stop_handling_input_events();
-    });
+
+    //SpaceKey.bind(|| {
+    //    //info!("In space down bind haven't checked shift");
+    //    if CapsLockKey.is_toggled() {
+    //        info!("In caps Space down bind");
+    //        profile!("Full Search Process", execute_search_process());
+    //    }
+    //});
 
     let _handle = std::thread::spawn(|| {
         inputbot::handle_input_events(false);
+    });
+
+    let pressed_key = &SpaceKey;
+    let toggled_key = &CapsLockKey;
+
+    let _fuckedEventLoopBlessAtomics = std::thread::spawn(|| loop {
+        sleep(Duration::from_millis(TRIGGER_DELAY_MILLIS));
+        if pressed_key.is_pressed() && toggled_key.is_toggled() {
+            profile!("Fucked Event Loop Search", execute_search_process());
+        }
     });
 
     let options = eframe::NativeOptions {
@@ -309,7 +327,6 @@ pub(crate) fn get_next_keybind_from_screen() -> Option<KeybindTypes> {
     let screen_idx =
         unsafe { screen_pixels.get_unchecked((width / 2) as usize + (height / 2) as usize) };
     let screen_pixel = *screen_idx;
-    dbg!(screen_pixel);
 
     let screen_pixel_color = PixelColor::from(&screen_pixel);
     //warn!("Screen pixel color: {:?}", screen_pixel_color);
@@ -321,7 +338,7 @@ pub(crate) fn get_next_keybind_from_screen() -> Option<KeybindTypes> {
     //);
     use KeybindTypes::*;
 
-    let found_keybind = match closest.0.1 {
+    let found_keybind = match closest.0 .1 {
         PixelColors::Black => NOKEY,
         PixelColors::DarkGray => Key1,
         PixelColors::Blue => Key2,
@@ -373,7 +390,7 @@ pub(crate) fn get_next_keybind_from_screen() -> Option<KeybindTypes> {
         PixelColors::LightBlueGreen => KeyCEquals,
     };
 
-    info!("Found keybind: {:?}", found_keybind);
+    //info!("Found keybind: {:?}", found_keybind);
     unsafe { CURRENT_KEYBIND = Some(found_keybind) };
     Some(found_keybind)
 }
@@ -432,7 +449,7 @@ fn execute_search_process() {
             KeybindTypes::KeyC9 => press_ctrl_key_sequence(Numrow9Key),
             KeybindTypes::KeyC0 => press_ctrl_key_sequence(Numrow0Key),
             KeybindTypes::KeyCDash => press_ctrl_key_sequence(MinusKey),
-            KeybindTypes::KeyCEquals => press_ctrl_key_sequence(EqualKey),            
+            KeybindTypes::KeyCEquals => press_ctrl_key_sequence(EqualKey),
         }
     }
 }
@@ -449,5 +466,32 @@ fn get_window_rect(hwnd: HWND) -> Option<RECT> {
         Some(rect)
     } else {
         None
+    }
+}
+
+static ORIGINAL_WNDPROC: AtomicPtr<std::ffi::c_void> = AtomicPtr::new(std::ptr::null_mut());
+
+unsafe extern "system" fn window_proc(
+    hwnd: HWND,
+    msg: u32,
+    wparam: WPARAM,
+    lparam: LPARAM,
+) -> LRESULT {
+    match msg {
+        WM_MOVE => {
+            // Window has moved, update the screen position
+            update_screen_position();
+        }
+        _ => {}
+    }
+
+    // Call the original window procedure
+    let original_proc = ORIGINAL_WNDPROC.load(Ordering::Relaxed);
+    let original_func: WNDPROC = std::mem::transmute(original_proc);
+    if let Some(func) = original_func {
+        func(hwnd, msg, wparam, lparam)
+    } else {
+        // Default processing if the original procedure is null
+        DefWindowProcW(hwnd, msg, wparam, lparam)
     }
 }

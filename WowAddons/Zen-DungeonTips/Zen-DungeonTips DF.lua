@@ -65,8 +65,8 @@ local iconList = {
 	Interrupts = "ability_kick",
 	Defensives = "inv_shield_05",
 	Important = "ability_dualwield",
-	Legion = "ability_dualwield",
-	Dodge = "ability_dualwield",
+    Avoid = "ability_rogue_sprint",
+    Dodge = "ability_rogue_sprint",
 	
 	DEMONHUNTER = "classicon_demonhunter",
 	DRUID = "classicon_druid",		

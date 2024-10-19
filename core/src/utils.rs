@@ -17,7 +17,7 @@ macro_rules! profile {
             let start = std::time::Instant::now();
             $blockfn;
             let duration = start.elapsed();
-            println!("{}: {:?}ms", $label, duration.as_millis());            
+            //println!("{}: {:?}ms", $label, duration.as_millis());            
         }};
 }
 

@@ -1116,7 +1116,7 @@ do
                         local indicator = b.Recommendation.indicator
                         local keybind = b.Recommendation.keybind
                         local exact_time = b.Recommendation.exact_time
-
+                        
                         local ability = class.abilities[ action ]
 
                         if ability then

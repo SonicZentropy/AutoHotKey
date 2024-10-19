@@ -692,6 +692,8 @@ function Zekili:GetPredictionFromAPL( dispName, packName, listName, slot, action
     local strict = false -- disabled for now.
     local force_channel = false
     local stop = false
+    
+    
 
     if debug then self:Debug( "Current recommendation was %s at +%.2fs.", action or "NO ACTION", wait or state.delayMax ) end
 
@@ -724,7 +726,7 @@ function Zekili:GetPredictionFromAPL( dispName, packName, listName, slot, action
             elseif rAction and state.empowering[ rAction ] then
                 if debug then self:Debug( "The recommended action (%s) is currently empowering; exiting list (%s).", rAction, listName ) end
                 break
-
+            
             elseif stop then
                 if debug then self:Debug( "The action list reached a stopping point; exiting list (%s).", listName ) end
                 break
@@ -733,7 +735,9 @@ function Zekili:GetPredictionFromAPL( dispName, packName, listName, slot, action
 
             Timer:Reset()
 
-            local entry = list[ actID ]
+            local entry = list[actID]
+            
+            
 
             if self:IsActionActive( packName, listName, actID ) then
                 -- Check for commands before checking actual actions.
@@ -742,15 +746,24 @@ function Zekili:GetPredictionFromAPL( dispName, packName, listName, slot, action
 
                 state.this_action = action
                 state.delay = nil
-
+                
                 local ability = class.abilities[ action ]
-
+                
+                local playerIsMoving = GetUnitSpeed("player") > 1
+               
+                
+                --print(packName, listName, actID, " --- ", ability.id)
+                
                 if not ability then
-                    if not invalidActionWarnings[ scriptID ] then
-                        Zekili:Error( "Priority '%s' uses action '%s' ( %s - %d ) that is not found in the abilities table.", packName, action or "unknown", listName, actID )
-                        invalidActionWarnings[ scriptID ] = true
+                    if not invalidActionWarnings[scriptID] then
+                        Zekili:Error(
+                        "Priority '%s' uses action '%s' ( %s - %d ) that is not found in the abilities table.", packName,
+                            action or "unknown", listName, actID)
+                        invalidActionWarnings[scriptID] = true
                     end
-
+                 -- ZEN If whirling dragon punch, only use if we're not moving
+                elseif (ability.id == "152175" or ability.id == 152175) and playerIsMoving then
+                    if debug then self:Debug( "WHIRLING DRAGON PUNCH WHILE MOVING") end                    
                 elseif state.whitelist and not state.whitelist[ action ] and ( ability.id < -99 or ability.id > 0 ) then
                     if debug then self:Debug( "[---] %s ( %s - %d) not castable while casting a spell; skipping...", action, listName, actID ) end
 
