@@ -221,7 +221,7 @@ local function HandleDeprecatedOperators( str, opStr, prefix  )
                 local char = right:sub(i, i)
 
                 if char == "(" then
-                    i = i + right:sub( i ):match("^(%b())" ):len()
+                    i = i + right:sub( i ):match( "^(%b())" ):len()
                 elseif mathBreak[char] or char == ")" then
                     eos = i - 1
                     break
@@ -439,30 +439,31 @@ do
     end
 
     local timely = {
-        { "^(d?e?buff%.[a-z0-9_]+)%.down$"     , "%1.remains"      },
-        { "^(dot%.[a-z0-9_]+)%.down$"          , "%1.remains"      },
-        { "^!?(d?e?buff%.[a-z0-9_]+)%.up$"     , "%1.remains"      },
-        { "^!?(dot%.[a-z0-9_]+)%.up$"          , "%1.remains"      },
-        { "^!?(d?e?buff%.[a-z0-9_]+)%.react$"  , "%1.remains"      },
-        { "^!?(dot%.[a-z0-9_]+)%.react$"       , "%1.remains"      },
-        { "^!?(d?e?buff%.[a-z0-9_]+)%.ticking$", "%1.remains"      },
-        { "^!?(dot%.[a-z0-9_]+)%.ticking$"     , "%1.remains"      },
-        { "^!?(d?e?buff%.[a-z0-9_]+)%.remains$", "%1.remains"      },
-        { "^!?ticking"                         , "remains"         },
-        { "^!?remains$"                        , "remains"         },
-        { "^!?up$"                             , "remains"         },
-        { "^down$"                             , "remains"         },
-        { "^refreshable$"                      , "time_to_refresh" },
-        { "^time>=?(.-)$"                      , "0.01+%1-time"    },
+        { "^(d?e?buff%.[a-z0-9_]+)%.down$"          , "%1.remains"                        },
+        { "^(dot%.[a-z0-9_]+)%.down$"               , "%1.remains"                        },
+        { "^!?(d?e?buff%.[a-z0-9_]+)%.up$"          , "%1.remains"                        },
+        { "^!?(dot%.[a-z0-9_]+)%.up$"               , "%1.remains"                        },
+        { "^!?(d?e?buff%.[a-z0-9_]+)%.react$"       , "%1.remains"                        },
+        { "^!?(dot%.[a-z0-9_]+)%.react$"            , "%1.remains"                        },
+        { "^!?(d?e?buff%.[a-z0-9_]+)%.ticking$"     , "%1.remains"                        },
+        { "^!?(dot%.[a-z0-9_]+)%.ticking$"          , "%1.remains"                        },
+        { "^!?(d?e?buff%.[a-z0-9_]+)%.remains$"     , "%1.remains"                        },
+        { "^!?ticking"                              , "remains"                           },
+        { "^!?remains$"                             , "remains"                           },
+        { "^!?up$"                                  , "remains"                           },
+        { "^down$"                                  , "remains"                           },
+        { "^refreshable$"                           , "time_to_refresh"                   },
+        { "^buff%.([a-z0-9_]+)%.refreshable$"       , "buff.%1.time_to_refresh"           },
+        { "^debuff%.([a-z0-9_]+)%.refreshable$"     , "debuff.%1.time_to_refresh"         },
+        { "^dot%.([a-z0-9_]+)%.refreshable$"        , "debuff.%1.time_to_refresh"         },
 
-        { "^gcd.remains$"            , "gcd.remains"      },
-        { "^gcd.remains<?=(.+)$"     , "gcd.remains-%1"   },
-        { "^swing.([a-z_]+).remains$", "swing.%1.remains" },
-
-        { "^(.-)%.deficit<=?(.-)$"         , "0.01+%1.timeTo(%1.max-(%2))" },
-        { "^(.-)%.deficit>=?(.-)$"         , "0.01+%1.timeTo(%1.max-(%2))" },
-        { "^target%.health%.pe?r?ce?n?t[<>=]+(.-)$"
-                                           , "0.01+target['time_to_pct_' .. %1]" },
+        { "^time>=?(.-)$"                           , "0.01+%1-time"                      },
+        { "^gcd.remains$"                           , "gcd.remains"                       },
+        { "^gcd.remains<?=(.+)$"                    , "gcd.remains-%1"                    },
+        { "^swing.([a-z_]+).remains$"               , "swing.%1.remains"                  },
+        { "^(.-)%.deficit<=?(.-)$"                  , "0.01+%1.timeTo(%1.max-(%2))"       },
+        { "^(.-)%.deficit>=?(.-)$"                  , "0.01+%1.timeTo(%1.max-(%2))"       },
+        { "^target%.health%.pe?r?ce?n?t[<>=]+(.-)$" , "0.01+target['time_to_pct_' .. %1]" },
 
         { "^cooldown%.([a-z0-9_]+)%.ready$"                      , "cooldown.%1.remains"                      },
         { "^cooldown%.([a-z0-9_]+)%.up$"                         , "cooldown.%1.remains"                      },
@@ -518,8 +519,10 @@ do
         { "^!?time_to_hpg[<=]=?(.-)$" , "time_to_hpg-%1"       }, -- Retribution Paladin
         { "^!?consecration.up"        , "consecration.remains" }, -- Prot        Paladin
 
-        { "^!?contagion<=?(.-)"  , "contagion-%1"           }, -- Affliction Warlock
-        { "^time_to_imps%.(.+)$" , "time_to_imps[%1]"       }, -- Demo       Warlock
+        { "^!?contagion<=?(.-)"  , "contagion-%1"                 }, -- Affliction Warlock
+        { "^time_to_imps%.(.+)$" , "time_to_imps[%1]"             }, -- Demo Warlock
+        { "^!?diabolic_ritual$"  , "buff.diabolic_ritual.remains" }, -- Warlocks
+        { "^!?demonic_art$"      , "buff.demonic_art.remains"     },
 
         { "^active_bt_triggers$"       , "time_to_bt_triggers(0)"    }, -- Feral Druid w/ Bloodtalons.
         { "^active_bt_triggers<?=0$"   , "time_to_bt_triggers(0)"    }, -- Feral Druid w/ Bloodtalons.
@@ -531,6 +534,7 @@ do
 
         { "^!?fiery_brand_dot_primary_remains$", "fiery_brand_dot_primary_remains" }, -- Vengeance
         { "^!?fiery_brand_dot_primary_ticking$", "fiery_brand_dot_primary_remains" }, -- Vengeance
+
 
         { "^!?variable%.([a-z0-9_]+)$", "safenum(variable.%1)"                        },
         { "^!?variable%.([a-z0-9_]+)<=?(.-)$", "0.01+%2-safenum(variable.%1)"         },
@@ -1193,6 +1197,7 @@ local newModifiers = {
     default = 'raw',
     empower_to = 'raw',
     for_next = 'raw',
+    extra_amount = 'raw',
     line_cd = 'raw',
     max_cycle_targets = 'raw',
     sec = 'raw',

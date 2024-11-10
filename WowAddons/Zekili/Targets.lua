@@ -413,12 +413,10 @@ do
 
                             if not excluded and checkPlates then
                                 local _, maxR = RC:GetRange( unit )
-                                excluded = maxR == nil or maxR > checkPlates
-
-                                range = maxR or range
+                                excluded = maxR ~= nil and maxR > checkPlates
 
                                 if debugging and excluded then
-                                    details = format( "%s\n    - Excluded by range (%d > %d).", details, range, checkPlates )
+                                    details = format( "%s\n    - Excluded by range (%d > %d).", details, maxR, checkPlates )
                                 end
                             end
 
@@ -482,9 +480,7 @@ do
 
                                 if not excluded and checkPlates then
                                     local _, maxR = RC:GetRange( unit )
-                                    excluded = maxR == nil or maxR > checkPlates
-
-                                    range = maxR or range
+                                    excluded = maxR ~= nil and maxR > checkPlates
 
                                     if debugging and excluded then
                                         details = format( "%s\n    - Excluded by range (%d > %d).", details, maxR, checkPlates )
@@ -813,11 +809,12 @@ ns.compositeDebuffCount = function( ... )
     return n
 end
 
-ns.conditionalDebuffCount = function(req1, req2, ...)
+ns.conditionalDebuffCount = function(req1, req2, req3, ...)
     local n = 0
 
     req1 = class.auras[req1] and class.auras[req1].id
     req2 = class.auras[req2] and class.auras[req2].id
+    req3 = class.auras[req3] and class.auras[req3].id
 
     for i = 1, select("#", ...) do
         local debuff = select(i, ...)
@@ -826,9 +823,7 @@ ns.conditionalDebuffCount = function(req1, req2, ...)
 
         if debuff then
             for unit in pairs(debuff) do
-                local reqExp =
-                    (req1 and debuffs[req1] and debuffs[req1][unit]) or (req2 and debuffs[req2] and debuffs[req2][unit])
-                if reqExp then
+                if (req1 and debuffs[req1] and debuffs[req1][unit]) or (req2 and debuffs[req2] and debuffs[req2][unit]) or (req3 and debuffs[req3] and debuffs[req3][unit]) then
                     n = n + 1
                 end
             end
@@ -1045,11 +1040,9 @@ do
             local a = class.auras[ aura ]
             local window = a and a.duration or grace
             local friendly = a and ( a.friendly or a.dot == "buff" ) or false
-            local expires = not ( a and a.no_ticks or friendly )
 
             for unit, entry in pairs( targets ) do
-                -- NYI: Check for dot vs. debuff, since debuffs won't 'tick'
-                if expires and now - entry.last_seen > window then
+                if now - entry.last_seen > window then
                     ns.trackDebuff( aura, unit )
                 elseif special == "combatExit" and not friendly then
                     -- Zekili:Error( format( "Auditor removed an aura %d from %s after exiting combat.", aura, unit ) )

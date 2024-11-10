@@ -546,7 +546,7 @@ all:RegisterAbilities( {
 
         auras = {
             kaheti_shadeweavers_dark_ritual = {
-                id = 455479,
+                id = 455464,
                 duration = 30,
                 max_stack = 10
             }
@@ -888,6 +888,55 @@ all:RegisterAbilities( {
             battle_prowess = {
                 id = 91374,
                 duration = 15,
+                max_stack = 1
+            }
+        }
+    },
+
+    -- Anniversary
+    burst_of_knowledge = {
+        cast = 0,
+        cooldown = 120,
+        gcd = "off",
+
+        item = 231424,
+        toggle = "cooldowns",
+
+        proc = "primary",
+        self_buff = "burst_of_knowledge",
+
+        handler = function()
+            applyBuff( "burst_of_knowledge" )
+        end,
+
+        auras = {
+            burst_of_knowledge = {
+                id = 469925,
+                duration = 20,
+                max_stack = 20
+            }
+        }
+    },
+
+    living_flame = {
+        cast = 0,
+        cooldown = 120,
+        gcd = "off",
+
+        item = 155947,
+        toggle = "cooldowns",
+
+        proc = "primary",
+        self_buff = "living_flame_buff",
+
+        handler = function ()
+            applyBuff( "living_flame_buff" )
+        end,
+
+        auras = {
+            living_flame_buff = {
+                id = 64712,
+                duration = 20,
                 max_stack = 1
             }
         }

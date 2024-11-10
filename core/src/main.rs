@@ -6,6 +6,7 @@ extern crate lazy_static;
 
 mod image_processing;
 mod utils;
+use bumpalo::Bump;
 use tracing::{info, trace, warn};
 use utils::*;
 
@@ -135,6 +136,8 @@ pub(crate) fn update_screen_position() {
     }
 }
 
+
+
 fn main() -> eframe::Result {
     tracing_subscriber::fmt()
         // enable everything
@@ -164,7 +167,7 @@ fn main() -> eframe::Result {
 
     // INTERRUPT STUFF FROM Spectrust
     std::thread::spawn(|| {
-        let img = image::open("images/interruptIconEdited.png").unwrap();
+        let img = image::open("images/interruptIconEdited.png").unwrap();       
         let region = None;
         let mut min_confidence = Some(0.93);
         let tolerance = Some(5);
@@ -181,19 +184,27 @@ fn main() -> eframe::Result {
             img_height,
         };
         
+        let bump = Bump::new();
+        
         
         while !found {
             if INTERRUPT_PRESSED_FLAG.load(Ordering::SeqCst) {
                 let start = std::time::Instant::now();
-                match locate_center_of_image(&img, &processed_image_data, region, min_confidence, tolerance) {
+                match locate_center_of_image(&img, &processed_image_data, region, min_confidence, tolerance, &bump) {
                     Some((x, y, _confidence)) => {
                         //found = true;
-                        //println!(
-                        //    "Image center found at {}, {} with confidence {}",
-                        //    x, y, confidence
-                        //);
-                        MouseCursor::move_abs(x as i32 + 20, y as i32 - 15);
-                        sleep(Duration::from_millis(25));
+                        println!(
+                            "Image center found at {}, {} with confidence {}",
+                            x, y, _confidence
+                        );
+                        if MouseButton::RightButton.is_pressed() {
+                            MouseButton::RightButton.release();
+                            sleep(Duration::from_millis(10));
+                        }
+                        MouseCursor::move_abs(x as i32 + 75, y as i32 - 22);
+                        //MouseCursor::move_abs(x as i32, y as i32);
+                        
+                        sleep(Duration::from_millis(10));
                         MouseButton::LeftButton.press();
                         sleep(Duration::from_millis(25));
                         MouseButton::LeftButton.release();
@@ -207,7 +218,7 @@ fn main() -> eframe::Result {
                 let duration = start.elapsed();
                 println!("Interrupt took {:?}ms", duration.as_millis());
             }
-            sleep(Duration::from_millis(25));
+            sleep(Duration::from_millis(5));
         }
     });
 
@@ -216,7 +227,7 @@ fn main() -> eframe::Result {
     });
 
     Numpad0Key.bind(|| {
-        //info!("In Numpad0Key down bind");
+        info!("In Numpad0Key down bind");
         profile!("Full Search Process", execute_search_process());
         //fastrace::flush();
     });
@@ -242,11 +253,11 @@ fn main() -> eframe::Result {
             profile!("Fucked Event Loop Search", execute_search_process());
         }
     });
-
+    
+    
     let options = eframe::NativeOptions {
         viewport: egui::ViewportBuilder::default()
             .with_inner_size([200.0, 250.0])
-            //.with_mouse_passthrough(true)
             //.with_transparent(true)
             .with_decorations(true),
         ..Default::default()
@@ -254,18 +265,22 @@ fn main() -> eframe::Result {
     eframe::run_native(
         "Dev Tools",
         options,
-        Box::new(|_cc| Ok(Box::<MyApp>::default())),
+        Box::new(|_cc| Ok(Box::<BotApp>::default())),
     )
     .unwrap();
+    
+    
+    
+    
 
     info!("Exiting safely!");
     Ok(())
 }
 
 #[derive(Default)]
-struct MyApp {}
+struct BotApp {}
 
-impl eframe::App for MyApp {
+impl eframe::App for BotApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         ctx.set_visuals(egui::Visuals {
             //panel_fill: egui::Color32::TRANSPARENT,

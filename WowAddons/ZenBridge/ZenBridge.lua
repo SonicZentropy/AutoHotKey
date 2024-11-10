@@ -217,3 +217,4 @@ local function OnUpdate(self, elapsed)
 end
 
 frame:SetScript("OnUpdate", OnUpdate)
+

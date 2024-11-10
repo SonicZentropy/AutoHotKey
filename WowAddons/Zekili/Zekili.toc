@@ -1,5 +1,5 @@
-## Interface: 110002
-## Version: v11.0.2-1.0.17
+## Interface: 110005
+## Version: v11.0.5-1.0.12
 ## Title: Zekili
 ## Author: Zekili
 ## IconTexture: Interface\AddOns\Zekili\Textures\LOGO-ORANGE.blp
@@ -22,8 +22,14 @@ Events.lua
 
 Classes.lua
 
+TheBurningCrusade\Items.lua
+Wrath\Items.lua
+Cataclysm\Items.lua
+Legion\Items.lua
+
 BfA\AzeritePowers.lua
 BfA\Essences.lua
+BfA\Items.lua
 
 Shadowlands\AnimaPowers.lua
 Shadowlands\Covenants.lua
@@ -72,6 +78,7 @@ TheWarWithin\ShamanRestoration.lua
 TheWarWithin\WarlockAffliction.lua
 TheWarWithin\WarlockDemonology.lua
 TheWarWithin\WarlockDestruction.lua
+TheWarWithin\Warrior\ReflectableSpells.lua
 TheWarWithin\WarriorArms.lua
 TheWarWithin\WarriorFury.lua
 TheWarWithin\WarriorProtection.lua

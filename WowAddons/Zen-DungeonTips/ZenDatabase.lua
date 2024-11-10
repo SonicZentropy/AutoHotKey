@@ -196,15 +196,15 @@ tipsMap = {
     [224152] = {
         { "TANK", "Brutal Strike: Tank targeted phys hit" },
     }, -- Twilight Brute
-
+    
     [224219] = {
         { "Interrupts", "Mass Tremor: 60yd AoE nature hit and 30% slow for 10s" }
     }, -- Twilight Earthcaller
-
+    
     [224609] = {
         { "Important", "Umbral Wind: 100yd AoE shadow hit and knock back, can LoS" }
     }, -- Twilight Destroyer
-
+    
     [224221] = {
         { "TANK",      "Rive: Tank targeted phys hit that applies a stacking 10% phys damage taken increase for 12s" },
         { "Important", "Reckless Tactic: Enrages all mobs within 100yds, clearing any active CC, increasing damage done by 20%, and damage taken by 10% for 10s" }

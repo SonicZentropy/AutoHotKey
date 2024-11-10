@@ -1,0 +1,9 @@
+## Interface: 100207
+## Version: 1.0.0
+## Title: ZenDecay
+## Notes: RotationHelper
+## Author: Zentropy
+## SavedVariablesPerCharacter: ZenDecayDB
+
+ZenLib.lua
+ZenDecay.lua

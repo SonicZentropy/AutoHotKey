@@ -5,6 +5,7 @@ edition = "2021"
 resolver = "2"
 
 [dependencies]
+bumpalo = { version = "3.16.0", features = ["collections"] }
 image = { version = "0.24", features = ["png"] }
 #inputbot = { git = "https://github.com/obv-mikhail/InputBot", branch = "develop" }
 inputbot = { path = "../crates/InputBot" }

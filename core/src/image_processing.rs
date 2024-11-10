@@ -1,3 +1,4 @@
+use bumpalo::{Bump, collections::Vec as BumpVec};
 use std::sync::Mutex;
 
 // Importing necessary image processing and screenshot capturing modules.
@@ -20,21 +21,32 @@ pub fn screenshot(x: u16, y: u16, width: u16, height: u16) -> DynamicImage {
     if !(x + width <= display.0 && y + height <= display.1) {
         panic!("One or more specified parameter is not within the screen size. Use screen::size() to check.")
     }
-
+    let start = std::time::Instant::now();
     // Retrieve screen based on specified coordinates
     let screen =
         Screen::from_point(x.into(), y.into()).expect("Cannot get screen from specified x and y");
-
+    let duration = start.elapsed();
+    //println!("Retrieve Screen took {:?}ms", duration.as_millis());
     // Capture specified area of the screen
+    let start = std::time::Instant::now();
     let capture = screen
         .capture_area(x.into(), y.into(), width.into(), height.into())
         .expect("Unable to screen capture.");
-
+    let duration = start.elapsed();
+    //println!("Capture Screen took {:?}ms", duration.as_millis());
+    
+    let start = std::time::Instant::now();
     // Convert capture to image buffer
     let buffer = capture.buffer();
-
+    let duration = start.elapsed();
+    //println!("Buffer took {:?}ms", duration.as_millis());
+    
+    let start = std::time::Instant::now();
     // Load the image from memory buffer
     let dynamic_image = image::load_from_memory(buffer).unwrap();
+    let duration = start.elapsed();
+    //println!("Image load took {:?}ms", duration.as_millis());
+  
 
     return dynamic_image;
 }
@@ -234,20 +246,24 @@ pub fn locate_center_of_image(
     region: Option<(u16, u16, u16, u16)>,
     min_confidence: Option<f32>,
     tolerance: Option<u8>,
+    bump_alloc: &Bump,
 ) -> Option<(u32, u32, f32)> {
     // Default values
     let (x, y, width, height) = region.unwrap_or((0, 0, size().0, size().1));
     let min_confidence = min_confidence.unwrap_or(0.75);
     let tolerance = tolerance.unwrap_or(25);
-
+    //let start = std::time::Instant::now();
     let screenshot = screenshot(x, y, width, height);
-    //let screen_pixels: Vec<_> = screenshot.pixels().map(|p| p.2.to_rgba()).collect(); // use to_rgba
-    let screen_pixels: Vec<Rgba<u8>> = {
+    //let duration = start.elapsed();
+    //println!("Screenshot took {:?}ms", duration.as_millis());
+    
+    //let start = std::time::Instant::now();
+    let screen_pixels: BumpVec<'_, Rgba<u8>> = {
         let (width, height) = screenshot.dimensions();
-        let mut vec = Vec::with_capacity(width as usize * height as usize);
+        let mut vec = BumpVec::with_capacity_in(width as usize * height as usize, bump_alloc);
         unsafe {
             vec.set_len(width as usize * height as usize);
-        }
+        }        
         screenshot
             .pixels()
             .zip(vec.iter_mut())
@@ -255,7 +271,24 @@ pub fn locate_center_of_image(
                 *out = p.2.to_rgba();
             });
         vec
-    };
+    };    
+    
+    
+    //let screen_pixels: Vec<Rgba<u8>> = {
+    //    let (width, height) = screenshot.dimensions();
+    //    let mut vec = Vec::with_capacity(width as usize * height as usize);
+    //    unsafe {
+    //        vec.set_len(width as usize * height as usize);
+    //    }
+        
+    //    screenshot
+    //        .pixels()
+    //        .zip(vec.iter_mut())
+    //        .for_each(|(p, out)| {
+    //            *out = p.2.to_rgba();
+    //        });
+    //    vec
+    //};
     let screen_width = screenshot.width();
     let screen_height = screenshot.height();
 

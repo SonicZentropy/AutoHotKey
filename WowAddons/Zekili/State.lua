@@ -475,6 +475,7 @@ local mt_trinket_is = {
         local item = state.trinket[ t.slot ]
 
         if item.usable and item.ability == k then return true end
+        if item.__id and class.gear[ k ] and class.gear[ k ][ 1 ] == item.__id then return true end
 
         return false
     end,
@@ -2940,7 +2941,7 @@ do
             elseif k == "is_player" then
                 local isPlayer = UnitIsPlayer( "target" )
                 if not isPlayer then isPlayer = PvpDummies[ t.npcid ] end
-                t[k] = isPlayer -- Enables proper treatment of Absolute Corruption and similar modified-in-PvP effects.
+                t[k] = isPlayer or false -- Enables proper treatment of Absolute Corruption and similar modified-in-PvP effects.
 
             elseif k == "is_undead" then t[k] = UnitCreatureType( "target" ) == BATTLE_PET_NAME_4
 
@@ -3581,7 +3582,7 @@ end
 
 
 local mt_resource = {
-    __index = function(t, k)
+    __index = function( t, k )
 
         local meta = t.meta[ k ]
         if meta ~= nil then
@@ -4573,21 +4574,24 @@ do
                 return defaultValue
             end
 
-            state.variable[ var ] = defaultValue
+            local value
 
             local data = db[ var ]
             local parent = state.scriptID
+            local which_mod = "value"
 
             -- If we're checking variable with no script loaded, don't bother.
             if not parent or parent == "NilScriptID" then return 0 end
 
-            local value = defaultValue
-
-            local which_mod = "value"
-
             for i, entry in ipairs( data ) do
                 local scriptID = entry.id
                 local currPath = entry.fullPath .. ":" .. now
+
+                value = rawget( state.variable, var )
+                if value == nil then
+                    state.variable[ var ] = defaultValue
+                    value = defaultValue
+                end
 
                 -- Check the requirements/exclusions in the APL stack.
                 if pathState[ currPath ] == nil then
@@ -4617,6 +4621,7 @@ do
 
                     if cache[ var ][ pathKey ] ~= nil then
                         value = cache[ var ][ pathKey ]
+                        state.variable[ var ] = value
 
                     else
                         state.scriptID = scriptID
@@ -4706,7 +4711,7 @@ do
                         -- Cache the value in case it is an intermediate value (i.e., multiple calculation steps).
                         if debug then
                             conditions = format( "%s: %s", passed and "PASS" or "FAIL", scripts:GetConditionsAndValues( scriptID ) )
-                            valueString = format( "%s: %s", state.args.value ~= nil and tostring( state.args.value ) or "nil", scripts:GetModifierValues( "value", scriptID ) )
+                            valueString = format( "%s: %s", value ~= nil and tostring( value ) or "nil", scripts:GetModifierValues( "value", scriptID ) )
 
                             Zekili:Debug( var .. " #" .. i .. " [" .. scriptID .. "]; conditions = " .. conditions .. "\n - value = " .. valueString )
                         end
@@ -4927,6 +4932,7 @@ do
         v1 = 1,
         v2 = 1,
         v3 = 1,
+        pmultiplier = 1
     }
 
     mt_default_debuff = {
@@ -5323,16 +5329,18 @@ local mt_default_action = {
             return class.primaryResource
 
         elseif k == "in_flight" then
-            if ability and ability.flightTime then
-                return ability.lastCast + ability.flightTime > state.query_time
+            if ability.flightTime then
+                return ability.lastCast + max( ability.flightTime, 0.25 ) > state.query_time
             end
-            return state:IsInFlight( t.action )
+
+            return state:IsInFlight( t.action ) or ability.isProjectile and ability.lastCast + 0.25 > state.query_time
 
         elseif k == "in_flight_remains" then
-            if ability and ability.flightTime then
-                return max( 0, ability.lastCast + ability.flightTime - state.query_time )
+            if ability.flightTime then
+
+                return max( 0, ability.lastCast + max( ability.flightTime, 0.25 ) - state.query_time )
             end
-            return state:InFlightRemains( t.action )
+            return max( state:InFlightRemains( t.action ), ability.isProjectile and ability.lastCast + 0.25 - state.query_time or 0 )
 
         elseif k == "channeling" then
             return state:IsChanneling( t.action )
