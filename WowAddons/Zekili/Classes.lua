@@ -1,5 +1,5 @@
 -- Classes.lua
--- July 2024
+-- January 2025
 
 local addon, ns = ...
 local Zekili = _G[ addon ]
@@ -53,13 +53,6 @@ local specTemplate = {
     damageRange = 0,
     damagePets = false,
 
-    throttleRefresh = false,
-    regularRefresh = 0.5,
-    combatRefresh = 0.25,
-
-    throttleTime = false,
-    maxTime = 20,
-
     -- Toggles
     custom1Name = "Custom 1",
     custom2Name = "Custom 2",
@@ -86,6 +79,8 @@ local specTemplate = {
             criteria = nil
         }
     },
+
+    placeboBar = 3,
 
     ranges = {},
     settings = {},
@@ -589,8 +584,6 @@ local ZekiliSpecMixin = {
         end
     end,
 
-
-
     RegisterPotion = function( self, potion, data )
         self.potions[ potion ] = data
 
@@ -728,7 +721,7 @@ local ZekiliSpecMixin = {
             end
         end
 
-        if ( a.velocity or a.flightTime ) and a.impact then
+        if ( a.velocity or a.flightTime ) and a.impact and a.isProjectile == nil then
             a.isProjectile = true
         end
 
@@ -1022,16 +1015,17 @@ local ZekiliSpecMixin = {
 
     RegisterPet = function( self, token, id, spell, duration, ... )
         CommitKey( token )
-
+    
+        -- Register the main pet.
         self.pets[ token ] = {
             id = type( id ) == "function" and setfenv( id, state ) or id,
             token = token,
             spell = spell,
             duration = type( duration ) == "function" and setfenv( duration, state ) or duration
         }
-
+    
+        -- Process copies.
         local n = select( "#", ... )
-
         if n and n > 0 then
             for i = 1, n do
                 local copy = select( i, ... )
@@ -1039,14 +1033,70 @@ local ZekiliSpecMixin = {
             end
         end
     end,
+    
 
-    RegisterTotem = function( self, token, id )
+    RegisterPets = function( self, pets )
+        for token, data in pairs( pets ) do
+            -- Extract fields from the pet definition.
+            local id = data.id
+            local spell = data.spell
+            local duration = data.duration
+            local copy = data.copy
+    
+            -- Register the pet and handle the copy field if it exists.
+            if copy then
+                self:RegisterPet( token, id, spell, duration, copy )
+            else
+                self:RegisterPet( token, id, spell, duration )
+            end
+        end
+    end,
+
+
+    RegisterTotem = function( self, token, id, ... )
+        -- Register the primary totem.
         self.totems[ token ] = id
         self.totems[ id ] = token
-
+    
+        -- Handle copies if provided.
+        local n = select( "#", ... )
+        if n and n > 0 then
+            for i = 1, n do
+                local copy = select( i, ... )
+                self.totems[ copy ] = id
+                self.totems[ id ] = copy
+            end
+        end
+    
+        -- Commit the primary token.
         CommitKey( token )
     end,
 
+    RegisterTotems = function( self, totems )
+        for token, data in pairs( totems ) do
+            local id = data.id
+            local copy = data.copy
+    
+            -- Register the primary totem.
+            self.totems[ token ] = id
+            self.totems[ id ] = token
+    
+            -- Register any copies (aliases).
+            if copy then
+                if type( copy ) == "string" then
+                    self.totems[ copy ] = id
+                    self.totems[ id ] = copy
+                elseif type( copy ) == "table" then
+                    for _, alias in ipairs( copy ) do
+                        self.totems[ alias ] = id
+                        self.totems[ id ] = alias
+                    end
+                end
+            end
+    
+            CommitKey( token )
+        end
+    end,
 
     GetSetting = function( self, info )
         local setting = info[ #info ]
@@ -1226,7 +1276,6 @@ ns.isDefault = function( name, category )
     return false
 end
 
-
 function Zekili:NewSpecialization( specID, isRanged, icon )
 
     if not specID or specID < 0 then return end
@@ -1262,6 +1311,7 @@ function Zekili:NewSpecialization( specID, isRanged, icon )
         resources = {},
         resourceAuras = {},
         primaryResource = nil,
+        primaryStat = nil,
 
         talents = {},
         pvptalents = {},
@@ -1313,7 +1363,6 @@ function Zekili:NewSpecialization( specID, isRanged, icon )
     return spec
 end
 
-
 function Zekili:GetSpecialization( specID )
     if not specID then return class.specs[ 0 ] end
     return class.specs[ specID ]
@@ -1349,6 +1398,38 @@ all:RegisterAuras( {
         aliasMode = "first",
         aliasType = "buff",
         duration = 3600,
+    },
+
+    -- The War Within M+ Affix auras
+    -- Haste
+    cosmic_ascension = {
+        id = 461910,
+        duration = 30,
+        max_stack = 1
+    },
+    -- Crit
+    rift_essence = {
+        id = 465136,
+        duration = 30,
+        max_stack = 1
+    },
+    -- Mastery
+    void_essence = {
+        id = 463767,
+        duration = 30,
+        max_stack = 1
+    },
+    -- CDR & Vers
+    voidbinding = {
+        id = 462661,
+        duration = 30,
+        max_stack = 1
+    },
+    -- Priory of the Sacred Flame
+    blessing_of_the_sacred_flame = {
+        id = 435088,
+        duration = 1800,
+        max_stack = 1
     },
 
     -- Can be used in GCD calculation.
@@ -1414,7 +1495,7 @@ all:RegisterAuras( {
     },
 
     bloodlust = {
-        alias = { "ancient_hysteria", "bloodlust_actual", "drums_of_deathly_ferocity", "fury_of_the_aspects", "heroism", "netherwinds", "primal_rage", "time_warp" },
+        alias = { "ancient_hysteria", "bloodlust_actual", "drums_of_deathly_ferocity", "fury_of_the_aspects", "heroism", "netherwinds", "primal_rage", "time_warp", "harriers_cry" },
         aliasMode = "first",
         aliasType = "buff",
         duration = 3600,
@@ -1454,6 +1535,13 @@ all:RegisterAuras( {
         duration = 40,
         max_stack = 1,
         shared = "player",
+    },
+
+    harriers_cry = {
+        id = 466904,
+        duration = 40,
+        max_stack = 1,
+        shared = "player"
     },
 
     mark_of_the_wild = {
@@ -1618,7 +1706,7 @@ all:RegisterAuras( {
     -- Mastery increased by $w1% and auto attacks have a $h% chance to instantly strike again.
     skyfury = {
         id = 462854,
-        duration = 3600.0,
+        duration = 3600,
         max_stack = 1,
         shared = "player",
         dot = "buff"
@@ -1757,13 +1845,20 @@ all:RegisterAuras( {
                     t.v3 = 0
                     t.caster = unit
 
-                    if unit == "target" and Zekili.DB.profile.filterCasts then
-                        local filters = Zekili.DB.profile.castFilters
-                        local npcid = state.target.npcid
+                    if unit == "target" and Zekili.DB.profile.toggles.interrupts.filterCasts then
+                        local filters = class.interruptibleFilters
+                        local zone = state.instance_id
+                        local npcid = state.target.npcid or -1
 
-                        if npcid and filters[ npcid ] and not filters[ npcid ][ spellID ] then
-                            if Zekili.ActiveDebug then Zekili:Debug( "Cast '%s' not interruptible per user preference.", spell ) end
-                            t.v2 = 1
+                        if filters then
+                            local interruptible = filters[ zone ][ npcid ][ spellID ]
+
+                            if not interruptible then
+                                if Zekili.ActiveDebug then Zekili:Debug( "Cast '%s' not interruptible per user preference.", spell ) end
+                                t.v2 = 1
+                            elseif interruptible == "testing" then
+                                t.v2 = 0
+                            end
                         end
                     end
 
@@ -1790,11 +1885,18 @@ all:RegisterAuras( {
                         removeBuff( "casting" )
                     elseif unit == "target" and Zekili.DB.profile.filterCasts then
                         local filters = Zekili.DB.profile.castFilters
-                        local npcid = state.target.npcid
+                        local zone = state.instance_id
+                        local npcid = state.target.npcid or -1
 
-                        if npcid and filters[ npcid ] and not filters[ npcid ][ spellID ] then
-                            if Zekili.ActiveDebug then Zekili:Debug( "Cast '%s' not interruptible per user preference.", spell ) end
-                            t.v2 = 1
+                        if filters then
+                            local interruptible = filters[ zone ][ npcid ][ spellID ]
+
+                            if not interruptible then
+                                if Zekili.ActiveDebug then Zekili:Debug( "Cast '%s' not interruptible per user preference.", spell ) end
+                                t.v2 = 1
+                            elseif interruptible == "testing" then
+                                t.v2 = 0
+                            end
                         end
                     end
 
@@ -1996,6 +2098,136 @@ all:RegisterAuras( {
         end,
     },
 
+    disoriented = {  -- Disorients (e.g., Polymorph, Dragon’s Breath, Blind)
+        duration = 10,
+        generate = function( t )
+            local max_events = GetActiveLossOfControlDataCount()
+
+            if max_events > 0 then
+                local spell, start, duration, remains = "none", 0, 0, 0
+
+                for i = 1, max_events do
+                    local event = GetActiveLossOfControlData( i )
+
+                    if event.locType == "CONFUSE"
+                        and event.startTime and event.startTime > 0
+                        and event.timeRemaining and event.timeRemaining > 0
+                        and event.timeRemaining > remains then
+
+                        spell = event.spellID
+                        start = event.startTime
+                        duration = event.duration
+                        remains = event.timeRemaining
+                    end
+                end
+
+                if start + duration > query_time then
+                    t.count = 1
+                    t.expires = start + duration
+                    t.applied = start
+                    t.duration = duration
+                    t.caster = "anybody"
+                    t.v1 = spell
+                    return
+                end
+            end
+
+            t.count = 0
+            t.expires = 0
+            t.applied = 0
+            t.duration = 10
+            t.caster = "nobody"
+            t.v1 = 0
+        end,
+    },
+
+    feared = {
+        duration = 10,
+        generate = function( t )
+            local max_events = GetActiveLossOfControlDataCount()
+
+            if max_events > 0 then
+                local spell, start, duration, remains = "none", 0, 0, 0
+
+                for i = 1, max_events do
+                    local event = GetActiveLossOfControlData( i )
+
+                    if ( event.locType == "FEAR" or event.locType == "FEAR_MECHANIC" or event.locType == "HORROR" )
+                        and event.startTime and event.startTime > 0
+                        and event.timeRemaining and event.timeRemaining > 0
+                        and event.timeRemaining > remains then
+
+                        spell = event.spellID
+                        start = event.startTime
+                        duration = event.duration
+                        remains = event.timeRemaining
+                    end
+                end
+
+                if start + duration > query_time then
+                    t.count = 1
+                    t.expires = start + duration
+                    t.applied = start
+                    t.duration = duration
+                    t.caster = "anybody"
+                    t.v1 = spell
+                    return
+                end
+            end
+
+            t.count = 0
+            t.expires = 0
+            t.applied = 0
+            t.duration = 10
+            t.caster = "nobody"
+            t.v1 = 0
+        end,
+    },
+
+    incapacitated = {  -- Effects like Sap, Freezing Trap, Gouge
+        duration = 10,
+        generate = function( t )
+            local max_events = GetActiveLossOfControlDataCount()
+
+            if max_events > 0 then
+                local spell, start, duration, remains = "none", 0, 0, 0
+
+                for i = 1, max_events do
+                    local event = GetActiveLossOfControlData( i )
+
+                    if event.locType == "STUN"
+                        and event.startTime and event.startTime > 0
+                        and event.timeRemaining and event.timeRemaining > 0
+                        and event.timeRemaining > remains then
+
+                        spell = event.spellID
+                        start = event.startTime
+                        duration = event.duration
+                        remains = event.timeRemaining
+                    end
+                end
+
+                if start + duration > query_time then
+                    t.count = 1
+                    t.expires = start + duration
+                    t.applied = start
+                    t.duration = duration
+                    t.caster = "anybody"
+                    t.v1 = spell
+                    return
+                end
+            end
+
+            t.count = 0
+            t.expires = 0
+            t.applied = 0
+            t.duration = 10
+            t.caster = "nobody"
+            t.v1 = 0
+        end,
+        copy = "sapped"
+    },
+
     rooted = {
         duration = 10,
         generate = function( t )
@@ -2047,6 +2279,50 @@ all:RegisterAuras( {
                     local event = GetActiveLossOfControlData( i )
 
                     if event.locType == "SNARE" and event.startTime and event.startTime > 0 and event.timeRemaining and event.timeRemaining > 0 and event.timeRemaining > remains then
+                        spell = event.spellID
+                        start = event.startTime
+                        duration = event.duration
+                        remains = event.timeRemaining
+                    end
+                end
+
+                if start + duration > query_time then
+                    t.count = 1
+                    t.expires = start + duration
+                    t.applied = start
+                    t.duration = duration
+                    t.caster = "anybody"
+                    t.v1 = spell
+                    return
+                end
+            end
+
+            t.count = 0
+            t.expires = 0
+            t.applied = 0
+            t.duration = 10
+            t.caster = "nobody"
+            t.v1 = 0
+        end,
+        copy = "slowed"
+    },
+
+    stunned = {  -- Shorter stuns (e.g., Kidney Shot, Cheap Shot, Bash)
+        duration = 10,
+        generate = function( t )
+            local max_events = GetActiveLossOfControlDataCount()
+
+            if max_events > 0 then
+                local spell, start, duration, remains = "none", 0, 0, 0
+
+                for i = 1, max_events do
+                    local event = GetActiveLossOfControlData( i )
+
+                    if event.locType == "STUN_MECHANIC"
+                        and event.startTime and event.startTime > 0
+                        and event.timeRemaining and event.timeRemaining > 0
+                        and event.timeRemaining > remains then
+
                         spell = event.spellID
                         start = event.startTime
                         duration = event.duration
@@ -2298,7 +2574,7 @@ all:RegisterAuras( {
             local amount = UnitGetTotalAbsorbs( unit )
 
             if amount > 0 then
-                t.name = ABSORB
+                -- t.name = ABSORB
                 t.count = 1
                 t.expires = now + 10
                 t.applied = now - 5
@@ -2338,6 +2614,14 @@ do
         {
             name = "elemental_potion_of_power",
             items = { 191907, 191906, 191905, 191389, 191388, 191387 }
+        },
+        {
+            name = "algari_healing_potion",
+            items = { 211878, 211879, 211880 }
+        },
+        {
+            name = "cavedwellers_delight",
+            items = { 212242, 212243, 212244 }
         }
     }
 
@@ -2432,7 +2716,9 @@ do
 
                             class.auras[ spell ] = all.auras[ potion.name ]
                         else
-                            insert( all.auras[ potion.name ].copy, spell )
+                            local existing = all.auras[ potion.name ]
+                            if not existing.copy then existing.copy = {} end
+                            insert( existing.copy, spell )
                             all.auras[ spell ] = all.auras[ potion.name ]
                             class.auras[ spell ] = all.auras[ potion.name ]
                         end
@@ -2456,7 +2742,7 @@ do
         startsCombat = false,
         toggle = "potions",
 
-        consumable = function() return state.args.potion or settings.potion or first_potion_key or "elemental_potion_of_power" end,
+        consumable = function() return state.args.potion or settings.potion or first_potion_key or "tempered_potion" end,
         item = function()
             if state.args.potion and class.abilities[ state.args.potion ] then return class.abilities[ state.args.potion ].item end
             if spec.potion and class.abilities[ spec.potion ] then return class.abilities[ spec.potion ].item end
@@ -3156,7 +3442,9 @@ do
         { "verdant_aspirants_badge_of_ferocity", 209763 },
         { "verdant_gladiators_badge_of_ferocity", 209343 },
         { "forged_aspirants_badge_of_ferocity", 218421 },
-        { "forged_gladiators_badge_of_ferocity", 218713 }
+        { "forged_gladiators_badge_of_ferocity", 218713 },
+        { "prized_aspirants_badge_of_ferocity", 229491 },
+        { "prized_gladiators_badge_of_ferocity", 229780 }
     }
 
     local pvp_badges_copy = {}
@@ -3181,7 +3469,7 @@ do
         cooldown = 120,
         gcd = "off",
 
-        items = { 162966, 161902, 165223, 165058, 167528, 167380, 172849, 172669, 175884, 175921, 185161, 185197, 186906, 186866, 192352, 192295, 201449, 201807, 205778, 205708, 209763, 209343, 218421, 218713 },
+        items = { 162966, 161902, 165223, 165058, 167528, 167380, 172849, 172669, 175884, 175921, 185161, 185197, 186906, 186866, 192352, 192295, 201449, 201807, 205778, 205708, 209763, 209343, 218421, 218713, 229491, 229780 },
         texture = 135884,
 
         toggle = "cooldowns",
@@ -3259,7 +3547,9 @@ do
         verdant_combatants_emblem = 208309,
         verdant_gladiators_emblem = 209345,
         algari_competitors_emblem = 219933,
-        forged_gladiators_emblem = 218715
+        forged_gladiators_emblem = 218715,
+        prized_aspirants_emblem = 229494,
+        prized_gladiators_emblem = 229782
     }
 
     local pvp_emblems_copy = {}
@@ -3293,7 +3583,7 @@ do
             end
             return e
         end,
-        items = { 162898, 161675, 165221, 165056, 167378, 167526, 172667, 172847, 178334, 178447, 185242, 185282, 186946, 186868, 192392, 192297, 201452, 201809, 204166, 205781, 205710, 209766, 208309, 209345, 219933, 218715 },
+        items = { 162898, 161675, 165221, 165056, 167378, 167526, 172667, 172847, 178334, 178447, 185242, 185282, 186946, 186868, 192392, 192297, 201452, 201809, 204166, 205781, 205710, 209766, 208309, 209345, 219933, 218715, 229494, 229782 },
         toggle = "cooldowns",
 
         handler = function ()
@@ -3750,7 +4040,7 @@ function Zekili:SpecializationChanged()
     end
 
     for i = 1, 4 do
-        local id, name, _, _, role = GetSpecializationInfo( i )
+        local id, name, _, _, role, primaryStat = GetSpecializationInfo( i )
 
         if not id then break end
 
@@ -3771,6 +4061,14 @@ function Zekili:SpecializationChanged()
                 state.role.tank = true
             else
                 state.role.healer = true
+            end
+
+            if primaryStat == 1 then
+                state.spec.primaryStat = "strength"
+            elseif primaryStat == 2 then
+                state.spec.primaryStat = "agility"
+            else
+                state.spec.primaryStat = "intellect"
             end
 
             state.spec[ state.spec.key ] = true

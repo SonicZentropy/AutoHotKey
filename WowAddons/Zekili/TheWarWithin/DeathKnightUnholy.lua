@@ -1,5 +1,5 @@
 -- DeathKnightUnholy.lua
--- July 2024
+-- January 2025
 
 if UnitClassBase( "player" ) ~= "DEATHKNIGHT" then return end
 
@@ -13,28 +13,19 @@ local PTR = ns.PTR
 
 local strformat = string.format
 
-local me = Zekili:NewSpecialization( 252 )
-
-me:RegisterResource( Enum.PowerType.Runes, {
+local spec = Zekili:NewSpecialization( 252 )
+spec:RegisterResource( Enum.PowerType.Runes, {
     rune_regen = {
-        last = function ()
-            return state.query_time
-        end,
+        last = function () return state.query_time end,
+        stop = function( x ) return x == 6 end,
 
         interval = function( time, val )
-            local r = state.runes
-            val = math.floor( val )
-
+            val = floor( val )
             if val == 6 then return -1 end
-            return r.expiry[ val + 1 ] - time
+            return state.runes.expiry[ val + 1 ] - time
         end,
-
-        stop = function( x )
-            return x == 6
-        end,
-
         value = 1,
-    },
+    }
 }, setmetatable( {
     expiry = { 0, 0, 0, 0, 0, 0 },
     cooldown = 10,
@@ -48,53 +39,38 @@ me:RegisterResource( Enum.PowerType.Runes, {
 
     reset = function()
         local t = state.runes
-
         for i = 1, 6 do
             local start, duration, ready = GetRuneCooldown( i )
-
             start = start or 0
             duration = duration or ( 10 * state.haste )
-
-            start = roundUp( start, 3 )
-
-            t.expiry[ i ] = ready and 0 or start + duration
+            t.expiry[ i ] = ready and 0 or ( start + duration )
             t.cooldown = duration
         end
-
         table.sort( t.expiry )
-
-        t.actual = nil
+        t.actual = nil -- Reset actual to force recalculation
     end,
 
     gain = function( amount )
         local t = state.runes
-
         for i = 1, amount do
-            t.expiry[ 7 - i ] = 0
+            table.insert( t.expiry, 0 )
+            t.expiry[ 7 ] = nil
         end
         table.sort( t.expiry )
-
         t.actual = nil
     end,
 
     spend = function( amount )
         local t = state.runes
-
         for i = 1, amount do
-            if t.expiry[ 4 ] > state.query_time then
-                t.expiry[ 1 ] = t.expiry[ 4 ] + t.cooldown
-            else
-                t.expiry[ 1 ] = state.query_time + t.cooldown
-            end
-            table.sort( t.expiry )
+            local nextReady = ( t.expiry[ 4 ] > 0 and t.expiry[ 4 ] or state.query_time ) + t.cooldown
+            table.remove( t.expiry, 1 )
+            table.insert( t.expiry, nextReady )
         end
 
-        if amount > 0 then
-            state.gain( amount * 10, "runic_power" )
-
-            if state.set_bonus.tier20_4pc == 1 then
-                state.cooldown.army_of_the_dead.expires = max( 0, state.cooldown.army_of_the_dead.expires - 1 )
-            end
+        state.gain( amount * 10, "runic_power" )
+        if state.set_bonus.tier20_4pc == 1 then
+            state.cooldown.army_of_the_dead.expires = max( 0, state.cooldown.army_of_the_dead.expires - 1 )
         end
 
         t.actual = nil
@@ -104,16 +80,15 @@ me:RegisterResource( Enum.PowerType.Runes, {
         return state:TimeToResource( state.runes, x )
     end,
 }, {
-    __index = function( t, k, v )
+    __index = function( t, k )
         if k == "actual" then
+            -- Calculate the number of runes available based on `expiry`.
             local amount = 0
-
             for i = 1, 6 do
                 if t.expiry[ i ] <= state.query_time then
                     amount = amount + 1
                 end
             end
-
             return amount
 
         elseif k == "current" then
@@ -126,7 +101,7 @@ me:RegisterResource( Enum.PowerType.Runes, {
 
                 for i = 1, t.fcount do
                     local v = t.forecast[ i ]
-                    if v.t <= q then
+                    if v.t <= q and v.v ~= nil then
                         index = i
                         slice = v
                     else
@@ -135,7 +110,7 @@ me:RegisterResource( Enum.PowerType.Runes, {
                 end
 
                 -- We have a slice.
-                if index and slice then
+                if index and slice and slice.v then
                     t.values[ q ] = max( 0, min( t.max, slice.v ) )
                     return t.values[ q ]
                 end
@@ -150,32 +125,17 @@ me:RegisterResource( Enum.PowerType.Runes, {
             return t[ "time_to_" .. t.current + 1 ]
 
         elseif k == "time_to_max" then
-            return t.current == 6 and 0 or max( 0, t.expiry[6] - state.query_time )
-
-
-        elseif k == "add" then
-            return t.gain
+            return t.current == t.max and 0 or max( 0, t.expiry[ 6 ] - state.query_time )
 
         else
             local amount = k:match( "time_to_(%d+)" )
             amount = amount and tonumber( amount )
-
-            if amount then return state:TimeToResource( t, amount ) end
+            if amount then return t.timeTo( amount ) end
         end
     end
-} ) )
-me:RegisterResource( Enum.PowerType.RunicPower )
+}))
 
-
-me:RegisterStateFunction( "apply_festermight", function( n )
-    if azerite.festermight.enabled or talent.festermight.enabled then
-        if buff.festermight.up then
-            addStack( "festermight", buff.festermight.remains, n )
-        else
-            applyBuff( "festermight", nil, n )
-        end
-    end
-end )
+spec:RegisterResource( Enum.PowerType.RunicPower )
 
 
 local spendHook = function( amt, resource, noHook )
@@ -184,11 +144,11 @@ local spendHook = function( amt, resource, noHook )
     end
 end
 
-me:RegisterHook( "spend", spendHook )
+spec:RegisterHook( "spend", spendHook )
 
 
 -- Talents
-me:RegisterTalents( {
+spec:RegisterTalents( {
     -- DeathKnight
     abomination_limb          = {  76049, 383269, 1 }, -- Sprout an additional limb, dealing 75,598 Shadow damage over 12 sec to all nearby enemies. Deals reduced damage beyond 5 targets. Every 1 sec, an enemy is pulled to your location if they are further than 8 yds from you. The same enemy can only be pulled once every 4 sec.
     antimagic_barrier         = {  76046, 205727, 1 }, -- Reduces the cooldown of Anti-Magic Shell by 20 sec and increases its duration and amount absorbed by 40%.
@@ -317,7 +277,7 @@ me:RegisterTalents( {
 
 
 -- PvP Talents
-me:RegisterPvpTalents( {
+spec:RegisterPvpTalents( {
     bloodforged_armor    = 5585, -- (410301) Death Strike reduces all Physical damage taken by 20% for 3 sec.
     dark_simulacrum      =   41, -- (77606) Places a dark ward on an enemy player that persists for 12 sec, triggering when the enemy next spends mana on a spell, and allowing the Death Knight to unleash an exact duplicate of that spell.
     doomburst            = 5436, -- (356512) Sudden Doom also causes your next Death Coil to burst up to 2 Festering Wounds and reduce the target's movement speed by 45% per burst. Lasts 3 sec.
@@ -330,24 +290,33 @@ me:RegisterPvpTalents( {
     strangulate          = 5430, -- (47476) Shadowy tendrils constrict an enemy's throat, silencing them for 4 sec.
 } )
 
-
 -- Auras
-me:RegisterAuras( {
+spec:RegisterAuras( {
     -- Your Runic Power spending abilities deal $w1% increased damage.
     a_feast_of_souls = {
         id = 440861,
         duration = 3600,
         max_stack = 1,
     },
+    abomination_limb = {
+        id = 383269,
+        duration = 12,
+        max_stack = 1,
+    },
     -- Talent: Absorbing up to $w1 magic damage.  Immune to harmful magic effects.
-    -- https://wowhead.com/beta/spell=48707
+    -- https://wowhead.com/spell=48707
     antimagic_shell = {
         id = 48707,
         duration = 5,
         max_stack = 1
     },
+    apocalyptic_conquest = {
+        id = 444763,
+        duration = 3600,
+        max_stack = 1,
+    },
     -- Talent: Summoning ghouls.
-    -- https://wowhead.com/beta/spell=42650
+    -- https://wowhead.com/spell=42650
     army_of_the_dead = {
         id = 42650,
         duration = 4,
@@ -355,7 +324,7 @@ me:RegisterAuras( {
         max_stack = 1
     },
     -- Talent: Stunned.
-    -- https://wowhead.com/beta/spell=221562
+    -- https://wowhead.com/spell=221562
     asphyxiate = {
         id = 108194,
         duration = 4.0,
@@ -364,7 +333,7 @@ me:RegisterAuras( {
         max_stack = 1
     },
     -- Talent: Disoriented.
-    -- https://wowhead.com/beta/spell=207167
+    -- https://wowhead.com/spell=207167
     blinding_sleet = {
         id = 207167,
         duration = 5,
@@ -378,18 +347,19 @@ me:RegisterAuras( {
         max_stack = 1
     },
     -- You may not benefit from the effects of Blood Draw.
-    -- https://wowhead.com/beta/spell=374609
+    -- https://wowhead.com/spell=374609
     blood_draw_cd = {
         id = 374609,
         duration = 120,
         max_stack = 1
     },
     -- Draining $w1 health from the target every $t1 sec.
-    -- https://wowhead.com/beta/spell=55078
+    -- https://wowhead.com/spell=55078
     blood_plague = {
         id = 55078,
         duration = function() return 24 * ( talent.ebon_fever.enabled and 0.5 or 1 ) end,
         tick_time = function() return 3 * ( talent.ebon_fever.enabled and 0.5 or 1 ) * ( buff.plaguebringer.up and 0.5 or 1 ) end,
+        type = "Disease",
         max_stack = 1,
         copy = "blood_plague_superstrain"
     },
@@ -399,8 +369,14 @@ me:RegisterAuras( {
         duration = 3600,
         max_stack = 1,
     },
+    -- https://www.wowhead.com/spell=374557
+    brittle = {
+        id = 374557,
+        duration = 5,
+        max_stack = 1,
+    },
     -- Talent: Movement slowed $w1% $?$w5!=0[and Haste reduced $w5% ][]by frozen chains.
-    -- https://wowhead.com/beta/spell=45524
+    -- https://wowhead.com/spell=45524
     chains_of_ice = {
         id = 45524,
         duration = 8,
@@ -421,6 +397,12 @@ me:RegisterAuras( {
         type = "Magic",
         max_stack = 1
     },
+    coil_of_devastation = {
+        id = 390271,
+        duration = 5,
+        type = "Disease",
+        max_stack = 1,
+    },
     commander_of_the_dead = { -- 10.0.7 PTR
         id = 390260,
         duration = 30,
@@ -428,7 +410,7 @@ me:RegisterAuras( {
         copy = "commander_of_the_dead_window"
     },
     -- Talent: Controlled.
-    -- https://wowhead.com/beta/spell=111673
+    -- https://wowhead.com/spell=111673
     control_undead = {
         id = 111673,
         duration = 300,
@@ -437,7 +419,7 @@ me:RegisterAuras( {
         max_stack = 1
     },
     -- Taunted.
-    -- https://wowhead.com/beta/spell=56222
+    -- https://wowhead.com/spell=56222
     dark_command = {
         id = 56222,
         duration = 3,
@@ -445,14 +427,14 @@ me:RegisterAuras( {
         max_stack = 1
     },
     -- Your next Death Strike is free and heals for an additional $s1% of maximum health.
-    -- https://wowhead.com/beta/spell=101568
+    -- https://wowhead.com/spell=101568
     dark_succor = {
         id = 101568,
         duration = 20,
         max_stack = 1
     },
     -- Talent: $?$w2>0[Transformed into an undead monstrosity.][Gassy.]  Damage dealt increased by $w1%.
-    -- https://wowhead.com/beta/spell=63560
+    -- https://wowhead.com/spell=63560
     dark_transformation = {
         id = 63560,
         duration = 15,
@@ -480,7 +462,7 @@ me:RegisterAuras( {
         end,
     },
     -- Reduces healing done by $m1%.
-    -- https://wowhead.com/beta/spell=327095
+    -- https://wowhead.com/spell=327095
     death = {
         id = 327095,
         duration = 6,
@@ -500,6 +482,13 @@ me:RegisterAuras( {
         -- blood_death_knight[137008] #14: { 'type': APPLY_AURA, 'subtype': ADD_PCT_MODIFIER, 'points': 48.2, 'target': TARGET_UNIT_CASTER, 'modifies': DAMAGE_HEALING, }
         -- death_rot[377540] #0: { 'type': APPLY_AURA, 'subtype': MOD_SPELL_DAMAGE_FROM_CASTER, 'points': 1.0, 'target': TARGET_UNIT_TARGET_ENEMY, }
     },
+    death_and_decay_cleave_buff = {
+        id = 188290,
+        duration = 10,
+        type = "None",
+        max_stack = 1,
+        copy = "death_and_decay"
+    },
     -- [444347] $@spelldesc444010
     death_charge = {
         id = 444347,
@@ -507,7 +496,7 @@ me:RegisterAuras( {
         max_stack = 1,
     },
     -- Talent: The next $w2 healing received will be absorbed.
-    -- https://wowhead.com/beta/spell=48743
+    -- https://wowhead.com/spell=48743
     death_pact = {
         id = 48743,
         duration = 15,
@@ -516,7 +505,7 @@ me:RegisterAuras( {
     death_rot = {
         id = 377540,
         duration = 10,
-        max_stack = 2,
+        max_stack = 10,
     },
     -- Your movement speed is increased by $w1%, you cannot be slowed below $s2% of normal speed, and you are immune to forced movement effects and knockbacks.
     deaths_advance = {
@@ -544,17 +533,16 @@ me:RegisterAuras( {
         duration = 20.0,
         max_stack = function() return 5 + ( talent.frenzied_bloodthirst.enabled and 2 or 0 ) end,
     },
-    festering_scythe = {
+    festering_scythe_ready = {
         id = 458123,
         duration = 15,
         max_stack = 1,
-        copy = "festering_scythe_buff"
+        copy = "festering_scythe"
     },
-    festering_scythe_stacking_buff = {
+    festering_scythe_stack = {
         id = 459238,
         duration = 3600,
         max_stack = 20,
-        copy = "festering_scythe_stack"
     },
     -- Suffering from a wound that will deal [(20.7% of Attack power) / 1] Shadow damage when damaged by Scourge Strike.
     festering_wound = {
@@ -563,30 +551,37 @@ me:RegisterAuras( {
         max_stack = 6,
     },
     -- Reduces damage dealt to $@auracaster by $m1%.
-    -- https://wowhead.com/beta/spell=327092
+    -- https://wowhead.com/spell=327092
     famine = {
         id = 327092,
         duration = 6,
         max_stack = 3
     },
     -- Strength increased by $w1%.
-    -- https://wowhead.com/beta/spell=377591
+    -- https://wowhead.com/spell=377591
     festermight = {
         id = 377591,
         duration = 20,
         max_stack = 20
     },
     -- Suffering $w1 Frost damage every $t1 sec.
-    -- https://wowhead.com/beta/spell=55095
+    -- https://wowhead.com/spell=55095
     frost_fever = {
         id = 55095,
         duration = function() return 24 * ( talent.ebon_fever.enabled and 0.5 or 1 ) end,
         tick_time = function() return 3 * ( talent.ebon_fever.enabled and 0.5 or 1 ) * ( buff.plaguebringer.up and 0.5 or 1 ) end,
         max_stack = 1,
+        type = "Disease",
         copy = "frost_fever_superstrain"
     },
+    frost_shield = {
+        id = 207203,
+        duration = 10,
+        type = "None",
+        max_stack = 1,
+    },
     -- Movement speed slowed by $s2%.
-    -- https://wowhead.com/beta/spell=279303
+    -- https://wowhead.com/spell=279303
     frostwyrms_fury = {
         id = 279303,
         duration = 10,
@@ -594,20 +589,22 @@ me:RegisterAuras( {
         max_stack = 1,
     },
     -- Damage and attack speed increased by $s1%.
-    -- https://wowhead.com/beta/spell=377588
+    -- https://wowhead.com/spell=377588
     ghoulish_frenzy = {
         id = 377588,
         duration = 15,
         max_stack = 1,
         copy = 377589
     },
+    -- https://www.wowhead.com/spell=434153
+    -- Gift of the San'layn The effectiveness of Essence of the Blood Queen is increased by 100%. Scourge Strike has been replaced with Vampiric Strike.  
     gift_of_the_sanlayn = {
         id = 434153,
-        duration = 10,
+        duration = 15,
         max_stack = 1
     },
     -- Dealing $w1 Frost damage every $t1 sec.
-    -- https://wowhead.com/beta/spell=274074
+    -- https://wowhead.com/spell=274074
     glacial_contagion = {
         id = 274074,
         duration = 14,
@@ -621,7 +618,7 @@ me:RegisterAuras( {
         max_stack = 1,
     },
     -- Dealing $w1 Shadow damage every $t1 sec.
-    -- https://wowhead.com/beta/spell=275931
+    -- https://wowhead.com/spell=275931
     harrowing_decay = {
         id = 275931,
         duration = 4,
@@ -636,30 +633,34 @@ me:RegisterAuras( {
         max_stack = 1,
     },
     -- Talent: Damage taken reduced by $w3%.  Immune to Stun effects.
-    -- https://wowhead.com/beta/spell=48792
+    -- https://wowhead.com/spell=48792
     icebound_fortitude = {
         id = 48792,
         duration = 8,
         max_stack = 1
     },
-    -- Attack speed increased by $w1%$?a436687[, and Runic Power spending abilities deal Shadowfrost damage.][.]
+    -- https://www.wowhead.com/spell=194879
+    -- Icy Talons Attack speed increased by 18%.  
     icy_talons = {
         id = 194879,
-        duration = 6,
-        max_stack = 3
+        duration = 10,
+        max_stack = 3,
     },
     -- Taking $w1% increased Shadow damage from $@auracaster.
     incite_terror = {
         id = 458478,
         duration = 15.0,
-        max_stack = 1,
+        max_stack = 5,
     },
+    -- https://www.wowhead.com/spell=460049
+    -- Infliction of Sorrow Scourge Strike consumes your Virulent Plague to deal 100% of their remaining damage to the target.  
     infliction_of_sorrow = {
         id = 460049,
         duration = 15,
-        max_stack = 1
+        max_stack = 1,
     },
     -- Time between auto-attacks increased by $w1%.
+    -- https://www.wowhead.com/spell=391568
     insidious_chill = {
         id = 391568,
         duration = 30,
@@ -672,14 +673,14 @@ me:RegisterAuras( {
         max_stack = 1,
     },
     -- Casting speed reduced by $w1%.
-    -- https://wowhead.com/beta/spell=326868
+    -- https://wowhead.com/spell=326868
     lethargy = {
         id = 326868,
         duration = 6,
         max_stack = 1
     },
     -- Leech increased by $s1%$?a389682[, damage taken reduced by $s8%][] and immune to Charm, Fear and Sleep. Undead.
-    -- https://wowhead.com/beta/spell=49039
+    -- https://wowhead.com/spell=49039
     lichborne = {
         id = 49039,
         duration = 10,
@@ -692,8 +693,13 @@ me:RegisterAuras( {
         duration = 3,
         max_stack = 1
     },
+    mograines_might = {
+        id = 444505,
+        duration = 3600,
+        max_stack = 1,
+    },
     -- Grants the ability to walk across water.
-    -- https://wowhead.com/beta/spell=3714
+    -- https://wowhead.com/spell=3714
     path_of_frost = {
         id = 3714,
         duration = 600,
@@ -701,6 +707,7 @@ me:RegisterAuras( {
         max_stack = 1
     },
     -- Disease damage occurring ${100*(1/(1+$s1/100)-1)}% more quickly.
+    -- https://www.wowhead.com/spell=390178
     plaguebringer = {
         id = 390178,
         duration = 10,
@@ -722,7 +729,7 @@ me:RegisterAuras( {
         max_stack = 1
     },
     -- Frost damage taken from the Death Knight's abilities increased by $s1%.
-    -- https://wowhead.com/beta/spell=51714
+    -- https://wowhead.com/spell=51714
     razorice = {
         id = 51714,
         duration = 20,
@@ -730,41 +737,42 @@ me:RegisterAuras( {
         type = "Magic",
         max_stack = 5
     },
+     -- https://www.wowhead.com/spell=390276
     rotten_touch = {
         id = 390276,
         duration = 10,
         max_stack = 1
     },
     -- Strength increased by $w1%
-    -- https://wowhead.com/beta/spell=374585
+    -- https://wowhead.com/spell=374585
     rune_mastery = {
         id = 374585,
         duration = 8,
         max_stack = 1
     },
     -- Runic Power generation increased by $s1%.
-    -- https://wowhead.com/beta/spell=326918
+    -- https://wowhead.com/spell=326918
     rune_of_hysteria = {
         id = 326918,
         duration = 8,
         max_stack = 1
     },
     -- Healing for $s1% of your maximum health every $t sec.
-    -- https://wowhead.com/beta/spell=326808
+    -- https://wowhead.com/spell=326808
     rune_of_sanguination = {
         id = 326808,
         duration = 8,
         max_stack = 1
     },
     -- Absorbs $w1 magic damage.    When an enemy damages the shield, their cast speed is reduced by $w2% for $326868d.
-    -- https://wowhead.com/beta/spell=326867
+    -- https://wowhead.com/spell=326867
     rune_of_spellwarding = {
         id = 326867,
         duration = 8,
         max_stack = 1
     },
     -- Haste and Movement Speed increased by $s1%.
-    -- https://wowhead.com/beta/spell=326984
+    -- https://wowhead.com/spell=326984
     rune_of_unending_thirst = {
         id = 326984,
         duration = 10,
@@ -783,7 +791,7 @@ me:RegisterAuras( {
         max_stack = 1,
     },
     -- Talent: Afflicted by Soul Reaper, if the target is below $s3% health this effect will explode dealing an additional $343295s1 Shadowfrost damage.
-    -- https://wowhead.com/beta/spell=343294
+    -- https://wowhead.com/spell=343294
     soul_reaper = {
         id = 448229,
         duration = 5,
@@ -807,10 +815,12 @@ me:RegisterAuras( {
     sudden_doom = {
         id = 81340,
         duration = 10,
-        max_stack = function () return talent.harbinger_of_doom.enabled and 2 or 1 end,
+        max_stack = function ()
+            if talent.harbinger_of_doom.enabled then return 2 end
+            return 1 end,
     },
     -- Runic Power is being fed to the Gargoyle.
-    -- https://wowhead.com/beta/spell=61777
+    -- https://wowhead.com/spell=61777
     summon_gargoyle = {
         id = 61777,
         duration = 25,
@@ -841,7 +851,7 @@ me:RegisterAuras( {
         max_stack = 1,
     },
     -- Talent: Haste increased by $s1%.
-    -- https://wowhead.com/beta/spell=207289
+    -- https://wowhead.com/spell=207289
     unholy_assault = {
         id = 207289,
         duration = 20,
@@ -849,7 +859,7 @@ me:RegisterAuras( {
         max_stack = 1
     },
     -- Talent: Surrounded by a vile swarm of insects, infecting enemies within $115994a1 yds with Virulent Plague and an unholy disease that deals damage to enemies.
-    -- https://wowhead.com/beta/spell=115989
+    -- https://wowhead.com/spell=115989
     unholy_blight_buff = {
         id = 115989,
         duration = 6,
@@ -878,7 +888,7 @@ me:RegisterAuras( {
         end,
     },
     -- Suffering $s1 Shadow damage every $t1 sec.
-    -- https://wowhead.com/beta/spell=115994
+    -- https://wowhead.com/spell=115994
     unholy_blight = {
         id = 115994,
         duration = 14,
@@ -899,7 +909,7 @@ me:RegisterAuras( {
         max_stack = 1,
     },
     -- Strength increased by $s1%.
-    -- https://wowhead.com/beta/spell=53365
+    -- https://wowhead.com/spell=53365
     unholy_strength = {
         id = 53365,
         duration = 15,
@@ -923,7 +933,7 @@ me:RegisterAuras( {
         max_stack = 1
     },
     -- Suffering $w1 Shadow damage every $t1 sec.  Erupts for $191685s1 damage split among all nearby enemies when the infected dies.
-    -- https://wowhead.com/beta/spell=191587
+    -- https://wowhead.com/spell=191587
     virulent_plague = {
         id = 191587,
         duration = function () return 27 * ( talent.ebon_fever.enabled and 0.5 or 1 ) end,
@@ -933,14 +943,14 @@ me:RegisterAuras( {
         copy = 441277,
     },
     -- The touch of the spirit realm lingers....
-    -- https://wowhead.com/beta/spell=97821
+    -- https://wowhead.com/spell=97821
     voidtouched = {
         id = 97821,
         duration = 300,
         max_stack = 1
     },
     -- Increases damage taken from $@auracaster by $m1%.
-    -- https://wowhead.com/beta/spell=327096
+    -- https://wowhead.com/spell=327096
     war = {
         id = 327096,
         duration = 6,
@@ -948,7 +958,7 @@ me:RegisterAuras( {
         max_stack = 3
     },
     -- Talent: Movement speed increased by $w1%.  Cannot be slowed below $s2% of normal movement speed.  Cannot attack.
-    -- https://wowhead.com/beta/spell=212552
+    -- https://wowhead.com/spell=212552
     wraith_walk = {
         id = 212552,
         duration = 4,
@@ -980,11 +990,72 @@ me:RegisterAuras( {
     },
 } )
 
+-- Pets
+spec:RegisterPets({
+    apoc_ghoul = {
+        id = 24207,
+        spell = "apocalypse",
+        duration = 15,
+        copy = "army_ghoul",
+    },
+    magus_of_the_dead = {
+        id = 148797,
+        spell = "apocalypse",
+        duration = 15,
+        copy = "t31_magus",
+    },
+    ghoul = {
+        id = 26125,
+        spell = "raise_dead",
+        duration = function() return talent.raise_dead_2.enabled and 3600 or 60 end
+    },
+    highlord_darion_mograine = {
+        id = 221632,
+        spell = "army_of_the_dead",
+        duration = 20,
+    },
+    king_thoras_trollbane = {
+        id = 221635,
+        spell = "army_of_the_dead",
+        duration = 20,
+    },
+    nazgrim = {
+        id = 221634,
+        spell = "army_of_the_dead",
+        duration = 20,
+    },
+    high_inquisitor_whitemane = {
+        id = 221633,
+        spell = "army_of_the_dead",
+        duration = 20,
+    },
+    risen_skulker = {
+        id = 99541,
+        spell = "raise_dead",
+        duration = function() return talent.raise_dead_2.enabled and 3600 or 60 end,
+    },
+})
 
-me:RegisterStateTable( "death_and_decay",
+-- Totems (which are sometimes pets)
+spec:RegisterTotems({
+    gargoyle = {
+        id = 458967,
+        copy = "dark_arbiter",
+    },
+    dark_arbiter = {
+        id = 298674,
+        copy = "gargoyle",
+    },
+    abomination = {
+        id = 298667,
+    },
+})
+
+spec:RegisterStateTable( "death_and_decay",
 setmetatable( { onReset = function( self ) end },
 { __index = function( t, k )
     if k == "ticking" then
+        if state.query_time - class.abilities.any_dnd.lastCast < 10 then return true end
         return buff.death_and_decay.up
 
     elseif k == "remains" then
@@ -995,10 +1066,11 @@ setmetatable( { onReset = function( self ) end },
     return false
 end } ) )
 
-me:RegisterStateTable( "defile",
+spec:RegisterStateTable( "defile",
 setmetatable( { onReset = function( self ) end },
 { __index = function( t, k )
     if k == "ticking" then
+        if state.query_time - class.abilities.any_dnd.lastCast < 10 then return true end
         return buff.death_and_decay.up
 
     elseif k == "remains" then
@@ -1009,25 +1081,25 @@ setmetatable( { onReset = function( self ) end },
     return false
 end } ) )
 
-me:RegisterStateExpr( "dnd_ticking", function ()
+spec:RegisterStateExpr( "dnd_ticking", function ()
     return death_and_decay.ticking
 end )
 
-me:RegisterStateExpr( "dnd_remains", function ()
+spec:RegisterStateExpr( "dnd_remains", function ()
     return death_and_decay.remains
 end )
 
 
-me:RegisterStateExpr( "spreading_wounds", function ()
-    if talent.infected_claws.enabled and buff.dark_transformation.up then return false end -- Ghoul is dumping wounds for us, don't bother.
+spec:RegisterStateExpr( "spreading_wounds", function ()
+    if talent.infected_claws.enabled and pet.ghoul.up then return false end -- Ghoul is dumping wounds for us, don't bother.
     return azerite.festermight.enabled and settings.cycle and settings.festermight_cycle and cooldown.death_and_decay.remains < 9 and active_dot.festering_wound < spell_targets.festering_strike
 end )
 
 
-me:RegisterStateFunction( "time_to_wounds", function( x )
+spec:RegisterStateFunction( "time_to_wounds", function( x )
     if debuff.festering_wound.stack >= x then return 0 end
     return 3600
-    --[[ No timeable wounds mechanic in SL?
+    --[[No timeable wounds mechanic in SL?
     if buff.unholy_frenzy.down then return 3600 end
 
     local deficit = x - debuff.festering_wound.stack
@@ -1037,29 +1109,31 @@ me:RegisterStateFunction( "time_to_wounds", function( x )
     local fw = last + ( speed * deficit ) - query_time
 
     if fw > buff.unholy_frenzy.remains then return 3600 end
-    return fw ]]
+    return fw--]]
 end )
 
-me:RegisterHook( "step", function ( time )
-    if Zekili.ActiveDebug then Zekili:Debug( "Rune Regeneration Time: 1=%.2f, 2=%.2f, 3=%.2f, 4=%.2f, 5=%.2f, 6=%.2f\n", runes.time_to_1, runes.time_to_2, runes.time_to_3, runes.time_to_4, runes.time_to_5, runes.time_to_6 ) end
+
+spec:RegisterHook( "step", function ( time )
+    if Zekili.ActiveDebug then Zekili:Debug( "Rune Regeneration Tispec: 1=%.2f, 2=%.2f, 3=%.2f, 4=%.2f, 5=%.2f, 6=%.2f\n", runes.time_to_1, runes.time_to_2, runes.time_to_3, runes.time_to_4, runes.time_to_5, runes.time_to_6 ) end
 end )
 
 local Glyphed = IsSpellKnownOrOverridesKnown
 
-me:RegisterPet( "ghoul", 26125, "raise_dead", 3600 )
+-- The War Within
+spec:RegisterGear( "tww2", 229253, 229251, 229256, 229254, 229252 )
+spec:RegisterAuras( {
+    -- https://www.wowhead.com/spell=1216813
+    -- Winning Streak! On a Winning Streak! Death Coil and Epidemic damage increased by 30%.  
+    winning_streak = {
+        id = 1216813,
+        duration = 3600,
+        max_stack = 10
+    },
+} )
 
-me:RegisterTotem( "gargoyle", 458967 )
-me:RegisterTotem( "dark_arbiter", 298674 )
-
-me:RegisterTotem( "abomination", 298667 )
-me:RegisterPet( "apoc_ghoul", 24207, "apocalypse", 15 )
-me:RegisterPet( "army_ghoul", 24207, "army_of_the_dead", 30 )
-me:RegisterPet( "magus_of_the_dead", 148797, "apocalypse", 15 )
-me:RegisterPet( "t31_magus", 148797, "apocalypse", 15 )
-
--- Tier 29
-me:RegisterGear( "tier29", 200405, 200407, 200408, 200409, 200410 )
-me:RegisterAuras( {
+-- Dragonflight
+spec:RegisterGear( "tier29", 200405, 200407, 200408, 200409, 200410 )
+spec:RegisterAuras( {
     vile_infusion = {
         id = 3945863,
         duration = 5,
@@ -1072,35 +1146,28 @@ me:RegisterAuras( {
         max_stack = 1
     }
 } )
-
--- Tier 30
-me:RegisterGear( "tier30", 202464, 202462, 202461, 202460, 202459 )
--- 2 pieces (Unholy) : Death Coil and Epidemic damage increased by 10%. Casting Death Coil or Epidemic grants a stack of Master of Death, up to 20. Dark Transformation consumes Master of Death and grants 1% Mastery for each stack for 20 sec.
-me:RegisterAura( "master_of_death", {
+spec:RegisterGear( "tier30", 202464, 202462, 202461, 202460, 202459 )
+spec:RegisterAura( "master_of_death", {
     id = 408375,
     duration = 30,
     max_stack = 20
 } )
-me:RegisterAura( "death_dealer", {
+spec:RegisterAura( "death_dealer", {
     id = 408376,
     duration = 20,
     max_stack = 1
 } )
--- 4 pieces (Unholy) : Army of the Dead grants 20 stacks of Master of Death. When Death Coil or Epidemic consumes Sudden Doom gain 2 extra stacks of Master of Death and 10% Mastery for 6 sec.
-me:RegisterAura( "lingering_chill", {
+spec:RegisterAura( "lingering_chill", {
     id = 410879,
     duration = 12,
     max_stack = 1
 } )
-
-me:RegisterGear( "tier31", 207198, 207199, 207200, 207201, 207203, 217223, 217225, 217221, 217222, 217224 )
--- (2) Apocalypse summons an additional Magus of the Dead. Your Magus of the Dead Shadow Bolt now fires a volley of Shadow Bolts at up to $s2 nearby enemies.
--- (4) Each Rune you spend increases the duration of your active Magi by ${$s1/1000}.1 sec and your Magi will now also cast Amplify Damage, increasing the damage you deal by $424949s2% for $424949d.
+spec:RegisterGear( "tier31", 207198, 207199, 207200, 207201, 207203, 217223, 217225, 217221, 217222, 217224 )
 
 
 local any_dnd_set, wound_spender_set = false, false
 
-local ExpireRunicCorruption = setfenv( function()
+--[[local ExpireRunicCorruption = setfenv( function()
     local debugstr
 
     local mod = ( 2 + 0.1 * talent.runic_mastery.rank )
@@ -1123,25 +1190,54 @@ local ExpireRunicCorruption = setfenv( function()
     forecastResources( "runes" )
     if Zekili.ActiveDebug then debugstr = format( "%s\n - %d, %.2f %.2f %.2f %.2f %.2f %.2f.", debugstr, rune.current, rune.expiry[1] - query_time, rune.expiry[2] - query_time, rune.expiry[3] - query_time, rune.expiry[4] - query_time, rune.expiry[5] - query_time, rune.expiry[6] - query_time ) end
     if debugstr then Zekili:Debug( debugstr ) end
-end, state )
+end, state )--]]
 
 
 local TriggerInflictionOfSorrow = setfenv( function ()
     applyBuff( "infliction_of_sorrow" )
 end, state )
 
-me:RegisterHook( "reset_precast", function ()
-    if buff.runic_corruption.up then
-        state:QueueAuraExpiration( "runic_corruption", ExpireRunicCorruption, buff.runic_corruption.expires )
+local ApplyFestermight = setfenv( function ( woundsPopped )
+    if woundsPopped > 0 and talent.festermight.enabled or azerite.festermight.enabled  then
+        if buff.festermight.up then
+            addStack( "festermight", buff.festermight.remains, woundsPopped )
+        else
+            applyBuff( "festermight", nil, woundsPopped )
+        end
     end
+
+    return woundsPopped -- Needs to be returned into the gain() function for runic power
+
+end, state )
+
+local PopWounds = setfenv( function ( attemptedPop, targetCount )
+    targetCount = targetCount or 1
+    local realPop = targetCount
+    realPop = ApplyFestermight( removeDebuffStack( "target", "festering_wound", attemptedPop ) * targetCount )
+    gain( realPop * 3, "runic_power" )
+
+    if talent.festering_scythe.enabled then
+        if realPop + buff.festering_scythe_stack.stack >= 20 then -- overflow stacks don't carry over
+            removeBuff( "festering_scythe_stack" )
+            applyBuff( "festering_scythe" )
+        else
+            addStack( "festering_scythe_stack", nil, realPop )
+         end
+    end
+
+end, state )
+
+spec:RegisterHook( "reset_precast", function ()
+    --[[if buff.runic_corruption.up then
+        state:QueueAuraExpiration( "runic_corruption", ExpireRunicCorruption, buff.runic_corruption.expires )
+    end--]]
 
     if totem.dark_arbiter.remains > 0 then
         summonPet( "dark_arbiter", totem.dark_arbiter.remains )
-        summonTotem( "gargoyle", nil, totem.dark_arbiter.remains )
-        summonPet( "gargoyle", totem.dark_arbiter.remains )
     elseif totem.gargoyle.remains > 0 then
         summonPet( "gargoyle", totem.gargoyle.remains )
     end
+    
 
     local control_expires = action.control_undead.lastCast + 300
     if control_expires > now and pet.up and not pet.ghoul.up then
@@ -1164,14 +1260,6 @@ me:RegisterHook( "reset_precast", function ()
     local army_expires = action.army_of_the_dead.lastCast + 30
     if army_expires > now then
         summonPet( "army_ghoul", army_expires - now )
-    end
-
-    if talent.all_will_serve.enabled and pet.ghoul.up then
-        summonPet( "skeleton" )
-    end
-
-    if query_time - action.outbreak.lastCast < 2 and debuff.virulent_plague.down then
-        applyDebuff( "target", "virulent_plague" )
     end
 
     if state:IsKnown( "deaths_due" ) then
@@ -1212,19 +1300,15 @@ me:RegisterHook( "reset_precast", function ()
     if state:IsKnown( "deaths_due" ) and cooldown.deaths_due.remains then setCooldown( "death_and_decay", cooldown.deaths_due.remains )
     elseif talent.defile.enabled and cooldown.defile.remains then setCooldown( "death_and_decay", cooldown.defile.remains ) end
 
-    -- Reset CDs on any Rune abilities that do not have an actual cooldown.
-    for action in pairs( class.abilityList ) do
-        local data = class.abilities[ action ]
-        if data and data.cooldown == 0 and data.spendType == "runes" then
-            setCooldown( action, 0 )
-        end
-    end
-
     if talent.infliction_of_sorrow.enabled and buff.gift_of_the_sanlayn.up then
         state:QueueAuraExpiration( "gift_of_the_sanlayn", TriggerInflictionOfSorrow, buff.gift_of_the_sanlayn.expires )
     end
 
     if Zekili.ActiveDebug then Zekili:Debug( "Pet is %s.", pet.alive and "alive" or "dead" ) end
+
+    if IsSpellKnownOrOverridesKnown( 458128 ) then applyBuff( "festering_scythe" ) end
+    if IsSpellKnownOrOverridesKnown( 433895 ) then applyBuff( "vampiric_strike" ) end
+
 end )
 
 local mt_runeforges = {
@@ -1234,7 +1318,7 @@ local mt_runeforges = {
 }
 
 -- Not actively supporting this since we just respond to the player precasting AOTD as they see fit.
-me:RegisterStateTable( "death_knight", setmetatable( {
+spec:RegisterStateTable( "death_knight", setmetatable( {
     disable_aotd = false,
     delay = 6,
     runeforge = setmetatable( {}, mt_runeforges )
@@ -1288,7 +1372,7 @@ Zekili:RegisterGearHook( ResetRuneforges, UpdateRuneforge )
 
 
 -- Abilities
-me:RegisterAbilities( {
+spec:RegisterAbilities( {
     -- Talent: Surrounds you in an Anti-Magic Shell for $d, absorbing up to $<shield> magic ...
     antimagic_shell = {
         id = 48707,
@@ -1348,21 +1432,7 @@ me:RegisterAbilities( {
                 if set_bonus.tww1_4pc > 0 then addStack( "unholy_commander" ) end
             end
 
-            if debuff.festering_wound.stack > 4 then
-                applyDebuff( "target", "festering_wound", debuff.festering_wound.remains, debuff.festering_wound.remains - 4 )
-                apply_festermight( 4 )
-                if conduit.convocation_of_the_dead.enabled and cooldown.apocalypse.remains > 0 then
-                    reduceCooldown( "apocalypse", 4 * conduit.convocation_of_the_dead.mod * 0.1 )
-                end
-                gain( 12, "runic_power" )
-            else
-                gain( 3 * debuff.festering_wound.stack, "runic_power" )
-                apply_festermight( debuff.festering_wound.stack )
-                if conduit.convocation_of_the_dead.enabled and cooldown.apocalypse.remains > 0 then
-                    reduceCooldown( "apocalypse", debuff.festering_wound.stack * conduit.convocation_of_the_dead.mod * 0.1 )
-                end
-                removeDebuff( "target", "festering_wound" )
-            end
+            PopWounds( 4, 1 )
 
             if level > 57 then gain( 2, "runes" ) end
             if set_bonus.tier29_2pc > 0 then applyBuff( "vile_infusion" ) end
@@ -1391,11 +1461,19 @@ me:RegisterAbilities( {
             if set_bonus.tww1_4pc > 0 then addStack( "unholy_commander" ) end
 
             if talent.raise_abomination.enabled then
-                summonPet( "abomination" )
+                summonPet( "abomination", 30 )
             else
                 applyBuff( "army_of_the_dead", 4 )
                 summonPet( "army_ghoul", 30 )
             end
+
+            if talent.apocalypse_now.enabled then
+                summonPet( "highlord_darion_mograine", 20 )
+                summonPet( "king_thoras_trollbane", 20 )
+                summonPet( "nazgrim", 20 )
+                summonPet( "high_inquisitor_whitemane", 20 )
+            end
+
         end,
 
         copy = { 455395, 42650, "army_of_the_dead", "raise_abomination" }
@@ -1471,23 +1549,25 @@ me:RegisterAbilities( {
 
         talent = "clawing_shadows",
         startsCombat = true,
+        max_targets = function()
+            if talent.cleaving_strikes.enabled and buff.death_and_decay_cleave_buff.up then return 8 end
+            return 1 end,
 
-        aura = "festering_wound",
         texture = function() return ( buff.vampiric_strike.up or buff.gift_of_the_sanlayn.up ) and 5927645 or 615099 end,
+
+        cycle = function()
+            if debuff.chains_of_ice_trollbane_slow.down and active_dot.chains_of_ice_trollbane_slow > 0 then return "chains_of_ice_trollbane_slow" end
+            return "festering_wound"
+        end,
+        min_ttd = function () return min( cooldown.death_and_decay.remains + 3, 8 ) end, -- don't try to cycle onto targets that will die too fast to get consumed.
         cycle_to = true,
 
         handler = function ()
-            if debuff.festering_wound.up then
-                if debuff.festering_wound.stack > 1 then
-                    applyDebuff( "target", "festering_wound", debuff.festering_wound.remains, debuff.festering_wound.stack - 1 )
-                else removeDebuff( "target", "festering_wound" ) end
+            PopWounds( 1, min( action.clawing_shadows.max_targets, active_enemies, active_dot.festering_wound ) )
 
-                if conduit.convocation_of_the_dead.enabled and cooldown.apocalypse.remains > 0 then
-                    reduceCooldown( "apocalypse", conduit.convocation_of_the_dead.mod * 0.1 )
-                end
-
-                apply_festermight( 1 )
-                if set_bonus.tier29_2pc > 0 then applyBuff( "vile_infusion" ) end
+            if debuff.undeath.up then
+                applyDebuff( "target", "undeath", debuff.undeath.stack + 1 )
+                active_dot.undeath = min( active_enemies, active_dot.undeath + 1 )
             end
 
             if buff.vampiric_strike.up or buff.gift_of_the_sanlayn.up then
@@ -1505,7 +1585,12 @@ me:RegisterAbilities( {
                 removeDebuff( "target", "virulent_plague" )
                 removeBuff( "infliction_of_sorrow" )
             end
-            -- gain( 3, "runic_power" ) -- ?
+
+            -- Legacy
+            if conduit.convocation_of_the_dead.enabled and cooldown.apocalypse.remains > 0 then
+                reduceCooldown( "apocalypse", conduit.convocation_of_the_dead.mod * 0.1 )
+            end
+
         end,
 
         bind = { "scourge_strike", "wound_spender" },
@@ -1597,10 +1682,11 @@ me:RegisterAbilities( {
                 applyDebuff( "target", "unholy_blight" )
                 applyDebuff( "target", "virulent_plague" )
                 active_dot.virulent_plague = active_enemies
-
                 if talent.superstrain.enabled then
-                    applyDebuff( "target", "blood_plague_superstrain" )
-                    applyDebuff( "target", "frost_fever_superstrain" )
+                    applyDebuff( "target", "frost_fever" )
+                    active_dot.frost_fever = active_enemies
+                    applyDebuff( "target", "blood_plague" )
+                    active_dot.blood_plague = active_enemies
                 end
             end
 
@@ -1613,6 +1699,8 @@ me:RegisterAbilities( {
                 applyBuff( "frenzied_monstrosity" )
                 applyBuff( "frenzied_monstrosity_pet" )
             end
+
+            if set_bonus.tww2 >= 4 then addStack( "winning_streak", nil, 10 ) end
 
         end,
 
@@ -1635,9 +1723,9 @@ me:RegisterAbilities( {
         id = 43265,
         noOverride = 324128,
         cast = 0,
-        charges = function() if talent.deaths_echo.enabled then return 2 end end,
+        charges = function () if talent.deaths_echo.enabled then return 2 end end,
         cooldown = 30,
-        recharge = function() if talent.deaths_echo.enabled then return 30 end end,
+        recharge = function () if talent.deaths_echo.enabled then return 30 end end,
         gcd = "spell",
 
         spend = 1,
@@ -1647,7 +1735,7 @@ me:RegisterAbilities( {
         notalent = "defile",
 
         handler = function ()
-            applyBuff( "death_and_decay" )
+            applyBuff( "death_and_decay", 10 )
             if talent.grip_of_the_dead.enabled then applyDebuff( "target", "grip_of_the_dead" ) end
         end,
 
@@ -1667,40 +1755,34 @@ me:RegisterAbilities( {
             return 30 - ( buff.sudden_doom.up and 10 or 0 ) - ( legendary.deadliest_coil.enabled and 10 or 0 ) end,
         spendType = "runic_power",
 
-        startsCombat = false,
+        startsCombat = true,
 
         handler = function ()
-            if set_bonus.tier30_2pc > 0 then addStack( "master_of_death" ) end
-
-            if pvptalent.doomburst.enabled and buff.sudden_doom.up and debuff.festering_wound.up then
-                if debuff.festering_wound.stack > 2 then
-                    applyDebuff( "target", "festering_wound", debuff.festering_wound.remains, debuff.festering_wound.stack - 2 )
-                    applyDebuff( "target", "doomburst", debuff.doomburst.up and debuff.doomburst.remains or nil, 2 )
-                else
-                    removeDebuff( "target", "festering_wound" )
-                    applyDebuff( "target", "doomburst", debuff.doomburst.up and debuff.doomburst.remains or nil, debuff.doomburst.stack + 1 )
-                end
-                if set_bonus.tier29_2pc > 0 then applyBuff( "vile_infusion" ) end
-            end
-
+            
             if buff.sudden_doom.up then
+                PopWounds( 1 + ( 1 * pvptalent.doomburst.rank ) )
                 removeStack( "sudden_doom" )
-                if set_bonus.tier30_4pc > 0 then
-                    addStack( "master_of_death", nil, 2 )
-                    applyBuff( "doom_dealer" )
-                end
-                if buff.master_of_death.up then
-                    removeBuff( "master_of_death" )
-                    applyBuff( "death_dealer" )
-                end
+                if talent.doomed_bidding.enabled then summonPet( "magus_of_the_dead", 6 ) end
                 if talent.rotten_touch.enabled then applyDebuff( "target", "rotten_touch" ) end
                 if talent.death_rot.enabled then applyDebuff( "target", "death_rot", nil, 2 ) end
-            elseif talent.death_rot.enabled then applyDebuff( "target", "death_rot" ) end
-            if cooldown.dark_transformation.remains > 0 then setCooldown( "dark_transformation", max( 0, cooldown.dark_transformation.remains - 1 ) ) end
+            elseif talent.death_rot.enabled then applyDebuff( "target", "death_rot", nil, 1 ) end
+            if buff.dark_transformation.up then buff.dark_transformation.expires = buff.dark_transformation.expires + 1 end
+            if buff.gift_of_the_sanlayn.up then buff.gift_of_the_sanlayn.expires = buff.gift_of_the_sanlayn.expires + 1 end
+            
+            -- Legacy
             if legendary.deadliest_coil.enabled and buff.dark_transformation.up then buff.dark_transformation.expires = buff.dark_transformation.expires + 2 end
             if legendary.deaths_certainty.enabled then
                 local spell = action.deaths_due.known and "deaths_due" or ( talent.defile.enabled and "defile" or "death_and_decay" )
                 if cooldown[ spell ].remains > 0 then reduceCooldown( spell, 2 ) end
+            end
+            if set_bonus.tier30_2pc > 0 then addStack( "master_of_death" ) end
+            if set_bonus.tier30_4pc > 0 then
+                addStack( "master_of_death", nil, 2 )
+                applyBuff( "doom_dealer" )
+            end
+            if set_bonus.tier30_2pc > 0 and buff.master_of_death.up then
+                removeBuff( "master_of_death" )
+                applyBuff( "death_dealer" )
             end
         end,
     },
@@ -1833,33 +1915,33 @@ me:RegisterAbilities( {
         cooldown = 0,
         gcd = "spell",
 
-        spend = function () return 30 - ( buff.sudden_doom.up and 10 or 0 ) end,
+        spend = function() return 30 - ( buff.sudden_doom.up and 10 or 0 ) end,
         spendType = "runic_power",
 
         startsCombat = false,
 
         targets = {
-            count = function () return active_dot.virulent_plague end,
+            count = function() return active_dot.virulent_plague end,
         },
 
-        usable = function () return active_dot.virulent_plague > 0, "requires active virulent_plague dots" end,
+        usable = function() return active_dot.virulent_plague > 0, "requires active virulent_plague dots" end,
         handler = function ()
-            if set_bonus.tier30_2pc > 0 then addStack( "master_of_death" ) end
 
             if buff.sudden_doom.up then
                 removeStack( "sudden_doom" )
-                if set_bonus.tier30_4pc > 0 then
-                    addStack( "master_of_death", nil, 2 )
-                    applyBuff( "doom_dealer" )
-                end
                 if talent.death_rot.enabled then applyDebuff( "target", "death_rot", nil, 2 ) end
-            elseif talent.death_rot.enabled then applyDebuff( "target", "death_rot" ) end
+            elseif talent.death_rot.enabled then applyDebuff( "target", "death_rot", nil, 1 ) end
+            if buff.dark_transformation.up then buff.dark_transformation.expires = buff.dark_transformation.expires + 1 end
+            if buff.gift_of_the_sanlayn.up then buff.gift_of_the_sanlayn.expires = buff.gift_of_the_sanlayn.expires + 1 end
+            if set_bonus.tier30_2pc > 0 then addStack( "master_of_death" ) end
         end,
     },
 
     -- Talent: Strikes for $s1 Physical damage and infects the target with $m2-$M2 Festering...
     festering_strike = {
-        id = function() return buff.festering_scythe.up and 458128 or 85948 end,
+        id = function ()
+            if IsSpellKnownOrOverridesKnown( 458128 ) or buff.festering_scythe.up then return 458128 end
+            return 85948 end,
         known = 85948,
         cast = 0,
         cooldown = 0,
@@ -1870,15 +1952,21 @@ me:RegisterAbilities( {
 
         talent = "festering_strike",
         startsCombat = true,
+        texture = function ()
+            if IsSpellKnownOrOverridesKnown( 458128 ) or buff.festering_scythe.up then return 3997563 end
+            return 879926 end,
 
-        aura = "festering_wound",
-        cycle = "festering_wound",
-
-        min_ttd = function () return min( cooldown.death_and_decay.remains + 3, 8 ) end, -- don't try to cycle onto targets that will die too fast to get consumed.
+        cycle = function() if debuff.festering_wound.stack_pct > 60 then return "festering_wound" end end,
+        min_ttd = function() return min( cooldown.death_and_decay.remains + 3, 8 ) end, -- don't try to cycle onto targets that will die too fast to get consumed.
 
         handler = function ()
+
+            if buff.festering_scythe.up then
+                active_dot.festering_wound = active_enemies
+            end
             removeBuff( "festering_scythe" )
-            applyDebuff( "target", "festering_wound", nil, debuff.festering_wound.stack + 2 )
+
+            applyDebuff( "target", "festering_wound", nil, min( 6, debuff.festering_wound.stack + 2 ) )
         end,
 
         copy = { 85948, 458128 }
@@ -1888,7 +1976,7 @@ me:RegisterAbilities( {
     icebound_fortitude = {
         id = 48792,
         cast = 0,
-        cooldown = function () return 180 - ( azerite.cold_hearted.enabled and 15 or 0 ) + ( conduit.chilled_resilience.mod * 0.001 ) end,
+        cooldown = function() return 180 - ( azerite.cold_hearted.enabled and 15 or 0 ) + ( conduit.chilled_resilience.mod * 0.001 ) end,
         gcd = "off",
 
         talent = "icebound_fortitude",
@@ -1957,10 +2045,11 @@ me:RegisterAbilities( {
         handler = function ()
             applyDebuff( "target", "virulent_plague" )
             active_dot.virulent_plague = active_enemies
-
-            if legendary.superstrain.enabled or talent.superstrain.enabled then
-                applyDebuff( "target", "blood_plague_superstrain" )
-                applyDebuff( "target", "frost_fever_superstrain" )
+            if talent.superstrain.enabled then
+                applyDebuff( "target", "frost_fever" )
+                active_dot.frost_fever = active_enemies
+                applyDebuff( "target", "blood_plague" )
+                active_dot.blood_plague = active_enemies
             end
         end,
     },
@@ -2017,10 +2106,10 @@ me:RegisterAbilities( {
         essential = true, -- new flag, will allow recasting even in precombat APL.
         nomounted = true,
 
-        usable = function () return not pet.alive end,
+        usable = function() return not pet.alive end,
         handler = function ()
-            summonPet( "ghoul", talent.raise_dead_2.enabled and 3600 or 30 )
-            if talent.all_will_serve.enabled then summonPet( "skeleton", talent.raise_dead_2.enabled and 3600 or 30 ) end
+            summonPet( "ghoul", talent.raise_dead_2.enabled and 3600 or 60 )
+            if talent.all_will_serve.enabled then summonPet( "risen_skulker", talent.raise_dead_2.enabled and 3600 or 60 ) end
             if set_bonus.tww1_4pc > 0 then addStack( "unholy_commander" ) end
         end,
 
@@ -2061,7 +2150,7 @@ me:RegisterAbilities( {
 
         toggle = "cooldowns",
 
-        usable = function () return pet.alive, "requires an undead pet" end,
+        usable = function() return pet.alive, "requires an undead pet" end,
 
         handler = function ()
             dismissPet( "ghoul" )
@@ -2071,7 +2160,7 @@ me:RegisterAbilities( {
 
     -- Talent: An unholy strike that deals $s2 Physical damage and $70890sw2 Shadow damage, ...
     scourge_strike = {
-        id = function()
+        id = function ()
             if buff.vampiric_strike.up or buff.gift_of_the_sanlayn.up then return 433895 end
             return 55090
         end,
@@ -2086,24 +2175,24 @@ me:RegisterAbilities( {
         talent = "scourge_strike",
         texture = function() return ( buff.vampiric_strike.up or buff.gift_of_the_sanlayn.up ) and 5927645 or 237530 end,
         startsCombat = true,
+        max_targets = function ()
+            if talent.cleaving_strikes.enabled and buff.death_and_decay_cleave_buff.up then return 8 end
+            return 1 end,
 
         notalent = function ()
             if buff.vampiric_strike.up or buff.gift_of_the_sanlayn.up then return end
             return "clawing_shadows"
         end,
-        aura = "festering_wound",
+
+        cycle = function ()
+            if debuff.chains_of_ice_trollbane_slow.down and active_dot.chains_of_ice_trollbane_slow > 0 then return "chains_of_ice_trollbane_slow" end
+            return "festering_wound"
+        end,
+        min_ttd = function() return min( cooldown.death_and_decay.remains + 3, 8 ) end, -- don't try to cycle onto targets that will die too fast to get consumed.
         cycle_to = true,
 
         handler = function ()
-            if debuff.festering_wound.up then
-                if debuff.festering_wound.stack > 1 then
-                    applyDebuff( "target", "festering_wound", debuff.festering_wound.remains, debuff.festering_wound.stack - 1 )
-                else
-                    removeDebuff( "target", "festering_wound" )
-                end
-                apply_festermight( 1 )
-                if set_bonus.tier29_2pc > 0 then applyBuff( "vile_infusion" ) end
-            end
+            PopWounds( 1, min( action.scourge_strike.max_targets, active_enemies, active_dot.festering_wound ) )
 
             if buff.vampiric_strike.up or buff.gift_of_the_sanlayn.up then
                 gain( 0.01 * health.max, "health" )
@@ -2111,14 +2200,12 @@ me:RegisterAbilities( {
 
                 if talent.infliction_of_sorrow.enabled and dot.virulent_plague.ticking then
                     dot.virulent_plague.expires = dot.virulent_plague.expires + 3
-                    applyBuff( "infliction_of_sorrow" ) -- TODO: Apply on Gift of the San'layn expiry?
                 end
 
                 removeBuff( "vampiric_strike" )
             end
 
             if talent.plaguebringer.enabled then
-                removeBuff( "plaguebringer" )
                 applyBuff( "plaguebringer" )
             end
 
@@ -2220,36 +2307,8 @@ me:RegisterAbilities( {
         handler = function ()
             applyDebuff( "target", "festering_wound", nil, min( 6, debuff.festering_wound.stack + 4 ) )
             applyBuff( "unholy_frenzy" )
-            stat.haste = stat.haste + 0.1
         end,
     },
-
-    --[[ Talent: Surrounds yourself with a vile swarm of insects for $d, stinging all nearby e...
-    unholy_blight = {
-        id = 115989,
-        cast = 0,
-        cooldown = 45,
-        gcd = "spell",
-
-        spend = 1,
-        spendType = "runes",
-
-        talent = "unholy_blight",
-        startsCombat = false,
-
-        handler = function ()
-            applyBuff( "unholy_blight_buff" )
-            applyDebuff( "target", "unholy_blight" )
-            applyDebuff( "target", "virulent_plague" )
-            active_dot.virulent_plague = active_enemies
-
-            if talent.superstrain.enabled then
-                applyDebuff( "target", "blood_plague_superstrain" )
-                applyDebuff( "target", "frost_fever_superstrain" )
-            end
-        end,
-    }, ]]
-
     -- Talent: Inflict disease upon your enemies spreading Festering Wounds equal to the amount currently active on your target to $s1 nearby enemies.
     vile_contagion = {
         id = 390279,
@@ -2262,6 +2321,10 @@ me:RegisterAbilities( {
 
         talent = "vile_contagion",
         startsCombat = false,
+
+        -- usable = function() return debuff.festering_wound.up, "requires active festering wounds" end,
+        cycle = "festering_wound",
+        cycle_to = true,
 
         toggle = "cooldowns",
         debuff = "festering_wound",
@@ -2292,7 +2355,7 @@ me:RegisterAbilities( {
 
     -- Stub.
     any_dnd = {
-        name = function () return "|T136144:0|t |cff00ccff[Any " .. ( class.abilities.death_and_decay and class.abilities.death_and_decay.name or "Death and Decay" ) .. "]|r" end,
+        name = function() return "|T136144:0|t |cff00ccff[Any " .. ( class.abilities.death_and_decay and class.abilities.death_and_decay.name or "Death and Decay" ) .. "]|r" end,
         cast = 0,
         cooldown = 0,
         copy = "any_dnd_stub"
@@ -2307,9 +2370,9 @@ me:RegisterAbilities( {
 } )
 
 
-me:RegisterRanges( "festering_strike", "mind_freeze", "death_coil" )
+spec:RegisterRanges( "festering_strike", "mind_freeze", "death_coil" )
 
-me:RegisterOptions( {
+spec:RegisterOptions( {
     enabled = true,
 
     aoe = 2,
@@ -2324,29 +2387,29 @@ me:RegisterOptions( {
     cycle = true,
     cycleDebuff = "festering_wound",
 
-    potion = "potion_of_spectral_strength",
+    potion = "tempered_potion",
 
     package = "Unholy",
 } )
 
 
-me:RegisterSetting( "dps_shell", false, {
-    name = strformat( "Use %s Offensively", Zekili:GetSpellLinkWithTexture( me.abilities.antimagic_shell.id ) ),
-    desc = strformat( "If checked, %s will not be on the Defensives toggle by default.", Zekili:GetSpellLinkWithTexture( me.abilities.antimagic_shell.id ) ),
+spec:RegisterSetting( "dps_shell", false, {
+    name = strformat( "Use %s Offensively", Zekili:GetSpellLinkWithTexture( spec.abilities.antimagic_shell.id ) ),
+    desc = strformat( "If checked, %s will not be on the Defensives toggle by default.", Zekili:GetSpellLinkWithTexture( spec.abilities.antimagic_shell.id ) ),
     type = "toggle",
     width = "full",
 } )
 
-me:RegisterSetting( "ob_macro", nil, {
-    name = strformat( "%s Macro", Zekili:GetSpellLinkWithTexture( me.abilities.outbreak.id ) ),
+spec:RegisterSetting( "ob_macro", nil, {
+    name = strformat( "%s Macro", Zekili:GetSpellLinkWithTexture( spec.abilities.outbreak.id ) ),
     desc = strformat( "Using a mouseover macro makes it easier to apply %s and %s to other enemies without retargeting.",
-        Zekili:GetSpellLinkWithTexture( me.abilities.outbreak.id ), Zekili:GetSpellLinkWithTexture( me.auras.virulent_plague.id ) ),
+        Zekili:GetSpellLinkWithTexture( spec.abilities.outbreak.id ), Zekili:GetSpellLinkWithTexture( spec.auras.virulent_plague.id ) ),
     type = "input",
     width = "full",
     multiline = true,
-    get = function () return "#showtooltip\n/use [@mouseover,harm,nodead][] " .. class.abilities.outbreak.name end,
-    set = function () end,
+    get = function() return "#showtooltip\n/use [@mouseover,harm,nodead][] " .. class.abilities.outbreak.name end,
+    set = function() end,
 } )
 
 
-me:RegisterPack( "Unholy", 20241109, [[Zekili:S3ZApUTn2(BjyrCS7K4yPzM0j9oEa6MBxGnOOlqNwSFZYASKT1gzlVsYPDkg4F73dPErsXdj1RjzYDakAsmPo88(C4HVwyT43wCRNBQ)IFXEM9fwwZE)0zxn7sRZxCB69h8xC7b3vFYDd8x27Ud())((TrH3t(57dJC9iFEs0X4vqtBttpK8dV9TBcs3E8UPRI292KGDhdDtdI2Vk2DDk5FV6TlU9UJbHP)Z9lUt(yBdW8G)k4NVe(RBd888Z6RFYQf3s67BSSEZS3)dNw(R(FoiX)0Yp7gh4ExOFYPpE6JL94sOh3gS7dNwE8azGoTC8)RVB62tl)quq4KQ(o7n2N)6tlj)zTVHTt2qJwwtNn9s2F2Ys4B(FoT8F4NK6hhSFd0YQ7t36ldEZEh8H)ob))9F80YDrXWFly)PL)4)6N46Mi8lBC2vVX(kaXN9EGyZ(tluca68SVN2jcPsG5Vt7G3PLhIdIIdsV)0Y1Xr7Y)(YV77bUd07FJqe)B3y4)bs4G9lUnmijnHQc4U3zDqc8JBG)5Vq1Q83teiEl(7lU1Dfrfa(Z9Pb7C3eSYjzRFyyMeno4qwRqZVk09EG()h5G6wOrcx0L0tqU58P9bB2Mo1DxIJ7DjrX35CWh092NEA5naHDA5OtlJpUhgGdr)HpGPxFA5fZwKcQscOufKFXPL3DC96PzJG7Ephp)vU3p94bk4kA(ZU7oeetq904Gp5dnZsx374T3JmoNJoouOKCKOm74ffTRyasDdbcyk5N89CUd02bsFAbikhJm0BfO3sgMlqhMu34n(Pt367gMUD6HvaR565NwE(L0bBnH)5e7VZnyFcLPDz1qagYHqBUapLmgxQLLPINWJVVdfwJpT0ZNcT1fMmo)r0X9EttsbxpaosW(tlFdOLc0L7Dr7c2tDPmLmuF2NsxRIIc9I(d43oeTYn8(dj(tzPYc)d02DaTqQL5KtlF4bdOfk(4a(K27LXA(EuYrnTCTAsPAeR((m0bg0uO1iFNe)ua1uyKv7t5TY(XOFcSVParu5K5lPUSi8aDMoIwnPbR(eL3ccLXuRNC977ogNKsHn4MlPq)UWelVtFoi0h0z2NcojaUszNisjopaRPSvWEjtDpjtnz19RGV3FV)UaisGPF1vz9m2nWZX)Ze0W1ZdWW)K4DlZLIqtLAwellll19HyJLncA80u4iWFnWfQO9jn0ptUg4QTKH3jATtWkFN04OWW7C3d6pHr)HALBrFl4kwCAckfHqFPYMCgpr7vIhgtgPslDHbQsMuYVnq2lOXmsNZiIa)c5edUlUxW4)5aG(eOYfLAuUIbB0bWpmX3n0uMVHkK8AgW5FiWd(5vL4cI)xChwTc5y1FkqbYWCvxeOYCDd06MvEt35(NgiCMttbWaj)1ccE5c033jEwFi1SM1wuqQ4bIGSYdYCkYxv8JJ0m8DCtsCpgMYoMIKe4zZQWrVjMLNNjC021BijTv6YutOHjYfEIbTkOoEWyEKBIZIlkiwv(6VOeXveqPEAyxqZgro4BsKiogCE8czcbvbImItKN7eQoHwt13jxWHhyRtQFCrHnoBdj51WXGf7LaJMj0TNB8NGOWU7twhfVJM0N6849Iiiy8rcM6Ci0DZrFksKKR2ueOlJ(L17y)1qMwBjWodTZjByEMWSmGz7jMegvGTjyDkjRbi)phyADKjKjKGsYryccGFCaj4GabhGPpMK6Sg0qJ5h)82VlmkYtkcoPEkJ5EIUlK6gNt8OUhStiqcJVsmjzqbYkX3Hn3CzdSIEXo417w1qxPBeDm9oiC)NuLsuvWrJmjGqb(5t8RPzRidMm4rfT4egS7oUWkefgvHwKzeGvda68u(qoJmrhcwLMsDFAQchmCb7E3GeSl35DuI04iWWApZm3Qphp8js8q8iep72VTU9jcfi05BPdm8F2Nw(DQPtanpREx9Vd8cMr1A6zgPFhrWl05jFrJc91gN4BPGIjPQIfYwSvHyGaRHyA8BUaQDA5VeT)nfHfx0Pc9QSwEDUSr4jUZB1UjM64tMtie)VJZRxkP0TB2c8TYk)sSfWQkCrBBa(u09Ks)M3G8cQH7N1Kz7x2bkdXj(G2a1WC7rM1pED31wC5ly8KWGZhY6yctOoj16LJZiPa0kmpKmwk0uADXOW4yILDcdGv8bTbKVjRqFy0qA2AEP2eVq7cZ8oMAFlZ2wtH11AqzwyWR16uaBnRqtzOe2zQHkxBl(qzrPPWGKgDC12A57M74MMSgJ7ImnJvrXXhP8wfR)KMLLtr2piloehYl7Zzfhzo3KikyhdDIQ86GQWUQTlkOb5a2pRBikV0iZrlfKEhwFX5flCSUcrRCnehBSYGoUn)mbvcTYehXDPNvllLHnMtZpsJVFCF2C5TYW64SYB96ZMrF6vouVcXLH9KP8nrHELPrwKNvqoAN5kc8WjFDnYvFW81QN2Te8sAZx5rohH4lQHMXrz4WEzLk4q08Ik1JfuYSAjnVyYcITmNP(pku2hPmxv1gkgvDhLXRvH09sqilBdrtSkS1Ok8xPBREmyMhOKWGf9QCgL1dmcoCGj7e54f4tv1LxxLQuBESlopv2eSFDyaLwibesG0EOtjJnJWVHQrZxWIIGSKI4510cVi6YcGPly5FN5PEhL)AuScsKE7shr6gEjtz1wBjpG5ebbw3)jF6(cSMFBoxZ)wEhzNcu2MmD99XUHKGbe0YdSz3fNfPry9X2ruGaSVO)I7(irUF1wdPMed4mwA9RXwuADLDWnE39kJaOwpLjsbbq5IiiePNGsp45QSmES5WHXcvSyiPK9CYwFy6KjzML7cGjLflKSNewNLCMAEILnWOpVUizAbyOJIvZix3ZsATjYB0XYHO6N0RXfLmiEhJP9Jw8Zzt)(ZlgWA9TA33wfWlVTPP2tRCzvmGfksv9zRBItr)kkMkPxkXlIBkbL8rz6)GLCyukd)ury18(yRKNB)yWZTBlp3wGNBzap3YCEUDB452Yc5Osp)fsL2CSDwc0fsgO05XmJIjvNfudktQXW9C35UX3zW015DQMCC3oiIuznFBQl1rg6H28r1KH00SCy9JwdGStN2EwpNsuomN0ekVp53ghbPoXRcflHPyNeHxgEkF5e0M2G1LY8NkwYkv(tLzBBJyBB3l22sGsZST7dFQFz01mFunziF22UjO5tFBB7YIx1TcxXUSVgw8Q5Y2IsifZ(krPnwLBrMBREotxQvLoSVS2PFh7mABbLythrLPJAeL(C5UAx5UWky1yn1SIacTfTQv1TcF)P0aN59T)z9cGVRydh3TkxvR(usk(0y86pv73Rw9GAoCy7wD2Sqr0znfQTpUrQL(OgupmvE41w1lp)1uJ9c)9f9g6QNdOs6)x(SSFjEfJoarr8tR(0IuSO)nNS6HWS0ySIqD(kV0eorHyVey8(X4ugVKGuHhbTMqYgVAw()CXTNlZDNssJ(z683JU8GMQfy0ciAi9FDzod8Euk6iRXnU)9C0HBtpyujCVPgmuVRuvSMOtWc1yIct(6XxPCYSXFKetsVsqo3eBJppYGDsDjQlEcWpFgpMwFniL4JmhLdwRwZLjCG0DWcBKaPDiZxlMcb5Zzqu6HdDvqAPEyPcE1QsgS7qC0N9j7BOI1tvm0QeftBouL8rKK698)mmlqHWws2uoK)T0eOP(wLfhj32TdBoRt5By0kjBXEVt2SR1RbEoD7QAct8mw2n4FF)Ffq2DtKurs3gaPZWXVPeIFsI)(v(ftuklTL)7rF)9mHiVKssCqF7rsAiegGeix0h347OzRqLyegCTHxK7ZX2QDAeLSDp4MAYhCddpT8hPmYtl)z6LarjFf8bh6K9pCi3peK9bBCWkYEeGpt0m7DH9JrXqsVAjkeRSlQKU9KHo4YGm4ymZGZoWI7DIYScIxr2ISPrXGUqQaZ6xDxf4gYnVnr)t2LxCf57Fdn7OIIeWY0IwFm((Pvfy(mQbjXcHZGKnDEvt1DSrvaG0tJMF97MjMtx9LfBuTwQCPpxpPw47rYwUyKI8ineY4tAeDdAQBcJAh5knRQUqvjeRMGevcy2u(Xe84BFvcCsTRQeQH8qQsGnYmQeLDHQsOzV7MNDk41ZF)M0TmtHtZeXkdCZ2kBQwYkLq5hjoS6(qMfUMoZ8eN)ZrVn7iEtjejEjuacX6QVP0TTUQl6VfF9WOJADftqpiDgsHBcDiXpPIj89Fmc6Klbib(QYSL0wT845BMYMRf)9WXWSkIzHxVJYAxee7tDU(nVBsCkT9Azga4Hrbu5axPqu2dQ2G5NQR5IBxszUpvIJzjXZ4T2DdnN)ysX6OyJyM1f98qu2FYV7vHC7jAngv()Byr)btvuzTYhrMSDgMG2VsixQ)1yf7ZN1fTxUVwsHrgvVPAFVb6QNtx)dl8zRmMz62725s2DwOlKMzlqMSIJQh2i6r6irYXhH1hm)YasP93Zwn0A9qOKO6NVJCsP(zMyajzB2J9cVjZIBpMqMG)ANnR8kUfAWZy3R1xOHNxB6ImbL5VGfjOaEgIQNRmkJYU5ZIM9(HGGt4j0PDk8daArrjvhEQgJpZPvhTnOtbhs5LV4JjgrXMgfcTncIqF3pNjhWpOrYe6LhiqvhxYkNNkUUEyppUkX1QlHrc6I7EhhDhRaDlNcLypkxEaT3PDK1tH)ATJUziVSOGPnv4qiy6T3iLGXparTr(yokqxBj8yeY03PJDUTIbNkpnXyD9UVONubKUZmQIs(YQ3zwK9Z4CZdU(rzvSxfVewgEeiDSSERgQ5NuAc20ITdIw)DTaHiid8thI9HCfUZT(s3MTC8YstbTgWIz3ucC6MOBXT0Q628vhvyZXrYXGOEL5PGPXGKP7cIJJOj9SogG3XyINHOD0dkuISpaDd)xT4aP87Kycn0If3JFZ7Iqd2nLgSBinyxrdnC1(QZnkM6jxIcdM0OA12z(ecXWGh586STDfYYFzk9zRM(6DjLe6Zwj9jMLqdPplNTqauNCqIjbncHTQWmcIjMpqdrmBDiM5CsbetmUDdrmlNK73VIfL0EydW3wgJojDFbxvoNxkFlHu1H5Lx1R5dJSONTB8KbjXbEsRTFH8WkLl0PiwBD(AOGXwVGrCNIBMGXwhJQNfmAhV2iym3CPUGrmZPgkyk2n8cZDtPzJwrhFG067u(kfYANojsx0b)X6KhVvZXBAcDYgKvLHmFJZQHXvH(l7Pe4r0Ov3JkVKSJzXMNGNmcc)CiDNqXAUs)TjucYAwMIt2)Dtnii1JHmgHLrmcX84WjtlTmcRgWiSKWiSrzekJLuBvhn00a58I0elezTZQexJ0iZcvGhOI2sZMSzhEFf(x)0cXvHvYnZIQ5sWF7AWvZqbWHSlgvvaHC3YkEogAZMXCHrx6OYfZd5nOERVv3Qai79Bp25XuNet7TQNj3gH4kGvJNUndSmzhtrNKPOkf3Wwflv4M2TGST8Xc7rfqhtxRzIofDUBOhkiXU7Qq2E(yggPm7RmZVLe4ViiF(MsOQYDfz0(8nLWGEtjuRDzhM7xOjlvz5xYA0LVzihRBR9psZsr3(1hwzEDk(2YDW7eXzA1hhrY2Ts5grls(wIQAtoNPTDT0nc)qouuciiIsYaOdCwX6AOwtOLoXAPUUs7Q8P)jzxkOta8yCBGO2VIT(z3kulMNk(vS)gYVImA5Rj)kYWVVg8Ry)KXVIm7Qg4xXwRFLH4gVPS9NVgA0pKJnCuh98vvHU0ZFsCvvmexdngzW98DdZZgCnNYF6BWvC3WKTB3A8lhWhY(oEdsSnwLKQx0IIF6P8w03KQ(Xpun4q(ED5BhvZknzBE(ABxztnIeKJK4BVtjmlSsEw(MqNT786WAwqER1(7uG0YLUGtElTuPT79STUBsSfUGXYxXABOz7tEDDSRvFeDdxM9ySqzgsEyFlvSL)O)wnlpShpJQym7GFBfHEHiUhLZsWVCcm7oQFYj8RuELRYJQYM)OkxL9spR7BAIyT8ObjRHmIL2KRZAFYnRxe5k8(yys5hAMGqApzUfxMjkRyx(kmxJ6wjLwT8vTDTY0FZNGOtz2QOvnEnXpeMUpDDWQXQzgpfRFvhwRS5Olwg2DuGixx2IsbE))SFCcP))I9m7lSSMbzW8hUX7bmayb)2wiTNGDhIIbFuqoyNw(kMDB8RoTm2))EmGEG1sIil2I7X0iirnYpaQq73agTN(4phqo3kN)dKt12Ey8On)kPo7aqMgH1yH9p0PXw)5eaYN(OemSC763m8Zwo(X7csa)K7FQc)ucz(B1gbil)AXXqito6SH(I8s6pIbPlgaCuQ0j)e40mzJ1aGDk1k7biJWrlFUheaATNbcdHhZ9PNaeLCt7zim5UZ8eGQ07tVVWWT20jfGn60nF8GVkBbYHjPz2ddNhLN1AF0G7qWdQEvwfaz9NRvdHi3TJPaqLEZzAiC7bBQVOW))Fk9IasJYTGSNjxcPVASM7(1hEaZtXOxqt4v(HQBeoVCKIRj2rQUHyNmA8luz2wIQsBDKjvL8gRlF54X2Fho2p5SQMRlvzBvQ4zYegQavfUKsq7Xi9Lc(XGwk0iFwlsGZ)2HMZ)iQfn40YRWYVkVi8jnl5kKjB0BbuqGV4sNiaESvwre61Mqt(YPXV81Lax(QBBoqfxgpjawsxgqGRBMDv17xKbxB7sOfrhwbxpR29fc(9p)(Peg3jv5bf44zoM)rwQDyuRz1PJwcuT4Q0UmGaxxk0DqDadI9JdJVqt8zOHF)ZVFkHXDsvEqbEjyVSx9djGZ9lWnaSDiROAantQlSdte0jq2Kkgc7EY1bc07ndLN5mFLb)N58dkN5D9QN2bf4ga2oK3xnGoKm5Ev9db69M63ZCMVYG)ZC(bIZGUPmO7wIx1OAX9OVPmgoi3Pn6IsiZVBafGS8TkOHqMDtekQKjz)fkcvKcS0d84HaYs1BBQclcILVyaBIjBklb8IRntrlMxiNMHGFRwDBT5cPFUN9lWnaSDyUN97C7huGBay7qgNyZSN5PQxgsY02xcW1ovQbf4ga2oOVoKZ(655L2qy)0MZm0W)zo)GYzWQ7GTcpS24EyFKax7c9nOa3aW2H4QdZCdvc7EY44P5SM)gMZm0W)zo)aXzqN6ztNvmYKc7WSIZG7JEPwgMcIiz3lkaCfpMfgQk8KBm(EedY2Sy7svKZFe)BMM8JWEgIt)p)vMxUXHWtqViKr2Uc9WPebl)ZUzD8OcvjV33caxXlcUHJHKhvDHXqXZUUH2C9kDGmgYEXZfgevpk6gokIV85cJa2dJUPqx8ntxe8yVP6g6xs40jlAwj)HSre2xnGW2A2GKJqoWrIW3pahjymZdvSO2y9h44AafXVB)GXd5eOTq0a7hGJOck9fwSMZmfVcJFXgiBe9((FGWovM9H1Rn2bvUxaowMc9cWrSf6fGFoIWTxZe9CSJFEVqbdJwJ0mElFGYEv3Y5LR(sfVRfLyiF9LyAwDAVLav3lnLKbYGpX8bh5U1w(WI3z1PIZTMkOSWAnBiqnGFioqg8jMp4MYc10z15yxkZG0BxnLEbQDiP8bBrI4cRF98Wqevonh8gia6QAVYb3uzwtu7XloVzmt8(1ZdJszgo4nqa0v7mLdUPYSMyNvl7YHwjPwIGdnf(E5rC7qnCQbXsEw5Q2OWHHS(mOGxhNqYztwGLO4nEBOr(bg8ga4gOw2e7aHbS2vTa2nF9OXO6PJurQV8LL)eZxw068zLN)BfcBthavVKFZNnbgkd5yu2BVZjgAgrFZhk1zWkQth8LvhKL(J1BrjVpdl81Ym6v3z9o6p0W3eiR3KRvbAfhr9U0SBGHSeITFDPPEam3u2e(BVZjgAgrFZhQuAQvTLs10oS)drHAN2KmkW12zSo0W3eiti4S70wqwTFt6wewTyFmfZnf(yL9qbOjV1NY8yL9ZMbfl5qXQPqrVaYGSB7D4BcK1lGK3htXCtHFJva6hrxNuJQfI7fOjRQWLVCFAp8Wlq8lbEzXH2yvEeEPINTNjF3yRPxEgIzj0QKVL8(flVLQ3TycCpJdTiC23iiVM8sRzZMmzYnm9uwU1kEpZejalTeGfkbyPGaSeiaBocOqt6RCnH3(1RMWBnstOob8vJMqobW49T2Q(K)fnZ5dgum0ri2j18vnA5HgItsj21LBZWmSZIw7NCmcT2bi(iE9IouxKT99LmAX32B7o2Hg(iRWDN2FkyhGK2OPHE5t34lE6(3IQ)HiI0(5RW6(hU9Mf0Wb)tF8Fsv7jGL8oGN98yCAzyqskrVEXTG6(2O4f3EBWUJHuO8Hy31PlU9qCe5jtO4j1izA5(N4S5VnBOj7hOtFuw7INmGxx2i9Chn3w(NvKTXRjVZ3Zfsu810CoMxfLNnjMQcTOFHHf6lsnzAcgAlfdTrWq9ldQqF7bmSkzWxhDyEIFAW6CS1Ew2FXXpmHL7kDXJF9QO9G3c4Vn)ll)UzudYsHlHA(YiBQsPUg9WsowyS)EajS7cs0FCcY0oehEl2HF20lzqGgSwyJQ4y9ALZneUgxO4(tG2vEjEr4hvj4hgEzpT4d9LEzXR5QXggDPAhOf7On16OBf9ss5Q7TYDiuTd0YE1TQEjPER9w9oek3bFDVmr9c5ndUh0YQ3sHQbp2EZCEIHKXyoEdylKxPhec03)V8p9X)2FRi9XKAesc9zlyp5Dtlh5ZrD(3CU5wQbJRhmRSSd4TkWCJflskaIdLpyP8G4CohFmmrzERYpK5xF5ivpmDxBv9eaiCM0YbWnxIJPvV3P8i6yfi0nLIvg6K4Hq0b9KrJvH53mxlQFT9Sr8ZrkVdJeLPp8q(qXDE0oEqjV7gMVdPdx8gY7qm70BYgzWXh3BpSgP0nZvOUi5XaMxAKZc4pyGv8oHdmyfgXaWRpFgocqFHcDIpiAZx9avWWuREtky(XrVqo7)HhyWb67F3QGuqQoHeDidmsoBCJgliETlhujNwVj0bX)6ZF4bjVz0p8qMFxUhhuqBTujUYeqJe8cg)P1yHIVDLfg8NHtLNvWbKDW9grXe)Ke)9R8lMeB2dIY)9OV)(CK6YjLqr8W5vy4u7u1nscdbOmWL4hCddpT8hZNE(ptMEolfdM1Hoz)thYC3ZvEyUh0En5SqSkfIpeSUuRL)CsOhGsb2lWGgG2)Q7Qa3qou1nEf5TsnfMTe8veaWAlaEvOAm2SFsgZD9X47jDFmLjv9BLH9p78BMZPMLBUnsIUhOzwAcjC4VE4HsZxXJfwHB23rSsOEFi1XyZ2OJH5WDKWVwyXphhPZSnOoSRdPQF1iijeiCU9ip5Vh6a9tEP2hX7PubS5Kh(Xj(XeWWipk)TNsYdziD7KhYHu)ipKbBw5bT4Kjo)NJEB2LBtr)W8aZfj2sI5wYKzkYEUFy2YUxGazUmNsQjhyX64fu40we04FaNNzxWLjP2VHoehmuThRR(kwlX6QMQnq(IUk1TUsIdZdhHmtjCSAqhykeFMfXWVzox6fv)mq)SWDDqSp1uVYiU8NEczdldNBQqlhq)FT316VPXrq8)wIQkbSJTpoaNKk4KsBtR6xARus)AamCyqgdwC4qSue)T3z39ESpMzFCGtSuSYxCU72DND2z(TZRDbRJo01sYUwbqD81CdjGDpVjZCngSgVjHcn6G2tyZWha7lyb2)3Yz9kBdF3A2FHjp1UXHUkYPvSGWaaqDIsgq((8EjF5ZB5GorHUGx2cdVhAO)yP2qSeZSFN526)LLUFu)X7hnFt6SbVC(2T3L9lxCXUD7oF36DZzhoAWr)lat6xUCq7OOlJUGRHE2IvZUN9Zm(lt(x2)F)O)k)b9VyCY(r7MdEr4Fp39TXrxEHyb6SYZ7EYFM)xI(Cr2(r3F3RaFTH)yxkZ4s2F57ye)6Ex(23EHuEitEx5FlgbwAu3Ty7C)70l70dyjm5IZ0Qh9KFhE4(rFu5P5tKz(paEs1(2DEXObvW9JwTE7(rcDkqHulghlw9513a6FFb29DfSZit7OW7tqAyyH0bHUkcqCdme7(dIJRcfGM(BHhj65LRm2Ug5s0qpXH6dBFrYFuf11SDURCl6zYlOMkwqLO7n7ncJ37cI802rjLFd2A)q1L9YTmm3lQJvOww8tW3Ps1Km9uXYSgO0LEKB4bV(v6SFVkEkEVyikJJU2rjezgsoYVuJH)kwMvxd8ZRNmv4PQGBHFTvileCqeCCpvdEbtHhFnZR45PclEfRk3SIBO94BZGPt26nxn8U0ntGrpjsl4qioeJ7DU0py6E4TVX8X)rWh3)RB3xlIxneEKDEnOBV65LPJ)SktrRt8yUZx4s3c7jJaZ3HfepuDzjLrTpOe4nYVbNx0HwMeC4gcQi3Pq93YJXRKW(mEq7yjlN7Li0LnN8aW9kgItIoVNk4ej5ggxsbc5(v4rkB2IS55H0qxgOy7rKRfLgVWbC44Ppy)NHzxHtSyH0hy3t9qstCfvAtCTC(gCacD1VKXkK7WY7(N3xoeNdlYmNuld4R4llJTH0lM8aWYaoPEB5sBd5rqpDZResA5sEcYZvkqOeQZNeQLPBJqZlJo5wf(zo8KuuWnYbHgiv)YVvpw36JrX7Doc1LxozoB(YeJxmHL5Y1lxEfl6fzlxVdzjYy5fPNTLao88D5RaIpJU1e8fxx2K7SUHieb2XKp30VGJyaTi)gXxI(j0Uw)(9J(vMmRcvla(pevTYEqtcgLuzfBHEocPLFRcfHQYwzsN00bTUDtF1rnOpg2AQRz2z4tgK0yjMKfwrREN6wGEO(tpeAQ7kZaQGsHxvk4dYcY1qG8QGIooL4YrLVQSj(rGTYdRL5dZ92z8WzPSlOEaJjdClml3vhAgfYBZZpFefp0x94qG7cUZPtmoXQQpAL(Q5zx2YteKaNB9hexdoMm82hywqR2hCJQpi4TIEGxEOR4oitAooHEvLHpkfeqHl6K2hROz58RFZx)k4G80HPFMhaKPtZop9lSuf3q)XvHsPn17syEW7WciwQfwM2cNDPUOjiYH1u1HCrercdNvx)(ZzXC4CDrhF0MgqxCcneJdj2oQEA(feG3woIbNFey(ig)bq7wzMSAjnGnUoCg)3ioCoG3FVE1zFy8QxY8JeljpNpzkZrneVfrDnZwDL1)nyfrMzajPcjwKorPwYyHtpWs)jX(rtX2IHRV0B1aGrR6fCMz7xF)2RaTWBWeXntzEcMX85DoPH(fvgz)EnAI3(zWgrZzcvLw5jDwSenA2M1GLvZGDd2O2a2lfbLWS7A1QABpLZlv54OCohL(AJW5wzgSrkckfhmpwtf7y5I1CsNwglSvDZWLlU9k8OwqBmQCrtuelh5NjSzts9r6Lf572m)K9WRzth2oHkl3oMdx8tgagC7LWrngkCMvtjfr0vtxtwPLyZYos5qg)ts6gvn7v)KwyuP6NeQjNjd62OjLfqDbcHWGkfMCs3wMDIBlVKyf5MwkZMOm9YvLqAGa22(MKxIXu9AtdpwVt6rTwsMDkjUcviT7GkiuIXYwYpIGKLhbw7HXfbs1cIAdRaQUWtvEQx5J7rd0fDPqA7sFqn4j4Aqh0EYj(CsHdGEdTXw1cqgNqrKQBFmqnV8Gqn9XghPjWZaQhBa1CgRma1pwOpjT79ZnBgFIjv260QhNEfOKZPv5NQA7yRhnGSJjnsjbCKWfl6T6GnsalgcKiyrSP3AgMRQx7DIMGAyRxauOOROooAXFpAFbRSxoeY5G8luhw4PLVHvapCE2IvZwUGt7IaVZoR7p9bEE0qlAHkn4wHet3XkWoQVNyUE605qRddQtJaAbV0wKMR8)VFXchPvbemnKw7t8cd(WJ1VRp5loiAi0ew7G(qOc1qRddjYS2a5)pe13sv3jv0lNEeQuTUr0DDLWcLvyuzQKQpvfLWusY1UvZ(kv3XYKii(p(ob)mh3DE64LBNF(Dt2cBd3tZg1E(rAHoXmwBDCsD7qCmydUEuA5rEfvjvSuQzvwMIwlKvHVNvP7FKZ9LKDvgFEgb9a)r74jl(TY1RDn63dzeDlWrIVwS9mEbbGM6)YtoBUIHqrBcST793LBldcnAi7ydYNyXUKCWk2TdY0QRNmfHM9sZZ)9U0vlTWxWQIgppO4vDnMoGvn2br20mr3GGDWQSSOyJ5uzVnY7BPeeBLT(SF47bNTB5dBUjwcAcgxY1DvafQcjEggThGPjnSxSjnXWgCwshII82lUQ1(Q7Hn3YrI)4gXb9McdEB(7zEKbgiVyB6TIcaD2dBgVKnA8YMhuRVDtfDdCQBz4dSloR8VRQWjunlMLcentNJBJ6yw3I0OGS(JESsSDouOo8iaOi4cwsB(jRR607OZlMUEiXTjeyHy2nMNib(cz6g472o82XRgdGMxdZ4BxKL5cvTSYHjBDPBN5kct28aS3XKHWZ2U5(8zGpdbAd17DyEd(LXUIxgUk9l3ZUiIy3yHxZlR5Plk(tVgqF7RsAWtPtIfhouLM0wBD5paYZpJhAh5MAYwUEBXTPqBfd4ZFy1fvMtMLnAbPBloorNeD(R70W8cnQ4wgIbkL)m5BjQ8Ew6ANs9(OQf29ov1OMmqr7TbtHom2vmk7k(XHDf7p7kw(kAZc7QTB2v8rKDP5vSH4LenZkQsomxKttkWAuljUdXnxvnLPQXH9ZsuFO6lQUIocssgYP1OsdAIJoOWmbTVoh1rpOyBrRxIO1hYY2tDaWJbHh87gaSItOxycZX4cZixrE1qyoouH56PXFmxoFwy(jMWSwym4rXqPSBQe3923xA3BT5DG3LxRE4uqJAczy70RGjflVjSixNBQrlb4Ts1TLzX9Kg(ktK2qeCGR6ckoiXyLo0X6tk)IyBD5dUgSGJkEcRoK18eexogdY(hrpbL4dpcEbsPMzgFfxv7QnhbpUJIVoXD8gypKk)M7bOltAC49Nv3ZinxM2gB2wAirLZ(9Cry3Tow8(JOnj9yL1r47)h2TgIt6YOnjTTzWtGxakUhFSAsPIaCvzf1z940oKRiEHn6P8dT4OXD1QvUKQ3VU0SCeOaREYtA7oTb)Fp0SIFIQzPtxFR1S0h)VvAwXFV0Smfh9qZkUUAwUIPKtpNFomqp75mryGCj75keqoL9EoQnpl7Pi79PTW)(0))]] )
+spec:RegisterPack( "Unholy", 20250311, [[Zekili:S3txZTnos(BXpefPKnkI02z8mvIRA3P2RQDQ9MRQ15E6QZuuIusCdfPwskNXBLs)2paWVaa7ga8lh7C6LzIfbB0DJ(l0DdW7TU)Z3FNNBM)9)U9c7RxCPL1CRRU6NSV8(7YE8G)93DWD9xC3s(hrU7j)3)7ODXHps)5hdJD9OVEA8XK1KhTll7q6V8(3VniB3XvZxhV)9Pb7pg6MfehToXDtg9Vx)(7VB1XGWS)w09RGM7RTVHaZd(Rj)812eWg455Npw)013FhDSVBXLVZY6xoT8UG9)6PLhpqbZF60Yu3Oq3hJoTCDOV7d(KFi74MnN(Tt)w(Bz)o7BiVvIV76StlF3T0xv4PFG80)HF6JrRpT8Re6iFgU)UWG0SugX6g5SjiDxq0wYF(7m(NFK7QqFV7)l3FhbUeIL8)JYc27UnyTt6o)WWCCpj4q(tjp(1545)rbOUJ8Wm)Kax6iDZ258LOGT7YM7Up1XDvACYkNd(eUCebTjy9ItlNqiJJrKj4q8x9toT8JNwE1I7ZimnjuQgYxCA5kc7yE(m4g5545V29X5eEafCLp(b39hcsOOEwsWx8jpMNUE0XlYJopxIopmOKEKUS54fhVVCcYCdjeWC6p575SISUsi95fG40YV9nY6LFMZQ4OJPZZ(6xTDU6WA2BYGOFAQF0AFN4noz78Dwfgh758Vo67hn3nZzV7FqqyIWAk)CTjXp6FhqNn6OZ2fKKMvpJgs058R1XbHu6(ku6oZnzRF28D(UHz7MFGkI9XpDA5LxZMPn0fuNe)9UbrPSvXRRNcIoui5zUKfz6CCT21qZX3pGcRPNw65ZG2g)u6VfT15RXhJ8MZyKeCKI9e9KtlpqOl3vX7dIyAZZPtfv)IqxRJJd9I)k53oeV2n8XdP(Z5PYhCjtgzYzp3HOwqMMtlNLVERLwy4JdXCqKxoR5Nqjh10Yhvtk1Zy97NJoKjnJ80yFhIWjb1uO134vfv7)ZX)vI9egqK1w4EZ1psKUP8aD6YYQXzbR)cJ3swuMYKSlucwDKi1ZGDCIFQS4FXGEii0NiZeLrSAr4kcALcMK2WyRevQCX90CXK1psm564h5VpWp1436M8rM4g454)afnC98iy4Fqn3MBJt6rvswunlll1JHQJLpdAm9vAzYFdHlut7ZmYWhSOAtbZ17Oyf18vaXkwwsCy4k3iIyvy8xzY858WcgevkdWAdUOMGSHYfv4zs2MJjZuLUV0evVkvTcyG0GKm0eDMNOIaxbtm4g9UGZI0bc6tHQGJ0s3naoWYnvuJHFKdw(hc8i)86kebXCmU9RoIz1tujkqNMB6ZQjKLCcTUDT3CIBwdwz(elefdw2)O0Qo8Q5p3lE2qSQzTOROa4YdXHYApsKDX(QCNCKfRTJBAQ7XWm(5uMKig6SkT7BIo5L5loAh6T0GkRSGQXtXm4fpzFyLuNiym3ro1sXvLeRkt)xvH4k8V0mQSRybNad(24ysGbx4(aArqLFjJ4efHsHktOvv9dWlC4b43lXpbNYgh8bqyocmy5rjXO58K75M8fI3x3O0nXj7zXaQoSEVykcMCKIPohcD3E0NHePfInLE5YPFOrN4t2hs6okSZr7cYEpzFDbEbzpcULKTbBYk3StXgBLIxj9iz)ce74eKqacuCytsCAMZgIeAI48x888TpbHGZAgbzHLOvHmZ4clpQhb)(day81ltatkHSs9D4dvhAIvmk(jV5WQN6AzJ4JzRi7c7lQIhQ25OrQeexb(f7dSTHQabto8OMwCcd2VQWTclXhQtnrEKSI7n5xZFVwTddLXliQGZnco)f62HJwx7fqpy)HK4h8POzPt76yDHDORj7fTAlP4MomHgUOpKrxcAhKaPRJLOdhkFi3zHrrJFAPnNhTg7OLL0nZub6pvOluw4KsycnAbtc4H1dWnXLLYYZWyAw71GVJGTuZ3FMHxNwwMKXwOtlAlFBcJ0BVTCQ7q162yBWc1VxfSZT8yqMelDpeNLrMKS4JR3Xz6PiVd52MzriW54nxdDDCsYrgVLHDkYoPGgnXi9nl40du4fF8YQPQ0O(1GOOcvkINoGjHZJLrOjFKDx2r7T64snThlSkd9688J8ySbKz5NdDY0fB)TtocuNAydI4ByYEmkVuRLp6EnSuq69ilZFQSEgDZODHU8uJfg0XTfJCrj0QIAf2Lxj00NgllHWqbsbTchmt1fOL4orBzw6ZPp9chQRtGIC9lq5nKRKZJv7ITQaTZnfrCfaNoRcXhmNs6PDlj3j2IB4uWqiEUS0mpSCDIYNgIeujGOz0)EdlXtLHIuooYQRNdXhK))2NFkb84htcBM4lIlPpfic7F5KxszojU7Br2iV2GfNpwUlSkGjMtT5sguFWn8izdxH092TO4pV)UlHCGPK0yVMUDiHQ1zWwNmxV0q6Nk1UaiiWYbYBavEFP1AafOJqqxTvls)aVsPPMc)bsomnuGPWnxTWjxq7ao41leOjbxtmiHzvOUC9(VCHiM2u1giyGcuoyJAj3l0ebT2qSZD0IjquyUSerzvEBDqwLCyLa(ut2DC5GbemTfqv6lrDM75)GlzfptyTaytb0)MkNTLe(w8Ju9uz)zY(lk0D72wORtO7m(vwMzENKdqXzPxcKqgV1mM4B5z3A3JHUTfu736Agjja9DhJ2MZaaGC5yCtwfqhgBfJYGBm9YCFb2wJA7aefLyoWCddpT8pZyKNw(3zT8tfFLydo0j)pCODdeHTtIGzn11RyG(567sH5uoLSgjQCzLSrFYtJ(sbUPmuhDWLdzWXyUjNFILdjPkpdjRP1NoJSryYClXS(hURdCdt5rtz7t2l43pj5V1eOszmy5srBoM84CVJjU5lhVLPqs1qeui5tmaOMA92dUGlV573tykvJfosz5rX74(d82OyEIs2)OZ2DKnIX3BmsprOgr6i1sBpSqdGHC9tAnKLnvEBUTYjksquzl7eNMcTLu9ZCTKv9qyIeYj6cqKWpj1pHIh)4lsGtQ9vKqnKhtrcSzMtKOAimrcn5oSi6uAoSI2MvfKPWsAUt29nlzfNl48NYhQvrMAiXItT854fW7TxEA19IC7cKvySuN)5rVT7PwtPejEsXieI1n)qjBBDtFKFlF7Xrg16g(KRV2Nws1qhQ)t2YeEA9qqNIvaQJV6iBPpRrC8IpMXMB4)9Wr6(rPicEI9QsbvqIpZ46p8MjXP0UlLzaGhhbqLtmxEblhbtAW8ch)jU(Za18PsCmpiEoR1UBzX8Nq7dcg2ihzD5ipeN))fRvfj2EQuZVwiXKQtPYQP59bwumprH4Li4Yf5yc64QGCL8xRfSVCrFKEfEB4E1w(rnEFdKvVKDkdSW3TYuUTBVFVlndLL7pKOJ01ckwT1AJHnICKosKwvgEBWKLkUzGr7)mF2qB0zjY5ev)gEGPLM1IyePzB(YjjQZC)DhtP7WFJZ21ELn1hEi7ED(8RCzJ9lY5vw880qrb8qevVzzug1LTFB0fDXjTYqmCcpIoT7HhfTS7mAXqjvfLS14t3rN8gtQIrHhkt3WkRUHvLOJY(f)PeJyydET(gO1J8M9Iov4MXb1qyeRMUiXOEY0AHH4A9bVHIU4vpdhDNQPhsZ9OJ1aUAp1ctBCWfEdXa38RlZJRXuj7y6Wk1eUhdLlkieI5OaBYXTSdjKZMBtkvEokQXFVR3JceJU2cXKUs5JAN1IbkgRnXlekRI)qGszz4EI0XYgS85w01yuSX8(2UcB0AKRdiefzyzj)EfTYgFNRG1oBSUz73JJEhuhT1(ZCzMQgtZ0JQvj(3Oo84mFX6Qc0CD4AWLMXq2xGQG(lFwZD3ZhCv1zBRFTYA1akRyL2Wo5DdOUZwBSgHxY)QthcwH4KscyGyh7OPrCWdvOvD6z3piyyCmtBvM2wqsCAi)ymPs)g6WwiQNZRyBycb(e0XnbPlrUrEpuynifKNvZ25KMtDFFW(Qwu6nv5vSBuIDTptSCCyeLwTWkD20uA5dMdqNm1Zb3jTaW0u5OQoZgn9kiKl(BXoBo1PbD8oPpyNuNPAoSouqO9060PdStoSwLWQWUqtqidRNQZHdYcK4cWBovCCUm5imRteKZPlqF)nfOsr8bFY)71n7qddoGLHAgIlDLP8cVtW03GP2A1UT4t3c4zlsOHfam6lyx)ZfdK)GiKhz4MhtCdPoUyzWIO6UpP5rMNiiSNAOIecw54Lp(rYRP1SSgwaj0VLwgWvYllkcNci3UIRvQvh4wtLYVOKUfXagd9Tet)okleWtu57qB3)178jXDMMB(FFqwMixhGPEBLTAyvOzIQ36sJlnEVYgqbgDa8KutbmrklWyUkEOJLdvvivqdUVD(pWKuxIg2U9)PQun0yShscIjO7J8(9kE28m751wg5RFWfcJzNBQt54kT4thLs8I62xsiFsU8prtomoJJFQW7AXySvYZTFk452DLNBlXZTmGNBzop3Ul8CBi3vQKZVaC1wGTZtGUKWjQmESqWtNUJ9GcOmRbd3ZDpz)5oJMSUOrv0s(zOj1jgAH28z1KP00GP4TJ2aG8rjzVy4J8YUU4FMr5dj)2ypinjEvOOrfb2Us7qvtqOkUPRHSNIDKwHSNcPBBJOBBpi62aqPD62dHn1VpYAMpRMmLN1TBdA(Yx32gkZDL6203ZzNl9KzletToF3k1)1QMjqNgchixXQHJvhWhtMoJ7)g9bns3QYI2MbddL2BZM70cSjk3dPrZHQ9NcfqSWYNAHeLQdLf1mxPOwGN)kTIvu9ELt468bZUYeRsk8PL)p(EeflV)x2jadEVQ0Ser45u8pjn70YWaA7KeKsV2xpe6UMLbb3tlV7V9F(R18I)ezG5xzS03NooFL1DvUJ6GkAdLB2ijfFQibwk2P(4DVF9HCKs7qVTv37xALBOj11KByQsgW5RgScwQIYbAeNygSqyLyJ2dMpYvdgEzcBzEXpFdyj4(IyF99SjEkle73OMoNvEO6egQ)ks4q5uTMrIxca4Ik8ewiGNvCcGAnPi7nCvTYel3p13pyfn92a5F2O61w3a3W5qoxoRmSjGICmrzRpCHY31iVtDUaU9pQvwLxmenpx91Uv9vyVmS1MGOnHbmAH6OjnojH1Hp)G6J57Or9ExYwdSIyqCdxGxVxSI9ACXvny67szxpK4VoE)k3Mxel5SB2XsGJhQyNfnond1aNLmW7VZgYyI(lzaPK8rpWauwrJ0feKoFFarhJDcg2KqG3XeAd1gVNP5Lc9cOfUS(O(lTnxidwTGgSvrd2TLgSBjnyxtdT8U7Oj3OSYucwNhTvJ67ohUxHsmC4rbVo3NlYLzHP0NTA6BWxPaOpBL0NCIcBj9z5SJyUWPaKyRGgHWw1y29aTkylrmBDiM5CsjetU)(BjIz5q)090M(dqDuNqj6SUAVVcUb(QhWNQUg8lMgiNZDB(GGK8epRZ6VlMFD16cZnDJBTJwUWyRFHrUIxMTWyRJrnWlmANVUSWyU6sZfg5DX1YfMYQ6PREK8QnAx6eDK2SIF1cKn6Yc15NEszkbuVE8EnTPXm2E)jGXIEmDEBdmU21F1ibGx(xjmvJO2kj)CwMbcrYii8HqwwT5vxz)2mgbzTybxQzUTbeaTyaXiSmIrihhhozAPLry1cgHfaJWgLrO0xsJ7qedvnqQ7DB0quwjUjaKgDZns8av0gnmw1F7qAE1zl(PO6)6VYtpsBWr53GQYzq8Wa0QC0BXLBe4SBxywwXxUkid88zqSI)ZD1kAwviGxMhZVUmD(u3udq(V9pyzMu3kM2t9KjPNexaSE(uU29r41oUkIajOA0LYUj4M2txKn8CH9bxshtxRAIobDHRXwgiXUGNrYVgMIrDxp0MU9w8G6DUJVBztgCUJVfPaMyvR647gphQPuVqtuQqXxc0Hlt1v9HjAkrqL0vRVTxugxNI392Y7JZzY70AiA1RUDV3yeTa8UfD8JX5PUR3mogHFyvYuebBx5T6JmWBlVzaulj0rJyDuwxPE1m4YsPJqN80CQguBxXw)UBLYfZlf7k2)azxbIwEozxbc)EoyxX(fJDfi9QwyxXwRDLX4K7u98ZhNg9tPPvVEY5wUxx45nj(NHTC)yCCAmsH78zC5Scx7P8x(kCpdpJlTcaqograG5NQLjAMaX8i16iUSm6EQzIMiHQqcTfgImL)8cC(wJb2q1Y4a6EXFKAuDAx4UulhQgQT4uOa2yTQQyYuDsoicM6L60BcP0MM8bFWOZeH(gWvPmVkDcbZC6Vbu6pzuTKRVbDlhznhhUUcTPXBNEUTy7uBXwL7c5P(PQ5yVT8(vVDTi7f6B40la63v2xI5616rULx71vou99IApQ1n9me(xyaPJL8UjhhPeBYvmrvXGBkTHvTBornffe3t9vv7hBIDD6Lyx9kxvl9a9bqd8bc(OW(YnxBEzp53ONvthYg0ocZmW)Y0z239ZzNW)mDQSPaujc8KUIkDXdB07mWlOSh5sS1tVqjy(kogMw9IMTqaosUpHNlKxR472bmhK6k8EN62HU2Af6)SxIitzwtxupFTXceMSpBVFny1CZNI2DOhTwXNq7TcSpqDYCDOEyGy0NefskD8)U9c7RxyBFd5nDtOFe0jSGptpQ4b7peNqCjsIn40YxZD9o)A6Pg)FDmG91kjnMwBE3JzXKaiO)arekAlrP90V93zhY8l)fAG7rK5J94xdASJaYSyShwQ)tg0uR)yMoid9rAuc(Q(oowplN(na(q1vVE74c2W4QOHojSe2kOmxabYIhxCjidFQ1neY0VotH(YRySFedsxnc4i4QtXTTq7wBSgbStPe6aazeoA1UxKaAJD1yi842pJeeb2PJHWuyJjsqfCtlFNHBJTOibB0D680bFv6c0TE0o9HXZIYzP2Nm4og8G67oajq28sfWqikChdibuW7FadH7aOt9Df())ZvVycPX4wP534qVEQMm39TVHzPyYfksbZeCE5efzQBIQS0nBY0luP2wHQGpDIj5K7wRRF10P2Vbh7N926h3CvL)PGlpZMXrfOIWvuc6iMOp9Epf0sPe5zPijo)7hBo)tOu0OtlVgl(QIAeM2UGRq2SXG5qbb(Yvjuc8yfrug6n2qtrDsf7PQkGNa2YvMdu5skdayGHmIax3o7QlCLmdUrne1IOJ7c3al29Dc(dp)(Leg3lr5rf44row8swQny04XQdhTcOAXvWHmIaxxi09qCadIdJbJVtB8zSH)WZVFjHX9suEubEfyVEqTdjHZdlWnaS9iQOganFvxQThLKjq6CsdH9az6ab6dMIYzoZZm4FMZpQCMpmOwAhvGBay7rCFna6yYKhuXpeOpyIFN5mpZG)zo)OYz(Pb1Q1OcCTGTBbFAio3nGRfSDJvyio3nGRfSDJvyio3nGJd2cv5UV3pdyULhOfvCxUXmQGxlGboioQ4WTfV7k41TcoywtXKqggFbNXEyShSWpS2jSfL8bjtWfLWBBcTHnLqnHNziAvDSaAh29K3zIJhKhGEkfbYInEVeKH7kFdHmF)6llFc0k)Yqfr2Aa4XJbKHvNCJCARqlsvo7Hk13jbREU8Ja1bRfOvkka0westcuJt0UDl8IBogYi5qvxkcjjDquAga3KkH)a5KFylq5OcCdaBpkmWWw4Lrf4ga2EKoqSYUyv)H8fcj5E23dW1nrQrf4ga2EiVoMPg)CrdAjSFzZzgB4FMZpQCgSIczRWcRnUf2NiW1nxFJkWnaS9WV6yM4(ZL0OLW(LnNzSH)zo)OYzmil)TWQ1OcCTGTBHgBio3nGRfSDJvyio3nGRfSDJvyio3nGJd2bwx8LAzoEzJ9WN(z2Dg3RhIeK1PC3LdrK8Zsq1K4h8P3wDL3XisGgyeyZbsFdpqZbiZ1ZFd9kCRDC3NGder(lkEpZjbvXh2sE6aCe4X2)w)QdWtkuhijlLZb9vOwv88FGSFniddaJOLHinO0bYCmWvIbzw2DKEOfPfEdCgKFCBHUBYk2PIKXUJJ3ldE5N3sxasxWtYQvsx)tiW(Mre2wlgXySTq86mmahRaH1xVHYsJCx8HyafXU7WGXJzcOSqKahgGJicUoE)Ex6LXLIGOahZ39jYgrUF4NiSRCMHq71g7wyAqaowKcdcWr0fggGJyTFqa(Lig1g0sTF5yk1C54i1ago9HeFI6Yk3(gqTqYFl)m1wHHIj)L7XQJPUcO6(WXdmrg8kMp5iFQ8GNw8bRoo)Q8mOKf24Xgcud4hYtKbVI5tUPSqndwDa8vRzKyNxp3n6rhVdPQ6gySXnWtdDPYP9G3GfG(k2RCYnDnRnI94voZmMj(4g4Pr5Ago4nybOV6zkNCtxZAJEgEACBXe2gHKgrzo2u4pd7XThjiQbeR4zv5iUvNsHrg864ea3QtsSeO79PF05nJTEG0e24sQd7dOZKPOYPturQV6vv)e3Bw(0pTO6MZsXITPtaeiQNPzKPYqogJ9o4CIXMrm08HkzgSmg1dBznbzL9y9AugCYOgC4RLzmOMZgC0FSHVjqwVkxNC0kpJ6nPz3cfzaIDynPPEcmxv2e(7GZjgBgXqZhQfAAKsNkX0E0CWOqTxDWMcCTBkRJn8nbYuco)BoczTkAB2oewT8ymfZnf(yP9qbOdcFieYIv(pBguSGHIvBHI(fidIUDWHVjqw)ce8ymfZnf(Twayyw66LyudxCxGgSQct(W20(23UaXUeXklo0MQYIWRu8v4E2BMAn)63IOwsEkW7M(y0A4NSly7oNhCdp6tH7BfqlkN9DsRxZEL1IfZMn7wUrcfBna)fJaS0sawOeGLccWsIaSfiGsjPN5scV)5RKW7nssOjb8SrsOGa4S(2OKsfVr7m(GbfdneID8(FDRkp0yC87X(qJ0om7jRp76ce))yVR2MtCKJW)w26QOdw71gjaF(sbQQlBUK6UkVvXB(uQCGmimKfdej486uu8BpDpAK0mJ65fbcV3MZFZwOPNE6P7NP7E6zeNIVGFygoxFcqA6ppd5TTbkzZxg6Rz7ZpPIFr3P76y000(z7P2FYEAElQMNIAMTF9J)tZt3gZc68rFT6(LF(WF1e4vtGJMUnGk65M(h(XFGP9JK1)MSpcTRHytxIFz1HF)NUdu3NVo5NU7UfpUBjJkVpjA22F6UnjRXV3I5F1ptVQOeIUy41zDnwVDh(rQFx9eBCzXpYoxSddOBwUd3xUkcEjLyLUK529WshDf9JVmxJ2RncL3vtAjRdhgqYHbA4q7vcGY72aCyz8qxUEZW04TlMX52Goz)XO4LPIsxY6N4YjRxbOfWFn8ZR8UEJgnvdcXO5ZZCtzuLvgpIdhFDI)gGjcofMO5KeyK3QDVVy335Q(cmqn2oyVsjwJU5rosxN3RKMBc9uLL63hkVYj(ZJSSH2)TMsVCtYI1jGtsoByCkj8tB((oM09DA59LyhBASm(PKWpTz(90s8lXwo0yP8tjJFYP(1f1RPrpg9a(nWVX1YQ(l5QgYCB4q5bd6XiNVbUf8RCkSeyC8)n(Wp(vFvU7JPvgiPSV5HRWpT7CMNZ6YFw8h6BMmrtHGZYor1MitOVitQqcaYbDXScN0vc4tqisHwXpv3d67z6BN)a)YVFGkN5tobc7RNt3SEtgXsLz0wgyOWIPvHXjIqOcq32RLjopCOvwFqqhp5yK4VGN6C6(98Us68EUBJrzxOq708c9E3gqVum8MSEga(MHrRnYTzPWHgux2acb89t2TAXKrBw)uCI8SbxeiFWBlLDkhi3sosGGd62rpdKUjgSXs2OAZx(1TuqOw(bTu4HEVHw8VFVapW(45pzXwywTnU6qgzio7PETuMEdk6uItdBBwNepO7(94CvXXxlJg73NH7UB6uGVyNAtKTkXMknbSmd2tapTIimEZIPaVcMdq3hVnpkSUxOFuErUeG6GX6X4K4004vtIZdIn7RP6)zxC8kot1VDbvup8R5govo1QEeceyKbqIVpA5YdJ)oE45)jm8CXrmywVCu2)ocJDNR8iCpDEjECGMSfwFyXScTw5JkKDcssS3OJAaB)3JMSiAPeRgLmjAfSOgeTe0kKaI2caQctJjqSjzc3z7sEgF9wmHu5Zkw2)IUHdLuZ4MBEe6EGMzHjKYHRC)(cZx1JDzom7nOvcd9bZJXdZxVBjNUEkpn3IFOEMoZ2GbyxLsLp1jkPSq4WaVmL6OvO69KONVA7IjFe05GX)9Rtt9KrknqBP5J4K04eKmcZhfp7lP5dkM(4MpOPuZmFqrBX5dwYjth9V3n9Hh52uSgYxyo3XwCn3cHSW(mXXHf35PCgidY8kmNCGf7OPlYbTvjT(giHmhbqMyUFxocbyyAp(3(lyTe)BRR2a2ItDw3)wcaZn7aptrjwfQdcfeZmFn8WHsUxu(yy8ls3zlsIzM6LgXfp6liBykEUUtAgi0PoxQL0saQrpWCKaw98JPvNJbVXBPXGMSt7N5ZWDG)fyI9Fpx0lTm8M14FrPp57DQZImELkjmaau3oHd1(7CQWN(CwpOBN6oHx0Ikrp4P(yH2Ozkg9FhdB9FKgFy8GOdJNNepB4xpF72nP)2RV(PNE6QNw)0C8Yhac0)AWL(Llh63PZnDUMzH(UfRMTlf6RVo8VH))HX)a)bdUok8W4NMdrr4oL79TbDU56SjO3vCFse(h5)vgnxKEy8UnxcXAd)XtXOZL4F5AFe8n9V5B)2Rf2hYWVR4VZ6bC3uFAX25Ut0B62hejOEX7uosgH)E4Hhg)bPNYhiZCVdCKRDLCojObtWdJxTE7HXz2uGbPsoowS6Nx)rW(7tWQVRGvgrRJ8OpbTHr5AhASvjaI9OqShmmiOmvak2V5rKOUVCf52TYEjwXoXI5dUU4BmtmNT39VTT(rYB0numGkPNAMBeLS3ge5f(DclEhQ5(rYt7flzuDTOUgHAX8NqVsLSlzQBfl6nqri9e3GkEgZZEXAqLYuAQurvMgDTRukYQO5i(Jkc8lXDwDnipFyY0SivZKw0xlmIkbNedh0x2HxWv4OhWOINhN5XB2SYhxXC0o6Xuy4KUo5(rBItMa9EyhLKdreqmD05yPRGFbMGW(DiA)kJNUo3dUe(FfY74aOS2BQ)yW1(44iUVte)iKnorzMyrI41FSZuoI3cR7tSusxmrHK4fcg8kVqb4Eh36CwT9s35T00584nv)vw6JfSJMXYhiUp8Saqbs2AYZGqlVlEBNR6lJ7PLl1iC0WgsOt7wrNeUzlsNZZwI6uF(kVex6qEVXcsB00N58f1vweiISLPY85pxq0VWb8HSVJwM0slgV1o3J2OR20qYIf67(RFFrxCfmjJX)wKl5S3SiTjc)WKNbrM4SmVTmTTrSKZhNCzMMgxZlJ9ST7k6uQ5dc5IG3RUB5Jk7wMzBgQKqc2RS9gkytdkEx10OR2h5)U1E4yLLtMJJxunEXeCtrxVC59yIrsxU(jIPOktVeu20E7rVvAUQG4sVBCVddowXK9n0JqjcCrIp2uV(WqG214gCLSd1mhLv1(5OZ5wxR)(dJ)DOoRexNH3FkMAfuqrdwhR6QYBzkoKT0k2mlfdqJR1mqUxR1ldRl1JAxFi3BSIOXK)E)LdAi)rGKCZal2t1mEe(Pc9DqfqSQeef(sM26e9nQevAT7ZPaL9WOrZIXpjla0skeOzkp4j9ckIFLVJ)D0jdD18ToOC1M463QDnZQUym6QnNzDlhboQ5yBWWGJqIjIQDh6VSmnyUqFsOA5uGvWPRyHCR15Bn2vL(7ivIb5b9R1TyjllRV9T73dHCpDu8pZsPY0PPxf)jCZN9uFCzYz819BHyobS44dUzflJBtlUCvnVw2qANnjOpTm)4PN16eX6eKkqPjtHE0mADCoKcd94S)Z7DNDBKQVBajpHNFaaVrjjwJQ1y5RtxQ)cjH5WE)L1RE3DrR(AmisQnp6QjtXO0icvKmUmt1R2GBPkoTQj6uxQ26OYuYLIw95hyQ)TbUXtbMYnSR8BzhqXRQfYw12VE327tIJ(iLkE1TIpKYtEoX16LFEfxoOVxl62pdwoAoQuv4RNWz8kRrZswd(xndwtirUb4pMLrIQKRD7Yf)Kohwf9J0riw4TRKM4sNHRS1dfQdvpUu5RBzt082UTRmXwsMrlx8490PSqVlPIfJrEICeFwMNBcMpc)y((OxDFp7txlOw8GIux2pGbx8vvamyEnrJAmklswfJucvxfBnrJwnRu2vyVPPFLWEDkh9YVsBkUu(vQRJNHd751sNFq9agrJBvsc5WETRse7(Fjik4oykkM05aMTkSSccOV5fjVHsO60IgomFh2x3CP2D9sqQOln2DjvekWyXP8geKS4O1AohUeqQgqu9mcOAdpv6PoTpFNnqxYPcHLlDb1GTXzc7RLiLSIphMhgOEOn4h)NXWmy80)1HXVlBp9ljWHXHhg7NDxpTfpO5ZWA)fpBT4z6flaJKyyocZyd0uOF(H)87pmUO2LHxe3YNS2JVxCLXbQMuhJknM(Qw2GiRQ0N3xNdS7BojSBx80sya8kSEtdRZfSIWK)6cdm0V)VPvRG3wLlBFr5JJVhGAy8Q4tL9GT9zdoTj5rDAane6Co1oge63ZXm14)zzXfOh2uNHeXPCLSMdjDXwdivTZUMkUM0aQAWVgIqvF0RLE4)IW161Am0itX9EeGpmzXIvZwUG1HzBeaEA()ca8P)5dZGvhXOto39CYIzGpoFyo62sMdmpg98HX3hNFl4WUFCeZfA1jAcdAJO(vdpgpP2BRgmSLL5yHWAUoj0gFRe4cnOsDCcdc6x(jycPodaluCOl5g7ebmQd7CsP(YbyGpJP)6)lawoBWkTj1gSVApLTtnXpOYK2jdEOb3G7kImaAE0DqaFLNLDE9HVkoEkcJopormupgzUWX9k0qUTjHpi6N6SXeCcsCcAjiS8U3L7DIP9C(O4P3ulMYL9kIKprPSxTpQYdc0vcrSL2ACgSUf4KL7ZaxMvjejvwj9pKvpKLKtOijVObkA6ED0t6sRiDE6RRex0rtzTtkqhUkPCz7SFFA82rqex7sVA7tpfmQ3MjwRyZOTJEm6tJyZhP50L8uQx3rbw5laGu0MSPr(YNZJJwUD(vBMSfcvRVsEm67MePUCsfvkl3vfD1Crqu7YMSTd1bJmRsvcignH0XR5MiW7JRo8bM0xWKrQ)zvWIlRhiV4)djiJ40I)d6t0J21Z1UmzUxw0fWgzPQvC3rW1KZSVNaEpTBd3LuslibCGWB7WNrpY6J2DRnDMYpTGDR3GQhGFQkeKNbeRSrUoBxIjf6vvnnERQDxi)Pkc9tkKGhMmLGNDcQXDFUuXHmixOQUvhVBykjnLrVriQHDQ9cX4zP2WKIjHtPJEe)EBP9xwW)dHsEuJFW(TDrm3IQ2jQnqSTRNiDWOAbWP4964vP5QbTffyO1AUm7CD5Ku1iT6DAJn(spFij7UDr3IoB5)oMjbiWUfBJFm7Gzm75KOLyVXoPCGz9JjL8niPEeXhaTW83RmAf5W5WQtqjKVaFYek0lVchiM)jpjPMo6Pf6RkNdsauCXJXH(5jbtJSy66rAUabbF0t)y1dHygyFc8E4AbRIaqZhGr8JlstTHQwSIL2wxKUeUHWKKNHflNmcE22KD8rGlDbzdvPomUxU4b26BRI)0o8UheVKIFGTo20f5)PtDOR0QGhCu7uZKddQsrBZxv)dG8CZBj)o25M0LR3MFbk5lfOe)HL3nPwfwM4fcYMFcIFBNR(MUEvVddZVybrqj(ZeVyifsGqI49(y(l0M6QMSSxdhkz9Ys2A9exbKIRGZJ4kWDXvG4TYQbXLVDXvqdkU8LH8ROEjWZ4PEGbZ1XQlfunQTG0rZLv5rQtDeNVFdzRuhT0rk9z(uWroLgv4qtqNtk9Oq7pMB3ah4yt7IKatR2LfTx3D(saO8qFDarTVk9RNYCaTYmXTI7rOmhuxL5JZIVjNoFvz(lrLz81hnpklDnToI7Lxt6DmE2EdRI(s3qF36rJK1YLaLTvLd97yA7Nm4ZU(2OtxttadAPJUapOUAO5cs9ZnK6uyf2OKnqwYaLQZ6s9oNZOI(KMykMtNpmvQzLKlbLt(O2KURwY6sXZPjopvBufEPgXaxETRNFH7sp30rPlQD(F751IAtJ0FWYvhuUTFlhRCWwNv7n8kep1zk5xGwpMc78xJ5xqqoCgYTGoZSQzTZ2XBYu6fA2EX1ud0CDSdALV45vWMJYwYPGXG(1geMzFhiY1RjXADVKgnKtbnTjSpwbT13RY6D9ZzLVQ0gWFMA7rH(lIsR9pHF4cmGT6m7yMpUOR2zeNWgDu)rV6yB1cgZOusoNk2SSSK(jJ5hsBeHMDU(L2Yk4xOwwQ81lTLLA))szzf85YYQQ6OdwwbhRLLTmvAnFmVMCXxZhJM8Xyt3ZwIfTQ79AUaFv3RU6E4RE2YdOlTQkk5XLbqdP)R61pGLv)8jVfqmgGMNXV)Bd)2oKJyHFVTtlE(zk9I)VHztw0mUsacJdW]] )

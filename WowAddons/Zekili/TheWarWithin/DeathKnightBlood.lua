@@ -1,5 +1,5 @@
 -- DeathKnightBlood.lua
--- July 2024
+-- January 2025
 
 if UnitClassBase( "player" ) ~= "DEATHKNIGHT" then return end
 
@@ -47,30 +47,24 @@ spec:RegisterResource( Enum.PowerType.Runes, {
 
     reset = function()
         local t = state.runes
-
         for i = 1, 6 do
             local start, duration, ready = GetRuneCooldown( i )
-
             start = start or 0
             duration = duration or ( 10 * state.haste )
-
-            t.expiry[ i ] = ready and 0 or start + duration
+            t.expiry[ i ] = ready and 0 or ( start + duration )
             t.cooldown = duration
         end
-
         table.sort( t.expiry )
-
-        t.actual = nil
+        t.actual = nil -- Reset actual to force recalculation
     end,
 
     gain = function( amount )
         local t = state.runes
-
         for i = 1, amount do
-            t.expiry[ 7 - i ] = 0
+            table.insert( t.expiry, 0 )
+            t.expiry[ 7 ] = nil
         end
         table.sort( t.expiry )
-
         t.actual = nil
     end,
 
@@ -82,14 +76,21 @@ spec:RegisterResource( Enum.PowerType.Runes, {
             table.sort( t.expiry )
         end
 
-        -- TODO:  Rampant Transference
-        state.gain( amount * 10 * ( state.buff.rune_of_hysteria.up and 1.2 or 1 ), "runic_power" )
+        local rpGainMultiplier = state.buff.rune_of_hysteria.up and 1.2 or 1
+        state.gain( amount * 10 * rpGainMultiplier, "runic_power" )
 
-        if state.talent.rune_strike.enabled then state.gainChargeTime( "rune_strike", amount ) end
+        if state.talent.rune_strike.enabled then
+            state.gainChargeTime( "rune_strike", amount )
+        end
 
+        -- Handle Eternal Rune Weapon interactions (Dancing Rune Weapon synergy).
         if state.buff.dancing_rune_weapon.up and state.azerite.eternal_rune_weapon.enabled then
-            if state.buff.dancing_rune_weapon.expires - state.buff.dancing_rune_weapon.applied < state.buff.dancing_rune_weapon.duration + 5 then
-                state.buff.eternal_rune_weapon.expires = min( state.buff.dancing_rune_weapon.applied + state.buff.dancing_rune_weapon.duration + 5, state.buff.dancing_rune_weapon.expires + ( 0.5 * amount ) )
+            local maxExtension = state.buff.dancing_rune_weapon.duration + 5
+            if state.buff.dancing_rune_weapon.expires - state.buff.dancing_rune_weapon.applied < maxExtension then
+                state.buff.eternal_rune_weapon.expires = min(
+                    state.buff.dancing_rune_weapon.applied + maxExtension,
+                    state.buff.dancing_rune_weapon.expires + ( 0.5 * amount )
+                )
             end
         end
 
@@ -100,16 +101,15 @@ spec:RegisterResource( Enum.PowerType.Runes, {
         return state:TimeToResource( state.runes, x )
     end,
 }, {
-    __index = function( t, k, v )
+    __index = function( t, k )
         if k == "actual" then
+            -- Calculate the number of runes available based on `expiry`.
             local amount = 0
-
             for i = 1, 6 do
                 if t.expiry[ i ] <= state.query_time then
                     amount = amount + 1
                 end
             end
-
             return amount
 
         elseif k == "current" then
@@ -122,7 +122,7 @@ spec:RegisterResource( Enum.PowerType.Runes, {
 
                 for i = 1, t.fcount do
                     local v = t.forecast[ i ]
-                    if v.t <= q then
+                    if v.t <= q and v.v ~= nil then
                         index = i
                         slice = v
                     else
@@ -131,7 +131,7 @@ spec:RegisterResource( Enum.PowerType.Runes, {
                 end
 
                 -- We have a slice.
-                if index and slice then
+                if index and slice and slice.v then
                     t.values[ q ] = max( 0, min( t.max, slice.v ) )
                     return t.values[ q ]
                 end
@@ -178,12 +178,22 @@ spec:RegisterResource( Enum.PowerType.RunicPower, {
 } )
 
 local spendHook = function( amt, resource )
+    -- Runic Power
     if amt > 0 and resource == "runic_power" then
-        if talent.red_thirst.enabled then cooldown.vampiric_blood.expires = max( 0, cooldown.vampiric_blood.expires - amt / 10 ) end
+        if talent.red_thirst.enabled then reduceCooldown( "vampiric_blood", floor( amt / 5 ) ) end -- it seems to reduce it by intervals of 5, not 10
         if talent.icy_talons.enabled then addStack( "icy_talons", nil, 1 ) end
-    elseif resource == "rune" and amt > 0 and active_dot.shackle_the_unworthy > 0 then
-        reduceCooldown( "shackle_the_unworthy", 4 * amt )
     end
+    -- Runes
+    if resource == "rune" and amt > 0 then
+        if active_dot.shackle_the_unworthy > 0 then
+            reduceCooldown( "shackle_the_unworthy", 4 * amt )
+        end
+
+        if talent.rune_carved_plates.enabled then
+            addStack( "rune_carved_plates" )
+        end
+    end
+    
 end
 
 spec:RegisterHook( "spend", spendHook )
@@ -534,7 +544,10 @@ spec:RegisterAuras( {
         id = 81256,
         duration = function () return ( pvptalent.last_dance.enabled and 6 or 8 ) + ( talent.everlasting_bond.enabled and 6 or 0 ) end,
         type = "Magic",
-        max_stack = 1
+        max_stack = 1,
+        active_weapons = function() return 
+            buff.dancing_rune_weapon.up and 1 + talent.everlasting_bond.rank or 0
+        end
     },
     -- Taunted.
     -- https://wowhead.com/beta/spell=56222
@@ -597,7 +610,7 @@ spec:RegisterAuras( {
     },
     exterminate = {
         id = 441416,
-        duration = 3600,
+        duration = 30,
         max_stack = function () return talent.reapers_onslaught.enabled and 1 or 2 end,
         copy = { 447954, "exterminate_painful_death" }
     },
@@ -612,8 +625,8 @@ spec:RegisterAuras( {
     -- https://wowhead.com/beta/spell=55095
     frost_fever = {
         id = 55095,
-        duration = function() return 24 * ( spec.frost and talent.wither_away.enabled and 0.5 or 1 ) end,
-        tick_time = function() return 3 * ( spec.frost and talent.wither_away.enabled and 0.5 or 1 ) end,
+        duration = function() return 24 * ( state.spec.frost and talent.wither_away.enabled and 0.5 or 1 ) end,
+        tick_time = function() return 3 * ( state.spec.frost and talent.wither_away.enabled and 0.5 or 1 ) end,
         max_stack = 1
     },
     -- Absorbs damage.
@@ -716,7 +729,7 @@ spec:RegisterAuras( {
     incite_terror = {
         id = 458478,
         duration = 15.0,
-        max_stack = 1,
+        max_stack = 5,
     },
     infliction_of_sorrow = {
         id = 460049,
@@ -777,6 +790,16 @@ spec:RegisterAuras( {
         duration = 3600,
         max_stack = 1
     },
+    ossified_vitriol = {
+        id = 458745,
+        duration = 8,
+        max_stack = 5
+    },
+    ossuary = {
+        id = 219788,
+        duration = 3600,
+        max_stack = 1
+    },
     -- Grants the ability to walk across water.
     -- https://wowhead.com/beta/spell=3714
     path_of_frost = {
@@ -810,7 +833,7 @@ spec:RegisterAuras( {
         max_stack = 1
     },
     reaper_of_souls = {
-        id = 440002,
+        id = 469172,
         duration = 12,
         max_stack = 1
     },
@@ -986,7 +1009,7 @@ spec:RegisterAuras( {
     -- https://wowhead.com/beta/spell=55233
     vampiric_blood = {
         id = 55233,
-        duration = function () return ( level > 55 and 12 or 10 ) + ( legendary.vampiric_aura.enabled and 3 or 0 ) + ( talent.improved_vampiric_blood.enabled and 2 or 0 ) end,
+        duration = function () return 10 + ( talent.improved_vampiric_blood.rank * 2 ) + ( legendary.vampiric_aura.enabled and 3 or 0 ) end,
         max_stack = 1
     },
     -- Movement speed increased by $w1%.
@@ -1045,7 +1068,26 @@ spec:RegisterAuras( {
 } )
 
 
--- TWW
+-- The War Within
+spec:RegisterGear( "tww2", 229253, 229251, 229256, 229254, 229252 )
+spec:RegisterAuras( {
+    -- https://www.wowhead.com/spell=1218601
+    -- Luck of the Draw! Damage increased by 15%. Death Strike costs 10 less Runic Power and strikes 2 additional nearby targets.  
+    luck_of_the_draw = {
+        id = 1218601,
+        duration = function() if set_bonus.tww2 >= 4 then return 12 end
+            return 10
+        end,
+        max_stack = 1,
+    },
+    -- https://www.wowhead.com/spell=1222698
+    -- Murderous Frenzy Your Haste is increased by 12%.  
+    murderous_frenzy = {
+        id = 1222698,
+        duration = 6,
+        max_stack = 1,
+    },
+} )
 spec:RegisterGear( "tww1", 212005, 212003, 212002, 212001, 212000 )
 spec:RegisterAuras( {
     unbreakable = {
@@ -1156,6 +1198,7 @@ end, state )
 
 local BonestormShield = setfenv( function()
     addStack( "bone_shield" )
+    gain( min( 0.1, 0.02 * active_enemies ) * health.max, "health" )
 end, state )
 
 
@@ -1346,18 +1389,18 @@ spec:RegisterAbilities( {
             applyDebuff( "target", "blood_plague" )
             active_dot.blood_plague = active_enemies
 
-            if buff.vampiric_strength.up then buff.vampiric_strength.expires = buff.vampiric_strength.expires + 0.5 end
-
             if talent.bind_in_darkness.enabled and debuff.reapers_mark.up then applyDebuff( "target", "reapers_mark", nil, debuff.reapers_mark.stack + 2 ) end
 
             if talent.hemostasis.enabled then
-                applyBuff( "hemostasis", 15, min( 5, active_enemies ) )
+                addStack( "hemostasis", nil, min( 5, active_enemies ) )
             end
 
-            if debuff.ashen_decay.up and set_bonus.tier31_4pc > 0 then
+            if set_bonus.tier31_4pc > 0 and debuff.ashen_decay.up then
                 debuff.ashen_decay.expires = debuff.ashen_decay.expires + 1
             end
 
+
+            -- Legacy
             if legendary.superstrain.enabled then
                 applyDebuff( "target", "frost_fever" )
                 active_dot.frost_fever = active_enemies
@@ -1365,7 +1408,7 @@ spec:RegisterAbilities( {
                 applyDebuff( "target", "virulent_plague" )
                 active_dot.virulent_plague = active_enemies
             end
-
+            if set_bonus.tier30_4pc > 0 and buff.vampiric_strength.up then buff.vampiric_strength.expires = buff.vampiric_strength.expires + 0.5 end
             if conduit.debilitating_malady.enabled then
                 addStack( "debilitating_malady", nil, 1 )
             end
@@ -1485,6 +1528,7 @@ spec:RegisterAbilities( {
         handler = function ()
             gain( 2, "runes" )
             applyBuff( "consumption" )
+            if talent.carnage.enabled then applyBuff( "blood_shield" ) end
         end,
     },
 
@@ -1530,6 +1574,7 @@ spec:RegisterAbilities( {
                 else removeBuff( "piledriver" ) end
             end
 
+            -- legacy
             if azerite.eternal_rune_weapon.enabled then applyBuff( "dancing_rune_weapon" ) end
             if legendary.crimson_rune_weapon.enabled then addStack( "bone_shield", nil, buff.dancing_rune_weapon.up and 10 or 5 ) end
         end,
@@ -1595,7 +1640,10 @@ spec:RegisterAbilities( {
             if buff.crimson_scourge.up then
                 if talent.perseverance_of_the_ebon_blade.enabled then applyBuff( "perseverance_of_the_ebon_blade" ) end
                 removeBuff( "crimson_scourge" )
-                if talent.relish_in_blood.enabled then gain( 10, "runic_power" ) end
+                if talent.relish_in_blood.enabled then
+                    gain( 10, "runic_power" ) 
+                    gain( 0.25 * buff.bone_shield.stack, "health" )
+                end
             end
 
             if legendary.phearomones.enabled and buff.death_and_decay.down then
@@ -1713,26 +1761,26 @@ spec:RegisterAbilities( {
         cooldown = 0,
         gcd = "spell",
 
-        spend = function () return ( ( talent.ossuary.enabled and buff.bone_shield.stack >= 5 ) and 40 or 45 ) - ( talent.improved_death_strike.enabled and 5 or 0 ) - ( buff.blood_draw.up and 10 or 0 ) end,
+        spend = function () return ( ( talent.ossuary.enabled and buff.bone_shield.stack >= 5 ) and 40 or 45 ) 
+                - ( talent.improved_death_strike.enabled and 5 or 0 )
+                - ( buff.blood_draw.up and 10 or 0 )
+                - ( set_bonus.tww2 >= 4 and buff.luck_of_the_draw.up and 10 or 0 )
+                end,
         spendType = "runic_power",
 
         talent = "death_strike",
         startsCombat = true,
 
         handler = function ()
-            removeBuff( "blood_draw" )
-            removeBuff( "heartrend" )
-            applyBuff( "blood_shield" ) -- gain absorb shield
-            if buff.coagulating_blood.up then
-                gain( 0.01 * buff.coagulating_blood.stack * health.max * ( 1.2 * buff.haemostasis.stack ) * ( 1.08 * buff.hemostasis.stack ), "health" )
-                removeBuff( "coagulating_blood" )
-            end
-            removeBuff( "haemostasis" )
-            removeBuff( "hemostasis" )
 
-            -- TODO: Calculate real health gain from Death Strike to trigger Bryndaor's Might legendary.
-            if talent.coagulopathy.enabled then applyBuff( "coagulopathy" ) end
+            applyBuff( "blood_shield" ) -- gain absorb shield
+            gain( health.max * max( 0.074,  0.01 * buff.coagulating_blood.stack * 0.25 ) * ( talent.voracious.enabled and 1.15 or 1 ) * ( talent.improved_death_strike.enabled and 1.05 or 1 ) * ( talent.hemostasis.enabled and ( 1.08 * buff.hemostasis.stack ) or 1 ), "health" )
+            removeBuff( "coagulating_blood" )
+
+            if talent.hemostasis.enabled then removeBuff( "hemostasis" ) end
+            if talent.coagulopathy.enabled then addStack( "coagulopathy" ) end
             if talent.voracious.enabled then applyBuff( "voracious" ) end
+            if talent.heartrend.enabled then removeBuff( "heartrend" ) end
         end,
     },
 
@@ -1776,8 +1824,9 @@ spec:RegisterAbilities( {
         startsCombat = true,
 
         handler = function ()
+            local RWStrikes = 1 + buff.dancing_rune_weapon.active_weapons -- the 1 is your actual spell hit
             applyDebuff( "target", "blood_plague" )
-            addStack( "bone_shield", nil, buff.dancing_rune_weapon.up and 4 or 2 )
+            addStack( "bone_shield", nil, ( 2 * RWStrikes ) )
 
             if set_bonus.tww1_4pc > 0 then
                 if buff.bone_shield.up then applyBuff( "piledriver", nil, buff.bone_shield.stack )
@@ -1821,13 +1870,15 @@ spec:RegisterAbilities( {
         max_targets = function () return buff.death_and_decay.up and talent.cleaving_strikes.enabled and 5 or 2 end,
 
         handler = function ()
+            local strikes = 1 + buff.dancing_rune_weapon.active_weapons
             if talent.heartbreaker.enabled then
-                gain( 2 * min( action.heart_strike.max_targets, true_active_enemies - 1 ) + ( 3 * buff.dancing_rune_weapon.stack ), "runic_power" )
+                gain( 15 + ( talent.heartbreaker.enabled and ( 2 * min( action.heart_strike.max_targets, true_active_enemies ) ) or 0 ) + 3 * buff.dancing_rune_weapon.active_weapons, "runic_power" )
             end
 
+            -- San'Layn stuff
             if buff.vampiric_strike.up or buff.gift_of_the_sanlayn.up then
-                gain( 0.01 * health.max, "health" )
-                applyBuff( "essence_of_the_blood_queen" ) -- TODO: mod haste
+                gain( 0.02 * health.max, "health" )
+                addStack( "essence_of_the_blood_queen" ) -- TODO: mod haste
 
                 if talent.infliction_of_sorrow.enabled and dot.blood_plague.ticking then
                     dot.blood_plague.expires = dot.blood_plague.expires + 3
@@ -1840,32 +1891,28 @@ spec:RegisterAbilities( {
 
             end
 
-            if buff.infliction_of_sorrow.up then
+            if talent.infliction_of_sorrow.enabled and buff.infliction_of_sorrow.up then
                 removeDebuff( "target", "blood_plague" )
                 removeBuff( "infliction_of_sorrow" )
             end
+            if talent.incite_terror.enabled then applyDebuff( "target", "incite_terror", nil, min( debuff.incite_terror.stack + 1, debuff.incite_terror.max_stack ) ) end
 
+            -- PvP
             if pvptalent.blood_for_blood.enabled then
                 health.current = health.current - 0.03 * health.max
-            end
+            end 
 
-            if buff.vampiric_strength.up then buff.vampiric_strength.expires = buff.vampiric_strength.expires + 0.5 end
-
-            if buff.ashen_decay_proc.up then
+            --- Legacy
+            if set_bonus.tier31_4pc > 0 and debuff.ashen_decay.up and set_bonus.tier31_4pc > 0 then debuff.ashen_decay.expires = debuff.ashen_decay.expires + 1 end
+            if azerite.deep_cuts.enabled then applyDebuff( "target", "deep_cuts" ) end
+            if legendary.gorefiends_domination.enabled and cooldown.vampiric_blood.remains > 0 then gainChargeTime( "vampiric_blood", 2 ) end
+            if set_bonus.tier31_4pc > 0 and buff.ashen_decay_proc.up then
                 applyDebuff( "target", "ashen_decay" )
                 removeBuff( "ashen_decay_proc" )
             end
-
-            if debuff.ashen_decay.up and set_bonus.tier31_4pc > 0 then -- TODO: Check if refresh is before reapplication.
-                debuff.ashen_decay.expires = debuff.ashen_decay.expires + 1
-            end
-
-            if azerite.deep_cuts.enabled then applyDebuff( "target", "deep_cuts" ) end
-
-            if legendary.gorefiends_domination.enabled and cooldown.vampiric_blood.remains > 0 then
-                gainChargeTime( "vampiric_blood", 2 )
-            end
+            if set_bonus.tier30_4pc > 0 and  buff.vampiric_strength.up then buff.vampiric_strength.expires = buff.vampiric_strength.expires + 0.5 end
         end,
+
 
         bind = "vampiric_strike",
         copy = { 206930, "vampiric_strike", 433895 }
@@ -1938,26 +1985,29 @@ spec:RegisterAbilities( {
         cooldown = 0,
         gcd = "spell",
 
-        spend = 2,
+        spend = function() return talent.exterminate.enabled and buff.exterminate.up and 1 or 2 end,
         spendType = "runes",
 
         talent = "marrowrend",
         startsCombat = true,
 
         handler = function ()
-            if buff.killing_machine.up  then removeStack( "killing_machine" ) end
+            local RWStrikes = 1 + buff.dancing_rune_weapon.active_weapons -- the 1 is your actual spell hit
+            addStack( "bone_shield", 30, buff.bone_shield.stack + 3 * RWStrikes )
 
-            addStack( "bone_shield", 30, buff.bone_shield.stack + ( buff.dancing_rune_weapon.up and 6 or 3 ) )
-
-            if buff.exterminate.stack == 1 then
-                applyDebuff( "target", spec.blood and "blood_plague" or "frost_fever" )
+            if talent.exterminate.enabled and buff.exterminate.up then
+                removeStack( "exterminate" )
+                applyDebuff( "target", "blood_plague" )
             end
-            if buff.exterminate.up then removeStack( "exterminate" ) end
+
+            if talent.ossified_vitriol.enabled then removeBuff( "ossified_vitriol" ) end
 
             if set_bonus.tww1_4pc > 0 then
                 if buff.bone_shield.up then applyBuff( "piledriver", nil, buff.bone_shield.stack )
                 else removeBuff( "piledriver" ) end
             end
+
+            -- Legacy
 
             if azerite.bones_of_the_damned.enabled then applyBuff( "bones_of_the_damned" ) end
         end,
@@ -2112,9 +2162,9 @@ spec:RegisterAbilities( {
     rune_tap = {
         id = 194679,
         cast = 0,
-        charges = function () return level > 43 and 2 or nil end,
+        charges = function () if level > 43 then return 2 end end,
         cooldown = 25,
-        recharge = function () return level > 43 and 25 or nil end,
+        recharge = function () if level > 43 then return 25 end end,
         gcd = "off",
 
         spend = 1,
@@ -2213,22 +2263,11 @@ spec:RegisterAbilities( {
         handler = function ()
             local bs = min( 5, buff.bone_shield.stack )
 
-            removeStack( "bone_shield", bs )
+
             if talent.insatiable_blade.enabled then reduceCooldown( "dancing_rune_weapon", bs * 5 ) end
+            if talent.blood_tap.enabled then  gainChargeTime( "blood_tap", bs * 2 ) end
+            removeStack( "bone_shield", bs )
             gain( 6 * bs, "runic_power" )
-
-            -- This is the only predictable Bone Shield consumption that I have noted.
-            if cooldown.dancing_rune_weapon.remains > 0 then
-                cooldown.dancing_rune_weapon.expires = cooldown.dancing_rune_weapon.expires - ( 3 * bs )
-            end
-
-            if cooldown.blood_tap.charges_fractional < cooldown.blood_tap.max_charges then
-                gainChargeTime( "blood_tap", 2 * bs )
-            end
-
-            if set_bonus.tier21_2pc == 1 then
-                cooldown.dancing_rune_weapon.expires = max( 0, cooldown.dancing_rune_weapon.expires - ( 3 * bs ) )
-            end
 
             if set_bonus.tww1_4pc > 0 then
                 if buff.bone_shield.up then applyBuff( "piledriver", nil, buff.bone_shield.stack )
@@ -2236,6 +2275,12 @@ spec:RegisterAbilities( {
             end
 
             applyBuff( "tombstone" )
+
+            -- Legacy
+            if set_bonus.tier21_2pc == 1 then
+                cooldown.dancing_rune_weapon.expires = max( 0, cooldown.dancing_rune_weapon.expires - ( 3 * bs ) )
+            end
+
         end,
     },
 
@@ -2293,7 +2338,7 @@ spec:RegisterOptions( {
     damage = true,
     damageExpiration = 8,
 
-    potion = "potion_of_phantom_fire",
+    potion = "tempered_potion",
 
     package = "Blood",
 } )
@@ -2352,4 +2397,4 @@ spec:RegisterSetting( "vb_damage", 50, {
     width = "full",
 } )
 
-spec:RegisterPack( "Blood", 20241102, [[Zekili:LZvBtUjos4FltDv5yNmXNbNjBYwJ9hs2BRkPUBRRYKBZ3miBKhtfm4fWzYS1u8B)A9cGqOwGFzsYE3x2DILO7wpDR(nHyHZIpU4MasoDXV5oX9footChp51UoVy6IBYVFhDXn7iR(m5w4pIjBH)7BIsscy)69rjKa2tNLSpDfmYnHB3hrYdtIFBkzD(IBwUpmk)DXlwAMdoWJUJUc(5RMS4MnHbbuXCPzRwCdBUp3X55tC)5c)pqZYtsPf(V7n)6Lf()(BG)Zh(yX7lEVyAtEU7RHP54mEY4Rk8bj5Tf(73X4AH)ZyppzhnTWpznmyY(Om1hDYlHh9FrsttUlLghu4)3l8)hFnNMUnmMtGG9PHX3w4)lF4tvp3Kx)C3xz)5uM6e2u)DY2DHPHRk85yyJXV6N5sDLqxn2ReSX4y)0ZDFbm2h3aY4NiWY7tH5BcJxCtuywEgx1qIJi3hd)5VXv00yYYiAWI3S4MKDWWuqlrwXuzlU5lK0q2OS)kApLpAoSUZghqj5B8YYtd)m1BxssKhzBY(4C(Z4jmlAmNG9B3voNCq)EWS2DckT3Ls9Ozz04vT4Z0dMpooQ8zzsm1lBtinkWlLUoLMTXtmrG4V4Gj(WcFxhU5hyMhf5LtsVLMNnEdLKMlxof(pTWpNerJZf)(Yuk5Z00XsoXh3TWFKQCQsaV0DEbP3XKWR0KWvPHGXyiHTrC96XRsi3UpkzhGL3poLULegNv4F9Sc)BxfmEl5R1lfvaNr5xYOC5GPKWma6PWMFfUbZ6NSZ)as8kWCYlDpGY3bBitIhVFxnD3LW))aHEfkHwbgFbj3fBKyaYfCFn9wY2K5TEF69mA(6ZdnPPz00pdZIrtNjOeLrdaCl8NQlq5KD8NvF)y9ZEb4XjjFSy67IaTgDCE4QpZ9b9Wdf(dnmHAfk4gCsH)GcFoQ)fPthp(SbaNBl1uKwMegXLj9nQ9YcA(mUf6tRSJ4mhKXlKIq5U1K1E5BOcbX7p2tPXCXHTI6AEny20MmBKo)mSKR4H2ynO7l1OBnmrwMW9Pd)dVOWTl5GLU3gdwuyC76wlIs1foe3AtQMUt3)KMUZaOiqnRWY1TuTkOIQBiUiG7aYU2PCXlC7qIdaVlRi3lmwRhwX984SCiReayk8VIpHo2eRGJQBoqqBnTJcKdsalrKT8L7l)(TCHvhqYDj3brkcORdxfMl3Bm5XaoCndh5jBxcWrSq73H7))V15HbvahVWJY1swe7XknE629sTHGIHcxtwMKY4(KtvTLHf0T00CwJyD6zq4Gh)fXhu9UHHhK5PvxuU4rST7huy5uzjegVokKZdgKKLWQbOYwPt9dBBCTmUkjodW8YKFCXtmOhoYrsYRfgjtJWOFe2ITYoXqUM1MfHGLDo1deV0K0gwcCD3iC7b3os1WKPF3OVaigwLrTc0wNqDT3U6bLgBmoCH9NwysINFMPbByRoXI1jEkfTvUQPo30MGtk90bmQi4LANgkS9U5)KbPS(lSXH6nLvNecfmFpuFFznR(3WdibdalNBt4l58KcF6xbbGowvKRkFmJ8LsxgzYNUkgNYV2i2yJbmwScBrINWXfgcIQIyCyiZBfbkYlJtl8O5xyjETCFKq9KgUndSjZwba2TuflYtk4IPywT2zvjv81cEO4YAlktKPHH7q8mpUwXLaAzYwsnHz4RSyv5GUtwL122QMRWxw4rmps)ym5PzeYzyHivB1aUxn8OCIccbCWbF))0oIozYaSpzlEizdIKS70oIkDSI25mrwKetNIhQHnFW3enMUnKc0HrgoBfTQb2CSfIUL4TBvU30R47cUY04bHcDRSW8SK9rWodwlhRLXNXFwfJBLzXftl1tUHXU6SLLoDwVpIraXOEmzPHhs8c9ZLwUlzT1e4(F16o4l7Dt7o8oc(TUPDDu2E)BAgESqzVOM1W3JWGq2mQtT)Ehul04mUSTCNPw91OTC6oH)FXuFS06Xdo1hlTI0wnfZ0kNWCmyWt(vwkle33mZrQW7yMhKhWN1ZuP14DuTJ0jQ36uHWqIKXngFLTwII7v2QaIvGaAzFw6FhAuQHDeOQkDlHykkwAFuMsT1pcbYS3gWUuR7aPX0oEbiygBRZr1vKDCvLCD2hDuRIkoHkShBpj0mWS2frRaMqdYwLAjFPodjqGKKM1Yi6QJE06Z6uPwhB5)FcOwZsbS08mm8QMug7MpEM7x0HDq3B1vF0f9OluhBY0hsYYOUrRnEqkfq0GkuWSzodD1NN(1b(sd9ELsexxeaP2(zH)OdQRk9OR3i9ZTvhx(oOuX0yDCYWhRO9nO4n7TL5VUTYWsU02Yt5uR8t2dft5GOTV1ANm(rOxlwAwIviS0WEdDBcyrKfMPyyOTLZC(LnBFFt81sFsKDasKCHenOvzE5Y5F3jupVdGUwW06UeVO)1K9r5v17xzBgcB9bJF6Fs1ndo46NZ5oEHmkDgVHK5ThkLKb3vMUwh)B9GJAnoynSnKDAgSKL52p7tPqDYjB5NYqMwDJFu8KzQf6lPMNdNjzhxBiQej3oGrtJ)TEqDy0ThWyB8YTgVqExRcxBgXQ6YezlH5pusWDPHjWUV71cAuT7rJXI6HuwdrFr63q1(G)JSvBlYuQVfQqpAug7fmR(vAZutAkxnRVpLeX8VXoD1aWTZwwKci)fTeBzoI4qQC(15Akqau6u2Khd8wk)S3gZOKC1)TDyZrb2gQ6k3SwOSUvnlffFTs3RLhcxtRTY5XJT1yp4)wWGW)K9MAY5nVIOiEQajWdSN1Chj5a6N8fw0N6)D(gc4x9wE1LvwG6XN1al3Uah3JaCCB5nQBWXPn40ql6AQjB15Keg7TbY7tB1q)J9H72rdgJzo1Az1YMOZfYiuA4AKgMSuQwS1lelT)ZKDDxg1wk4OwxiAeSPzjLczdO6x2WI0lRGNtARIr)uv4RUTIJXglAZYVlZ(FGGVJzZKn38iB1A1l1s4lCfDjKqlKNvsAEy((aJTG(DYzv4)RLtRQr0pH9(VNteL4KbYaKqiL9s6u60JWEoyIS6IIFcmWgcZN2ViWRc)pWta9tCedCdM2(ns3F)Ug9XoNexvrvy8kwL(36jDHDLS0TWLR9kLarv69rXZNGX3nv7DfUps0xwEScuBLKuOus7q)nTOvhIR66dJlSdyXGEwOk(iz3JJ29YwQ2lfkCJ2xhHshkS4iHyBVceOWV9(JVHMMaruPYQilpvZByL(SI9On0jEI)2JDhje3uc1ZOS8HT3hBybFMyA5f0GxF2oOK(KTljTRqtulN8TWRwOwYFo2jTcvPYMO4g2mX91Jb(FhjngKkiJu(nejC7oawl8xZmeEISwWNa6sw4(uMB2SewJei7H00j5SFakKgwvzJlE))mKzDXUkoVnjg4gF4Nu65SzDvanzNl2t08RQm8qNVoQNeLByaGkn(28niuwFoNzYFcc(wsgyYCVn5UEkNxIFcsnZAIKhgbjMAtYBoTZptoHvWgg0yt2lNW5KWNG8YCTytCLJFgj7HlSDvtVbg1JhPbZNIWCx7(xAn8bqu7oampNZm5pbbhZfGXPCEj(ji1226JoTZptoHvGz3agMW5KWNG8A0rq7XpJK9Wf2E4SqNr94rAW8xGZ8OVezIbIFUxeXXmrCmsKxIkj6LPAqQmmLhrI3dYYu4LphI9GYWnK1Fcfn7uwnoLhrI3dYAfiAnCdz9vNvz9rL4Ds2JZqRNY8Xr8kY(ADYI2)PkY2zhQ0f9w84Ke9hvI3dYEc7UDM8naTBZKtY6(XL69HUhLxeEn(RtIIsUJ39gY(uswH)DuwJLGOXbSU5aeJnnrBfk8znIG17L8Y5fNWBqaVdr1ZoiGn5asozjjJ(ZfVVW)5f(SG)SVffVJ3xbg9FrtkZ6BWIBi7Z3KKY)6G8wwloswhYo1oXeZE2S)UYPpx8()wHF5zQw8(65u2f2lzDnzMelkBf7L8tyBwt8Rm)JhEyyZbAKr(dpyyqzEVghtjRsJJZZFZ4im4AK6iDL8s3RFxJRFxS1VHksQLN259BCmJRF98xnoI26V7K3Wx)ihI2Lj7MXpLyjG4Ez9jXoZ5YvjXbHmco7cSZTyGI0bjTnxXMI9VF4b0tdqrwziFyoDRqwXocTldxpZ2j6Y3kC2pAtJYj7umkxPom5Qn(ixMdg21bzoZrvfR797HhUOPLr5eg1PG5AwWC7TG5QU3ZIG50xbR6qh5swNNzQIiQHQ2eSrgEmx9hRnq3nEYv046z(wwZnZNHvOXOF4HkrXY50n3DcSWoc7ed7aLOr3RyxJRy3VhR4dWae3NZiUlIFuo2qv4V954WGE55knO9zknFw9Hio4c7Acrui9drAuZGfQJ2fRRoTWEXzJhrLIM4hTd2tfxkpqYUqKQd3RxislDrhivd5r9CXKX2vonTlfhM2mUVkZh4wN0tEaBni1fy0QIAn(925FG8YQkZ7OZBgzpzd6lNSKpVSN0XWBjQKcdDDEg(1C8PwUIJp1Dek3f3jrgqBX6b9PRUyImcWEMRN5Go567Qyh0JDFdzeSdF1KG7Xju1LmSVeQ0PWPDXcrfivZlMiHFRdhWveA34qd)Omy01ZkFpKTY6Y7qiFlLGynUYH9wWf1hy4AyWfKhEiT9lc91tVQdno7nYUmjBtxWLbdXUbHx7(uoBB)AKpFMZ4RWn8vED6TYz0BLggHvUHDmcZMv9fcCMdKyHPRb41xjDf3(6)nAq7l(38Hix5VNzzj3eRBdPvGT971xBiH)o5FT7iOKXlWWlO2wJ6ObOIbQL2CUohFDg08kYWxSOR2rdUqB(vJaRgHtrTXTSBP(MJuTxP5nVBWqdBqGeop(vR(L6YM1mUVzLjZDrC(2puDNFQdY0cph0YJe3KA(vd6v(6ZCMyWdrPAS3iN9noYBPMvFGZNY0vdU4yILAy625f3U47mSJY(Qlg2rXEt7rMnDYPlwn3FEHX7KMS8YwY11vf3HMSNrb3DI01UHBF21ZM2x)1ir4a)QTVHzvjf0R4F9o2VPy71vPBi11gPdmVEQQeUXhXUtcke2t63vSRvSMnLbXC8KtuxrLz4oN11m2FuFBWUglXN5wbh1syKv(8iw9sV4aY3wWYE0oPBY1vDqooDtJh9AGQz8HLDRjkyQQM6rpWYRQFWJVsifACWfbHjhQv4nfFAL7pTLeyRHkbyhzoqw6xKcdnL1dEOYz8yLdgkcmB9ZuQ0xD3FIsHas8eZkPkwVvm)TIB(SxQLwhgywP3mtORfPCyzTJy4Q7CZ8IqgmeH36PMQSgut)adHgGKyWOtpXelaY0NIGinYz5mkZNA2mDvBGrhBhA2K)1AlIUFBn6lgGPT6A3dtpOMJI5uuqIloOlCqybmZOlt99Fg3OXSRg2H63iaP1EdBBINnTSlWM)uTQCOjikQR6JkYQ)fJHCLT2XufZ2t7CGC506dElOkgzeUS7mSYCYoqny4q8VgTLBIv)o2oQ(WQm8eJqR1U9avgeiPOPFilTbDwAiN7EGIBm8y2(tnU2)oFQlUn6GewRGa7tby26dk7r61t4Y0Ov6p2vVIRTp4nWhFDJ4BP5fVzS6JV1TkbjJJdMZNAEfMKOU6EnsZRp6wuJM1ROe)5SxfeRn4GFN6w8Fd]] )
+spec:RegisterPack( "Blood", 20250202, [[Zekili:v3r)VTTn2)wcoax72upl562UbBdCT7gqlUB4qtV1FZs0w0XcvwYtsoPzWq)TFps9fffFKYFK0oGISerY3389ff1wyT4ZlUXJKsx872JSNmc(XqlBRjwVAXnPpSJU4MDKvFLCl8lHKTWpFxquKh7Ppeer8yRojAF8kyKB83UpGK6hf((yY60f3SCVFq6hcxSunggdlDhDf84jJwCZgFppA(CPjRwCdBUVCKn8VFjZ9F65b)iCfnjnMeK5(Esqq2hZ(imPx9slRxAZMeG)3N5UFhdxIdYHWNGLgftZC)W7(TRZC)J3b)4tFUEAJEP9pdtZYA4OHtKGL7lyRNSJgN5gTggmAFqI4sh9AyP)hsCC09X0qGu)Pm3)13sPXB9d5aWBFSF4TzU)6N(s16g9ZV0(T6xNWuhXM6Fq2UZp2FvMlxl0y8j5sGwcGrVnhnkh7nV0(vWyFEdqJFHaS3x8t34hU4Ma)K0eUYLegqEie(1FNBQqdjldOElE3IBI2bdtb9mzftPV4M7iX(Srz)wWEkF0uGVtg6rjPBCaLN)xPo7IIcCiBJ2hMYxJtUHvJ54TF7UY5KcwihnQThHc7DXuhAscfmNKXZ4JgpVrenlJcPojB8PbEoX01X0Kno5ZdG9RoAy3pZ12IB9b7tccCsjX3sttgUHsItl4Mm3NN5MscOHP5pFzmL8vA8WcmXh3oZDGiDkcaN4DoEX3ZOWjsu4QyFWw0NW2jVE9WvrKB3heTdeLpmmMUL4hMK5oDwM7TR8gUL8TAwruEZG8RLGSY5X34h7VlFO)xcWB)kBCW2TGv9HnFpaEBkT)DVHlRHbac52i(wS0Omx63GTj0HICqLPyc5oQZs2Yl0uzU9YC5mO4thUFhYak5CGhFdQ07QsWuBEaGxskK4SIagmjmq9wDGYlkTGG2fake6Wu)vFLZ6hoK52xXeQPyWb3OA2YJeUcwOt8EGUUhCWffYz7b1KwoCwg5hWORFwVbIA4vdSDr8)laiRrOqAhnvjGya5okN4XMsdnZ4A8Ukkmb2NxHCzhz1iVFPKHBxsc9C8ORipKlveSheuKjPq8Xm35zUt4tyf4DZl6(q9u4CGcTNiiNbiYcqTLtGYU7Qjqay(RapO3ZIfXaI1O3IVTZs2FwNuyC2G9ioxzvdEr3gCWl7sRTjFBbPm1wnghIgCb5hUoWNVCNO1ojrSiNn2PQdFTiFUxPYrJj(jq8akKtJabWM2BeNgzzep4mJec83UuEY4BDbBRRmSXdNl6S5NGbcaM1(R8tZnugp6OnpRXOAx)Z5rwEUc))PrBxcMZH5YzdUnqa(mjOZPgbHyziCWqiDtPl9)CpLMllzodnnVgiBCtKnqgFykTkezuI(AjmiSvO9s5P9G7MSKQURiLWc76sZOUPMNwBx00XsMBzYid7sQt1gkAe2LwQn9nl7YYg35CzSVsxL1b(Yvuy7nMkWnOzOPzZdyhosqnlIHMsYgQ0TvP1ZzlCx6FFzRECdCTMlnmYpnUhpouEyDhAiDRpfaflKgNQYt2fegBPoPro7wL6mEcNRNOACp)8Wvf5)a1KgascwnB1K5l4RvGkfMfNmXJNzYTDFTokN2YvwrQAk1mmPzLMvrQ61728b6jfyFkiSJBSbJ7)AGMTzgc0QYTsLnGUOW95)ROGeHeVQRhPoMs9Gfb4yy4k9Ro3TmEoWQgSraRr4jeylxMIUavnYKbX9nEjbNOINjGALcOAx1Iv2IBgGNUYQnSny1bIlSyxVpGTLjFuh2UVgfcPP4bB80a6w0kjTNuw9JXJv2LCzhJh3bnLSUKpwhznDLdmgp2XzrAxYufvN6xAHf3sw3VaFS)DRjsVUZn354BCu)8mSFYAUZjfBtvT7t6uvt4Usnywr8Eq2dY69X8QdXDNEuWKgNqJzrlwOTvlhdmjLTM2zfjWqRsY9gX8zAjZOPKDlQ6os5q7bbmS2TjYLAkVvsPt()M3unnTc5O7QMPUHyS)MTI)ke6g8AobpoRMoLWYwjpf0ehiR5V2kvMgdIMsjwuxnDurlMlc)7SoohUStDH3VPHtqrf(EEJmPQK5qd1BH7iGRiZXuEUP7dsAy1H2jdl1stPse00Fh0kz6BOyMQ8Qvr3dESk2rtxz6RWWtQO0o0L2wQ166wTZlpPkHFJT0g1Au9UerI9i6FLUKxXZUSFLEqnnmOSiB580eNrHGajFozhln6zQMoMK3sM6duuOind9e4uLADURhLfmltDdEAjq8qcykuHG(YTcwFleUYGHQz3GIlDrhkI)ulmO7j(xCAs6T)rkRXUr73n0xDnLsR3syCRwiRVFUsoa8Gkx(Ar3HWD9FegJcBLrAAGPdz7jqPIOX0uI9zrAxUcrfj9gNbHMY7)(2)1ZRXQAAnGMe4UanZz8yXnVI5N1CF7yC)H)G0cSX4or1kclnS3q3gbwej(jcggsB5uNcpZ(hv(INlDr3SYZ(PqAqRsn0MJFZfSm3GGUMWA1PSgNhQaz3qZZB9ZAY(G0fLD9PYe2h8qa7rO)fv2lVetBUlkPC)ZqMXwd3qsCy1kZ0kvw4Ah)PEWbTghmA26ZAEplPFUz2(yQhOh3YBQEIu57FoFLjIT7PaAowCKWl094BgvfjzBqmQA8N6bLfJ2Dqm2wEzxlVqEZS8xRwIv1RrYwcZTzba3f7hbBsFqk2s1MmjeNxxNapeCxH7fr7d(dzCBlWuQVZvHo0GeGKSQF)3ymMSRTsUz9dXKaMBq2z06bEN2YcOaP5iL)lZFfxKwm)6usZLaOWjf)v(QG(bknjikv8V1l2SeeB9f94Rwluw)TKLIGl5cVWLN5utRTY5Xdb2yp4)nhb()f716KJBELDb8mgIGfSN1JTcWbWp6owqQ6)oDdbC)ElVk5klq5SBLew2Meo2NGWXUL3iZchR2cNgArUvNCEY1PU4h6SbspuIBO)5E)D7OEdXmNAXwTSjmYidqHHTsyOYsPIzRzK02n6TTDEnZAYOwtDjYhoQQzvqf5tTJjnNNfAL45S2QO0pvL8v2wXI3fk5sk0z5BYS)hiX3PSzsNBEKTAONbG)k6siVxipRO4u)09EkpjGpumRm3FRCAvNhWZyVS8PK8kHsaAaYBKYEvFkD6ryRdMiR8PWNbdSHW8P9R5YRm3pXZt9lCjg4gmU9RVU7(DnooHusyvHx(HRyne4wNcxytkQWZF5ANskiVy(UO45tO6DAGNZAE3M4cr8IO6cfD3YtLGARKgk9632KK5eRCYDvnhIHf2biPqpNRk(mz3JJ296wQ2RZv4kTVobLou)XjkIvOZnl(t1EGnBOXrqevArXMLNT9nSkKwXwAdDIt(V7WUqf5xRcXtQUCXPApOgGHVqiT82CWRpBhu5F02LK2vOLxYxX7YxnrTKVo25TdfZYMi7c98kllBWl99K4qGMG8r5xMe)T7aHAM7AMzWZkQe8zGMKfSpM5KnjI1TbYEijDsk7bq12apLmm7J)BFMTf7w78(Oqax8HFwPFZMvvbWKD4KptYRQWW9T(2GocuUzbisPH3MUbbYYZ5cd(ZGW3ssadMh0r31t5Yc8ZGQz2sKu)aiTuDuEZPD5rYzWbByIgD0E5eUKa(mOxMJfDKBX4xqWE8eRPk6vGOoSKgiFmcYT17FP1Whbq17aq9CUWG)miCmxakNYLf4NbvRBRp60U8i5m4a1UbumHljGpd6vPJG2JFbb7XtSDWzHmI6WsAG8xHJ8G7cuHG8h3jGyPgiwkbYRrPe5IuvqvkMYJiW7ayzk8Y1HypimCdA9nOstJ0QYP8ic8oawTcIwd3GwF7fLwFubUrWEAgADKMpnGxb2FwgSODFQcSg7pLmP3chNfP)Oc8oa2Zy3T1ONaPDBKCww3pUqVlW9K8IWRXFDuqq098E3q2htsYCVNYAReen2J1lhaySPL3uHmxwBiyDEjTCEHr8geW7pu9S98yt2JKswssO)s2hZCFzMll4p7ZwXh49vGb)x1eYS(gWAPr0AF2P0LpuYlM9tcN2C2h)hzULNHA2hRNtzxxVM1LKzfCFzRxVMFIAZAkXkZ44WH(nhOro4hoOyWImDvoMqEKkhNNXMYrycObIJykDfZ8VTs(3gJ)vudsn90otFLJPK)LZyv5is8V501W5FKdn76ODZ4NkCHaX(66tEDM11RIc98zaC2vyNtrpbQdstBUGnf7VpCaT7)c0A51biNwXoYSR9xpt3j4Y3kCXpktL0j7ulk5ulgD1w(uWM96B6GlNzjQIL93D4WvnTmkNWaJeMTAcZUZeMT4EpneMvxjSQdzKtzgpJubsusQQJWgOyz2YlRTG2S8KROX1Z8TSQBEptwHgv(WHksrZ5Yn3EeWyNGDIIDGfsdZCSTso2(7bhFegG4(CgWDr8JYXekk(BFUnmrFX5i1R9zinFw9Hg27k9AI8OqYhA0GMbleh1eQRoDWoHzLhjLGM4hTdYtuUuEaKMKivhMxNKiT0fgKunOhXZbRi2UWPNDD(HNnJ7Rs9bSzeEfhOwdqDfgSQGwJN3o)dK3H1I8omEFy7iAqFNLlWZR7iCu8YJwaH(2tEb(LB95AUyRp3Eak2ZVjQmbTgRh0vxFHvrNs9LoLHedUFjEpGdOQBA6zcisJRx6zcSQRAkdoSLnDMf6Kld1Lu7d68U(OOys0AMrz43T0EC9U09kvXdlI9nDw5BdTwuxEtr57GZbwJlwANj88YruCzq4eYHdXTFDSNoEIb1f7fSUmNEvxZMEy3u0P2phW65c92Vj8ZNXEl4XaRWfcWivR8I)HbyHlXyLSU91MShQoyULwXHe4zZQ(kDoZcsXs1f5C6KIGsTPKb9AF1nN3h5sB(Ij4E9AQO6Jkr7R)Mz2wIZV0ctThafpFfM6aQYxPfqBRUsYaxbWThX5Z8Dtv3HioZIYTd6DL08Rgb4M8WdsJRzJC9vRPY0Q5TtSxFf7DHuVpDUTjk7RaNdU8iv(Q2PBhkECuHjZDzE52JxDtSQJX3sj2RLhAUD88j96u5sZSg1d3QQZso97wlU7GAJjmFmtx17QtjvgftxpUmek4jrSJI(QRR3jHEv7rMnE05twn3HELYBkyr19TORPv1wJMRTsc3Eur8ef3jWPZg31GeibTbN5TV3FvjjHdCHy6Doxiv56u3Kefvo0i9O51tveWn(YdEwIIC7j5BW3ubRzvPunhpVhroQm965SMwY(L67O3uSebNRv40bMvSiZIAtFXJx9LDcdiFZil7I(iZGZuLQVXmi0vKQ1LOi1AelVhqF9ax(6QWPKhZsQKWQ5QPuT0MBA1LoARHkPmRIeJuhlvPc7iBOq9cLQYXqM3g(Qvdo2vkseJk3hjU4GZnUS9KUy)0W1S1O3QAnYEa1is7X9oAHJ5gvbyoDEdebYxTYEhbCv18O6rXZoSEonYYPVU0(WOln66Zlji7jMkPqPM6ytcDghu9k4DTFeNlYcY8hWzGl5L80tReTaCAfcVwQ0j8nd5yQ93j1ojTNYulIBNuNOdsOZEMel5gemhkQ4KFStP97nD27kTkWkZOJGrm1vjKMkDYToYqUii(B6JNOcFlle19OtNVxHN3wFMIbJZbkPyLUUBVlR8uGq8P3Vp(3q4sVCIF9HhuFgSkwXa0Ey0EG6dK9S8wQo(Z3XYRWssROYQ5SxaIowxjAcuDXZjIGvzHxktT4POnhQtN67zho4FHE3NUjkM))NUEp)E8T4))d]] )

@@ -1,5 +1,5 @@
 -- PaladinHoly.lua
--- July 2024
+-- January 2025
 
 if UnitClassBase( "player" ) ~= "PALADIN" then return end
 
@@ -276,6 +276,11 @@ spec:RegisterAuras( {
         duration = 3600,
         max_stack = 3
     },
+    blessed_assurance = {
+        id = 433019,
+        duration = 20,
+        max_stack = 1,
+    },
     blessing_of_autumn = {
         id = 388010,
         duration = 30,
@@ -455,7 +460,10 @@ spec:RegisterAuras( {
     infusion_of_light = {
         id = 54149,
         duration = 15,
-        max_stack = 2,
+        max_stack = function() if talent.inflorescence_of_the_sunwell.enabled then
+            return 2 end
+            return 1
+        end,
         copy = 53576
     },
     liberation = {
@@ -580,7 +588,10 @@ spec:RegisterAuras( {
     },
 } )
 
+-- Current Expansion
+spec:RegisterGear( "tww2", 229244, 229242, 229243, 229245, 229247 )
 
+-- Legacy
 
 spec:RegisterGear( "tier31", 207189, 207190, 207191, 207192, 207194 )
 spec:RegisterAuras( {
@@ -628,12 +639,18 @@ spec:RegisterHook( "reset_precast", function()
     end
 
     if talent.holy_armaments.enabled then
-        if IsActiveSpell( 432472 ) then applyBuff( "sacred_weapon_ready" )
-        else applyBuff( "holy_bulwark_ready" ) end
+        if IsSpellKnownOrOverridesKnown( 432472 ) then
+            applyBuff( "sacred_weapon_ready" )
+            removeBuff( "holy_bulwark_ready" )
+        else
+            applyBuff( "holy_bulwark_ready" )
+            removeBuff( "sacred_weapon_ready" )
+            end
     end
 end )
 
 spec:RegisterHook( "spend", function( amt, resource )
+        
     if amt > 0 and resource == "holy_power" then
         if talent.tirions_devotion.enabled then
             reduceCooldown( "lay_on_hands", amt * 1.5 )
@@ -641,6 +658,14 @@ spec:RegisterHook( "spend", function( amt, resource )
 
         if talent.relentless_inquisition.enabled then
             addStack( "relentless_inquisitor" )
+        end
+
+        if talent.blessed_assurance.enabled then
+            applyBuff( "blessed_assurance" )
+        end
+
+        if talent.unending_light.enabled and this_action == "word_of_glory" then
+            addStack( "unending_light", nil, amt )
         end
     end
 end )
@@ -791,7 +816,7 @@ spec:RegisterAbilities( {
         cooldown = 15,
         gcd = "spell",
 
-        spend = 0.04,
+        spend = 0.045,
         spendType = "mana",
 
         startsCombat = false,
@@ -1281,14 +1306,18 @@ spec:RegisterAbilities( {
         cooldown = 0,
         gcd = "spell",
 
-        spend = function() return 0.18 * ( buff.divine_favor.up and 0.5 or 1 ) * ( buff.infusion_of_light.up and 0.7 or 1 ) end,
+        spend = function() return 0.06 * ( buff.divine_favor.up and 0.5 or 1 ) end,
         spendType = "mana",
 
         startsCombat = false,
         texture = 135907,
 
         handler = function ()
-            removeBuff( "infusion_of_light" )
+            if buff.infusion_of_light.up then
+                removeStack( "infusion_of_light" )
+                if talent.valiance.enabled then reduceCooldown( "holy_armaments", 3 ) end
+                if talent.imbued_infusions.enabled then reduceCooldown( "holy_shock", 1) end
+            end
             removeBuff( "divine_favor" )
             if talent.boundless_salvation.enabled and buff.tyrs_deliverance.up then
                 buff.tyrs_deliverance.expires = buff.tyrs_deliverance.expires + 4
@@ -1399,7 +1428,7 @@ spec:RegisterAbilities( {
         cooldown = 0,
         gcd = "spell",
 
-        spend = function() return 0.064 * ( buff.hand_of_divinity.up and 0.5 or 1 ) * ( buff.divine_favor.up and 0.5 or 1 ) end,
+        spend = function() return 0.07 * ( buff.hand_of_divinity.up and 0.5 or 1 ) * ( buff.divine_favor.up and 0.5 or 1 ) end,
         spendType = "mana",
 
         startsCombat = false,
@@ -1411,7 +1440,9 @@ spec:RegisterAbilities( {
             removeBuff( "liberation" )
 
             if buff.infusion_of_light.up then
-                removeBuff( "infusion_of_light" )
+                removeStack( "infusion_of_light" )
+                if talent.valiance.enabled then reduceCooldown( "holy_armaments", 3 ) end
+                if talent.imbued_infusions.enabled then reduceCooldown( "holy_shock", 1) end
             end
             if talent.boundless_salvation.enabled and buff.tyrs_deliverance.up then
                 buff.tyrs_deliverance.expires = buff.tyrs_deliverance.expires + 8
@@ -1517,6 +1548,12 @@ spec:RegisterAbilities( {
             gain( 1, "holy_power" )
             HandleAwakening()
 
+            if buff.infusion_of_light.up then
+                removeStack( "infusion_of_light" )
+                if talent.valiance.enabled then reduceCooldown( "holy_armaments", 3 ) end
+                if talent.imbued_infusions.enabled then reduceCooldown( "holy_shock", 1) end
+            end
+
             removeBuff( "liberation" )
 
             if talent.empyrean_legacy.enabled and debuff.empyrean_legacy_icd.down then
@@ -1562,6 +1599,7 @@ spec:RegisterAbilities( {
         texture = 461859,
 
         handler = function ()
+            if talent.blessed_assurance.enabled then applyBuff( "blessed_assurance" ) end
             spend( 0.18 * mana.max, "mana" )
             if buff.divine_purpose.down and buff.shining_righteousness_ready.down then addStack( "afterimage_stacks", nil, 3 ) end
             if buff.dawnlight.up then
@@ -1571,6 +1609,7 @@ spec:RegisterAbilities( {
             removeBuff( "divine_purpose" )
             removeBuff( "shining_righteousness_ready" )
             if talent.maraads_dying_breath.enabled then applyBuff( "maraads_dying_breath" ) end
+            removeBuff( "unending_light" )
         end,
     },
 
@@ -1662,7 +1701,10 @@ spec:RegisterAbilities( {
         texture = 236265,
         equipped = "shield",
 
+        
         handler = function ()
+            if talent.blessed_assurance.enabled then applyBuff( "blessed_assurance" ) end
+
             if buff.divine_purpose.down and buff.shining_righteousness_ready.down then addStack( "afterimage_stacks", nil, 3 ) end
             removeBuff( "divine_purpose" )
             reduceCooldown( "crusader_strike", 1.5 )
@@ -1757,6 +1799,7 @@ spec:RegisterAbilities( {
         texture = 133192,
 
         handler = function ()
+            if talent.blessed_assurance.enabled then applyBuff( "blessed_assurance" ) end
             if buff.afterimage_stacks.stack >= 20 then removeStack( "afterimage_stacks", 20 ) end
             if buff.dawnlight.up then
                 applyBuff( "dawnlight_hot" )
@@ -1825,7 +1868,7 @@ spec:RegisterOptions( {
     damageDots = true,
     damageExpiration = 8,
 
-    potion = "potion_of_spectral_intellect",
+    potion = "tempered_potion",
 
     package = "Holy Paladin",
 } )

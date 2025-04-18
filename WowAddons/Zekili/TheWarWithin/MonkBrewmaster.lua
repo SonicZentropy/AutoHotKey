@@ -1,5 +1,5 @@
 -- MonkBrewmaster.lua
--- July 2024
+-- January 2025
 
 if UnitClassBase( "player" ) ~= "MONK" then return end
 
@@ -10,6 +10,8 @@ local class, state = Zekili.Class, Zekili.State
 local strformat = string.format
 
 local spec = Zekili:NewSpecialization( 268 )
+
+local FindUnitBuffByID = ns.FindUnitBuffByID
 local GetSpellCount = C_Spell.GetSpellCastCount
 local GetUnitBuffByAuraInstanceID = C_TooltipInfo.GetUnitBuffByAuraInstanceID
 
@@ -526,7 +528,7 @@ spec:RegisterAuras( {
     purified_chi = {
         id = 325092,
         duration = 15,
-        max_stack = 10,
+        max_stack = 6
     },
     -- Talent: Nearby enemies will be knocked out of the Ring of Peace.
     -- https://wowhead.com/beta/spell=116844
@@ -761,18 +763,35 @@ spec:RegisterHook( "reset_postcast", function( x )
     return x
 end )
 
+-- The War Within
+spec:RegisterGear( "tww2", 229298, 212045, 229301, 229299, 229297 )
+spec:RegisterAuras( {
+    -- 2-set
+    -- https://www.wowhead.com/ptr-2/spell=1217990/luck-of-the-draw
+    -- Each time you take damage you have a chance to activate Luck of the Draw! causing you to cast Fortifying Brew for 6.0 sec. Your damage done is increased by 15% for 8 sec after Luck of the Draw! activates.  
+    luck_of_the_draw = {
+        id = 1217990,
+        duration = 8,
+        max_stack = 1
+    },
+    -- tier_4_set_placeholder =https://www.wowhead.com/ptr-2/spell=1217999/opportunistic-strike
+    --[When you gain Luck of the Draw!, your next 2 casts of Blackout Kick deal 150% increased damage and incur a 2.0 sec reduced cooldown.]
+    opportunistic_strike = {
+        id = 1217999,
+        duration = 20,
+        max_stack = 2
+    },
+} )
 
+
+-- Dragonflight
 spec:RegisterGear( "tier31", 207243, 207244, 207245, 207246, 207248, 217188, 217190, 217186, 217187, 217189 )
-
--- Tier 30
 spec:RegisterGear( "tier30", 202509, 202507, 202506, 202505, 202504 )
 spec:RegisterAura( "leverage", {
     id = 408503,
     duration = 30,
     max_stack = 5
 } )
-
-
 spec:RegisterGear( "tier29", 200363, 200365, 200360, 200362, 200364 )
 spec:RegisterAura( "brewmasters_rhythm", {
     id = 394797,
@@ -780,11 +799,11 @@ spec:RegisterAura( "brewmasters_rhythm", {
     max_stack = 4
 } )
 
+-- Legacy
 spec:RegisterGear( "tier19", 138325, 138328, 138331, 138334, 138337, 138367 )
 spec:RegisterGear( "tier20", 147154, 147156, 147152, 147151, 147153, 147155 )
 spec:RegisterGear( "tier21", 152145, 152147, 152143, 152142, 152144, 152146 )
 spec:RegisterGear( "class", 139731, 139732, 139733, 139734, 139735, 139736, 139737, 139738 )
-
 spec:RegisterGear( "cenedril_reflector_of_hatred", 137019 )
 spec:RegisterGear( "cinidaria_the_symbiote", 133976 )
 spec:RegisterGear( "drinking_horn_cover", 137097 )
@@ -800,7 +819,6 @@ spec:RegisterGear( "soul_of_the_grandmaster", 151643 )
 spec:RegisterGear( "stormstouts_last_gasp", 151788 )
 spec:RegisterGear( "the_emperors_capacitor", 144239 )
 spec:RegisterGear( "the_wind_blows", 151811 )
-
 
 spec:RegisterHook( "spend", function( amount, resource )
     if equipped.the_emperors_capacitor and resource == "chi" then
@@ -1026,6 +1044,59 @@ spec:RegisterStateExpr( "boc_count", function()
     return blackoutComboCount
 end )
 
+-- Snapshotting
+
+local bocConsumptionTime = 0 -- time at which Blackout Combo was most recently consumed
+
+local function calculate_pmultiplier( spellID )
+    local a = class.auras
+
+    if spellID == a.breath_of_fire_dot.id then
+        -- Provide a short window of 0.2s after Blackout Combo is consumed to grant its effects.
+        local blackout_combo = FindUnitBuffByID( "player", a.blackout_combo.id, "PLAYER" ) or ( GetTime() - bocConsumptionTime < 0.2 )
+
+        -- The Breath of Fire DoT normally reduces damage by 5% but increases to 10%
+        -- with Blackout Combo.
+        return 1.05 + ( blackout_combo and 0.05 or 0 )
+    end
+
+    return 1
+end
+
+spec:RegisterStateExpr( "persistent_multiplier", function( act )
+    local mult = 1
+
+    act = act or this_action
+
+    if not act then return mult end
+
+    -- Snapshot damage reduction from Breath of Fire DoT with Blackout Combo.
+    if act == "breath_of_fire" then
+        mult = mult * ( 1.05 + ( buff.blackout_combo.up and 0.05 or 0 ) )
+    end
+
+    return mult
+end )
+
+spec:RegisterCombatLogEvent( function( ... )
+    local _, subtype, _, sourceGUID, _, _, _, destGUID, _, _, _, spellID = ...
+
+    -- Must be a player event.
+    if sourceGUID ~= state.GUID then return end
+
+    if subtype == "SPELL_AURA_REMOVED" then
+        -- Save when Blackout Combo is consumed to give a short window for snapshotting.
+        if spellID == class.auras.blackout_combo.id then
+            bocConsumptionTime = GetTime()
+        end
+    elseif subtype == "SPELL_AURA_APPLIED" then
+        if spellID == class.auras.breath_of_fire_dot.id then
+            local mult = calculate_pmultiplier( spellID )
+            ns.saveDebuffModifier( spellID, mult )
+            ns.trackDebuff( spellID, destGUID, GetTime(), true )
+        end
+    end
+end )
 
 spec:RegisterHook( "reset_precast", function ()
     rawset( healing_sphere, "count", nil )
@@ -1041,6 +1112,9 @@ spec:RegisterHook( "reset_precast", function ()
 
     stagger.amount = nil
     stagger.amount_remains = nil
+
+    -- Reset snapshots.
+    debuff.breath_of_fire_dot.pmultiplier = nil
 end )
 
 
@@ -1095,7 +1169,11 @@ spec:RegisterAbilities( {
 
         handler = function ()
             gain( energy.max, "energy" )
-            setCooldown( "celestial_brew", 0 )
+            if talent.endless_draught.enabled then
+                gainCharges( "celestial_brew", class.abilities.celestial_brew.charges )
+            else
+                setCooldown( "celestial_brew", 0 )
+            end
             gainCharges( "purifying_brew", class.abilities.purifying_brew.charges )
         end,
     },
@@ -1122,6 +1200,11 @@ spec:RegisterAbilities( {
 
             if conduit.walk_with_the_ox.enabled and cooldown.invoke_niuzao.remains > 0 then reduceCooldown( "invoke_niuzao", 0.5 ) end
 
+            if set_bonus.tww2 >= 4 and buff.opportunistic_strike.up then
+                reduceCooldown( "blackout_kick", 2 )
+                removeStack( "opportunistic_strike" )
+            end
+
             addStack( "elusive_brawler" )
         end,
     },
@@ -1147,7 +1230,10 @@ spec:RegisterAbilities( {
         handler = function ()
             removeBuff( "blackout_combo" )
             addStack( "elusive_brawler", nil, active_enemies * ( 1 + set_bonus.tier21_2pc ) )
-            if debuff.keg_smash.up then applyDebuff( "target", "breath_of_fire_dot" ) end
+            if debuff.keg_smash.up then
+                applyDebuff( "target", "breath_of_fire_dot" )
+                debuff.breath_of_fire_dot.pmultiplier = persistent_multiplier
+            end
             if talent.charred_passions.enabled or legendary.charred_passions.enabled then applyBuff( "charred_passions" ) end
         end,
     },
@@ -1156,7 +1242,13 @@ spec:RegisterAbilities( {
     celestial_brew = {
         id = 322507,
         cast = 0,
+        charges = function() return talent.endless_draught.enabled and 2 or nil end,
         cooldown = function() return talent.light_brewing.enabled and 36 or 45 end,
+        recharge = function()
+            if talent.endless_draught.enabled then
+                return talent.light_brewing.enabled and 36 or 45
+            end
+        end,
         gcd = "totem",
         school = "physical",
 
@@ -1364,10 +1456,6 @@ spec:RegisterAbilities( {
 
         startsCombat = true,
 
-        usable = function ()
-            if ( settings.eh_percent > 0 and health.pct > settings.eh_percent ) then return false, "health is above " .. settings.eh_percent .. "%" end
-            return true
-        end,
         handler = function ()
             gain( ( healing_sphere.count * stat.attack_power ) + stat.spell_power * ( 1 + stat.versatility_atk_mod ), "health" )
             if pvptalent.reverse_harm.enabled then gain( 1, "chi" ) end
@@ -1477,7 +1565,11 @@ spec:RegisterAbilities( {
 
             applyBuff( "shuffle" )
 
-            reduceCooldown( "celestial_brew", 4 + ( buff.blackout_combo.up and 2 or 0 ))
+            if talent.endless_draught.enabled then
+                gainChargeTime( "celestial_brew", 4 + ( buff.blackout_combo.up and 2 or 0 ))
+            else
+                reduceCooldown( "celestial_brew", 4 + ( buff.blackout_combo.up and 2 or 0 ))
+            end
             reduceCooldown( "fortifying_brew", 4 + ( buff.blackout_combo.up and 2 or 0 ))
             gainChargeTime( "purifying_brew", 4 + ( buff.blackout_combo.up and 2 or 0 ))
 
@@ -1558,16 +1650,40 @@ spec:RegisterAbilities( {
 
         spend = 20,
         spendType = "energy",
+        toggle = function() if talent.pressure_points.enabled then return "interrupts" end end,
 
         talent = "paralysis",
         startsCombat = true,
-        debuff = function() return talent.pressure_points.enabled and "dispellable_enrage" or nil end,
+
+        usable = function () if talent.pressure_points.enabled then
+            return buff.dispellable_enrage.up end
+            return true
+        end,
 
         handler = function ()
             applyDebuff( "target", "paralysis" )
-            if talent.pressure_points.enabled then removeDebuff( "target", "dispellable_enrage" ) end
+            if talent.pressure_points.enabled then removeBuff( "dispellable_enrage" ) end
         end,
     },
+
+
+
+--[[
+    -- Talent: Removes $s1 Enrage and $s2 Magic effect from an enemy target.$?s343244[    Successfully dispelling an effect generates $343244s1 Focus.][]
+    tranquilizing_shot = {
+
+        usable = function () return buff.dispellable_enrage.up or buff.dispellable_magic.up, "requires enrage or magic effect" end,
+
+        handler = function ()
+            if talent.devilsaur_tranquilizer.enabled and buff.dispellable_enrage.up and buff.dispellable_magic.up then reduceCooldown( "tranquilizing_shot", 5 ) end
+            removeBuff( "dispellable_enrage" )
+            removeBuff( "dispellable_magic" )
+            if state.spec.survival or talent.improved_tranquilizing_shot.enabled then gain( 10, "focus" ) end
+        end,
+    },
+--]]
+
+
 
     -- Taunts the target to attack you and causes them to move toward you at 50% increased speed. This ability can be targeted on your Statue of the Black Ox, causing the same effect on all enemies within 10 yards of the statue.
     provoke = {
@@ -1832,7 +1948,11 @@ spec:RegisterAbilities( {
             removeBuff( "blackout_combo" )
             removeBuff( "counterstrike" )
 
-            reduceCooldown( "celestial_brew", 1 )
+            if talent.endless_draught.enabled then
+                gainChargeTime( "celestial_brew", 1 )
+            else
+                reduceCooldown( "celestial_brew", 1 )
+            end
             reduceCooldown( "fortifying_brew", 1 )
             gainChargeTime( "purifying_brew", 1 )
 
@@ -1960,19 +2080,10 @@ spec:RegisterOptions( {
     damageDots = false,
     damageExpiration = 8,
 
-    potion = "phantom_fire",
+    potion = "tempered_potion",
 
     package = "Brewmaster"
 } )
-
-
---[[ spec:RegisterSetting( "ox_walker", true, {
-    name = "Use |T606543:0|t Spinning Crane Kick in Single-Target with Walk with the Ox",
-    desc = "If checked, the default priority will recommend |T606543:0|t Spinning Crane Kick when Walk with the Ox is active.  This tends to " ..
-        "reduce mitigation slightly but increase damage based on using Invoke Niuzao more frequently.",
-    type = "toggle",
-    width = "full",
-} ) ]]
 
 
 spec:RegisterSetting( "purify_for_celestial", true, {
